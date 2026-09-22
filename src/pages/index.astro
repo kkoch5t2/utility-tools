@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { tools } from "../config/tools";
+import { siteConfig } from "../config/site";
+---
+<BaseLayout title={siteConfig.name} description={siteConfig.description}>
+  <div class="shell home">
+    <header class="home-intro">
+      <h1>必要な処理を、ブラウザですぐに。</h1>
+      <p>無料・登録不要。ファイルは外部サーバーへ送らず、端末内で処理します。</p>
+    </header>
+    <section aria-labelledby="tools-title">
+      <h2 id="tools-title">ツール一覧</h2>
+      <div class="tool-grid">
+        {tools.map((tool) => (
+          <article class:list={["home-tool", tool.status === "planned" && "is-planned"]}>
+            <p class="category">{tool.category.toUpperCase()}</p>
+            <h3>{tool.name}</h3>
+            <p>{tool.description}</p>
+            {tool.status === "available" ? <a href={tool.href}>ツールを開く →</a> : <span class="planned">準備中</span>}
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+<style>
+  .home { padding-top: 48px; }
+  .home-intro { max-width: 760px; margin-bottom: 40px; }
+  h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.2; margin: 0 0 14px; }
+  .home-intro p { color: var(--muted); font-size: 18px; }
+  .tool-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .home-tool { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .home-tool h3 { margin: 4px 0 8px; line-height: 1.4; }
+  .home-tool p { color: var(--muted); }
+  .category { color: var(--accent) !important; font-weight: 800; font-size: 13px; }
+  .is-planned { opacity: .72; }
+  .planned { color: var(--muted); font-weight: 700; }
+  @media (max-width: 760px) { .tool-grid { grid-template-columns: 1fr; } }
+</style>

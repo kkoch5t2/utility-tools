@@ -1,0 +1,44 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  name: string;
+  category: string;
+  faqs: readonly (readonly [string, string])[];
+}
+
+const { title, description, name, category, faqs } = Astro.props;
+const faqJson = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map(([question, answer]) => ({
+    "@type": "Question",
+    name: question,
+    acceptedAnswer: { "@type": "Answer", text: answer },
+  })),
+};
+---
+<BaseLayout title={title} description={description}>
+  <div class="shell page-shell">
+    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><span>{category}</span></nav>
+    <header class="tool-heading">
+      <p class="eyebrow">{category}ツール</p>
+      <h1>{name}</h1>
+      <p>{description}</p>
+    </header>
+    <slot />
+    <section class="content-section">
+      <h2>ファイルが送信されない仕組み</h2>
+      <p>選択したファイルはブラウザのFile APIで読み込み、変換とZIP作成も端末内で実行します。このツールからファイル内容をAPIへ送信する処理はありません。</p>
+    </section>
+    <section class="content-section">
+      <h2>よくある質問</h2>
+      <div class="faq-list">
+        {faqs.map(([question, answer]) => <details><summary>{question}</summary><p>{answer}</p></details>)}
+      </div>
+    </section>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(faqJson)} />
+</BaseLayout>

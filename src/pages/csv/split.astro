@@ -1,0 +1,273 @@
+---
+import ToolLayout from "../../components/layout/ToolLayout.astro";
+import FileDrop from "../../components/file/FileDrop.astro";
+import ProgressBar from "../../components/feedback/ProgressBar.astro";
+import ErrorMessage from "../../components/feedback/ErrorMessage.astro";
+import SuccessMessage from "../../components/feedback/SuccessMessage.astro";
+import { csvSplitConfig as config } from "../../tools/csv-split/config";
+import "../../styles/tool.css";
+---
+<ToolLayout title={config.title} description={config.description} name={config.name} category={config.category} faqs={config.faqs}>
+  <section class="tool-card" aria-labelledby="csv-split-title">
+    <h2 id="csv-split-title">CSVを選択して分割</h2>
+    <div class="privacy-note">
+      <span aria-hidden="true">🔒</span>
+      <div><strong>端末内だけで処理します</strong><br />CSVの内容がサーバーへ送信されることはありません。</div>
+    </div>
+
+    <FileDrop
+      accept=".csv,text/csv"
+      multiple={false}
+      hint="UTF-8 / BOM付きUTF-8 / 最大200MB"
+    />
+    <ul class="file-list" data-file-list aria-live="polite"></ul>
+
+    <div class="settings-grid">
+      <div class="field">
+        <label for="rows-per-file">1ファイルあたりのデータ行数</label>
+        <input id="rows-per-file" data-rows-per-file type="number" min="1" max="1000000" value="10000" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="filename-prefix">出力ファイル名</label>
+        <input id="filename-prefix" data-filename-prefix type="text" value="split" maxlength="80" />
+      </div>
+      <div class="field">
+        <label for="newline">改行コード</label>
+        <select id="newline" data-newline>
+          <option value="crlf" selected>CRLF（Windows）</option>
+          <option value="lf">LF</option>
+        </select>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" data-has-header checked />
+        先頭行をヘッダーとして扱う
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" data-include-header checked />
+        各分割ファイルにヘッダーを付ける
+      </label>
+    </div>
+
+    <div class="actions">
+      <button class="button button-primary" type="button" data-start disabled>分割を開始</button>
+      <button class="button button-secondary" type="button" data-clear disabled>クリア</button>
+    </div>
+    <ErrorMessage />
+    <SuccessMessage />
+    <ProgressBar />
+
+    <section class="results" data-results hidden aria-labelledby="csv-results-title">
+      <div class="actions">
+        <h2 id="csv-results-title">分割結果</h2>
+        <button class="button button-primary" type="button" data-download-zip>ZIPで一括ダウンロード</button>
+      </div>
+      <div class="result-list" data-result-list></div>
+    </section>
+  </section>
+
+  <section class="content-section">
+    <h2>使い方</h2>
+    <ol>
+      <li>UTF-8のCSVファイルを選択します。</li>
+      <li>1ファイルあたりのデータ行数、ヘッダー、改行コードを設定します。</li>
+      <li>「分割を開始」を押し、完了後にZIPで保存します。</li>
+    </ol>
+  </section>
+  <section class="content-section">
+    <h2>CSVとして正しく解析します</h2>
+    <p>単純に改行文字で分割せず、ダブルクォート内のカンマ・改行・エスケープされたダブルクォートをCSV仕様として解析してから分割します。</p>
+  </section>
+</ToolLayout>
+
+<script>
+  import { formatBytes } from "../../core/files/file-size";
+  import { createZip } from "../../core/download/create-zip";
+  import { downloadBlob } from "../../core/download/download-file";
+  import { ProcessingCancelledError } from "../../core/processing/cancellation";
+  import { splitCsvFile } from "../../engines/csv/split-csv";
+
+  const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
+  const input = $<HTMLInputElement>("[data-file-input]");
+  const dropZone = $<HTMLElement>("[data-drop-zone]");
+  const fileList = $<HTMLUListElement>("[data-file-list]");
+  const startButton = $<HTMLButtonElement>("[data-start]");
+  const clearButton = $<HTMLButtonElement>("[data-clear]");
+  const rowsPerFile = $<HTMLInputElement>("[data-rows-per-file]");
+  const filenamePrefix = $<HTMLInputElement>("[data-filename-prefix]");
+  const newline = $<HTMLSelectElement>("[data-newline]");
+  const hasHeader = $<HTMLInputElement>("[data-has-header]");
+  const includeHeader = $<HTMLInputElement>("[data-include-header]");
+  const errorBox = $<HTMLElement>("[data-error-box]");
+  const successBox = $<HTMLElement>("[data-success-box]");
+  const progressPanel = $<HTMLElement>("[data-progress-panel]");
+  const progress = $<HTMLProgressElement>("[data-progress]");
+  const progressLabel = $<HTMLElement>("[data-progress-label]");
+  const progressCount = $<HTMLElement>("[data-progress-count]");
+  const cancelButton = $<HTMLButtonElement>("[data-cancel]");
+  const resultsSection = $<HTMLElement>("[data-results]");
+  const resultList = $<HTMLElement>("[data-result-list]");
+  const zipButton = $<HTMLButtonElement>("[data-download-zip]");
+
+  let selectedFile: File | null = null;
+  let parts: Array<{ filename: string; blob: Blob; dataRowCount: number }> = [];
+  let controller: AbortController | null = null;
+
+  function setMessage(element: HTMLElement, message = "") {
+    element.textContent = message;
+    element.hidden = !message;
+  }
+
+  function validate(file: File): string | null {
+    const extension = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
+    if (extension !== ".csv") return "対応していない形式です。CSVファイルを選択してください。";
+    if (file.size > 200 * 1024 * 1024) return "ファイルサイズが上限200MBを超えています。";
+    return null;
+  }
+
+  function renderFile() {
+    fileList.replaceChildren();
+    if (selectedFile) {
+      const item = document.createElement("li");
+      item.className = "file-item";
+      const name = document.createElement("span");
+      name.className = "file-name";
+      name.textContent = selectedFile.name;
+      const size = document.createElement("span");
+      size.textContent = formatBytes(selectedFile.size);
+      const remove = document.createElement("button");
+      remove.className = "button-danger-link";
+      remove.type = "button";
+      remove.textContent = "削除";
+      remove.addEventListener("click", clearAll);
+      item.append(name, size, remove);
+      fileList.append(item);
+    }
+    startButton.disabled = !selectedFile || !!controller;
+    clearButton.disabled = !selectedFile || !!controller;
+  }
+
+  function setFile(file: File | undefined) {
+    setMessage(errorBox);
+    if (!file) return;
+    const error = validate(file);
+    if (error) { setMessage(errorBox, error); return; }
+    selectedFile = file;
+    parts = [];
+    resultsSection.hidden = true;
+    renderFile();
+  }
+
+  function clearAll() {
+    selectedFile = null;
+    parts = [];
+    input.value = "";
+    resultList.replaceChildren();
+    resultsSection.hidden = true;
+    setMessage(errorBox);
+    setMessage(successBox);
+    renderFile();
+  }
+
+  input.addEventListener("change", () => { setFile(input.files?.[0]); input.value = ""; });
+  dropZone.addEventListener("click", () => input.click());
+  dropZone.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); input.click(); }
+  });
+  for (const eventName of ["dragenter", "dragover"]) {
+    dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.add("is-dragover"); });
+  }
+  for (const eventName of ["dragleave", "drop"]) {
+    dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.remove("is-dragover"); });
+  }
+  dropZone.addEventListener("drop", (event) => setFile(event.dataTransfer?.files?.[0]));
+  clearButton.addEventListener("click", clearAll);
+  cancelButton.addEventListener("click", () => controller?.abort());
+  hasHeader.addEventListener("change", () => {
+    includeHeader.disabled = !hasHeader.checked;
+    if (!hasHeader.checked) includeHeader.checked = false;
+  });
+
+  function renderResults(totalRows: number) {
+    resultList.replaceChildren();
+    for (const part of parts) {
+      const row = document.createElement("div");
+      row.className = "result-row";
+      const main = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = part.filename;
+      const meta = document.createElement("div");
+      meta.className = "result-meta";
+      meta.textContent = `${part.dataRowCount.toLocaleString()}行 / ${formatBytes(part.blob.size)}`;
+      main.append(name, meta);
+      const button = document.createElement("button");
+      button.className = "button button-secondary";
+      button.type = "button";
+      button.textContent = "ダウンロード";
+      button.addEventListener("click", () => downloadBlob(part.blob, part.filename));
+      row.append(main, button);
+      resultList.append(row);
+    }
+    resultsSection.hidden = parts.length === 0;
+    if (parts.length) setMessage(successBox, `${totalRows.toLocaleString()}行を${parts.length}ファイルに分割しました。`);
+  }
+
+  startButton.addEventListener("click", async () => {
+    if (!selectedFile) return;
+    setMessage(errorBox);
+    setMessage(successBox);
+    parts = [];
+    resultsSection.hidden = true;
+
+    const count = Number(rowsPerFile.value);
+    if (!Number.isInteger(count) || count < 1 || count > 1_000_000) {
+      setMessage(errorBox, "1ファイルあたりの行数は1〜1,000,000の整数で指定してください。");
+      return;
+    }
+
+    controller = new AbortController();
+    renderFile();
+    progressPanel.hidden = false;
+    progress.value = 0;
+    progressLabel.textContent = "CSVを解析・分割しています";
+    progressCount.textContent = "";
+
+    try {
+      const result = await splitCsvFile(selectedFile, {
+        rowsPerFile: count,
+        hasHeader: hasHeader.checked,
+        includeHeader: includeHeader.checked,
+        filenamePrefix: filenamePrefix.value.trim() || "split",
+        newline: newline.value === "lf" ? "\n" : "\r\n",
+      }, (percent) => {
+        progress.value = percent;
+        progressCount.textContent = `${percent}%`;
+      }, controller.signal);
+
+      parts = result.parts;
+      if (!parts.length) setMessage(errorBox, "分割対象のデータ行がありません。");
+      renderResults(result.totalDataRows);
+    } catch (error) {
+      if (error instanceof ProcessingCancelledError) setMessage(errorBox, error.message);
+      else setMessage(errorBox, `CSVの形式を解析できませんでした。\n${error instanceof Error ? error.message : ""}`.trim());
+    } finally {
+      controller = null;
+      progressPanel.hidden = true;
+      renderFile();
+    }
+  });
+
+  zipButton.addEventListener("click", async () => {
+    if (!parts.length) return;
+    zipButton.disabled = true;
+    setMessage(errorBox);
+    try {
+      const zip = await createZip(parts, (percent) => { zipButton.textContent = `ZIP作成中 ${percent}%`; });
+      downloadBlob(zip, "split-csv.zip");
+    } catch {
+      setMessage(errorBox, "ZIPファイルを作成できませんでした。もう一度お試しください。");
+    } finally {
+      zipButton.disabled = false;
+      zipButton.textContent = "ZIPで一括ダウンロード";
+    }
+  });
+</script>

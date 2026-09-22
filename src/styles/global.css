@@ -1,0 +1,27 @@
+* { box-sizing: border-box; }
+html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif; color: var(--text); background: var(--bg); }
+body { margin: 0; min-width: 320px; font-size: 16px; line-height: 1.7; }
+a { color: var(--accent); }
+button, input, select { font: inherit; }
+button, input, select, [tabindex] { outline-offset: 3px; }
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 3px solid #8ab8ff; }
+.shell { width: min(calc(100% - 32px), var(--shell)); margin-inline: auto; }
+.site-header, .site-footer { background: var(--surface); border-color: var(--line); }
+.site-header { border-bottom: 1px solid var(--line); }
+.site-footer { border-top: 1px solid var(--line); margin-top: 64px; }
+.header-inner, .footer-inner { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { color: var(--text); font-size: 20px; font-weight: 800; text-decoration: none; }
+.header-note, .footer-inner span { color: var(--muted); font-size: 14px; }
+.page-shell { padding-top: 32px; }
+.breadcrumbs { display: flex; gap: 8px; font-size: 14px; color: var(--muted); }
+.tool-heading { max-width: 800px; margin: 24px 0 28px; }
+.tool-heading h1 { font-size: clamp(28px, 5vw, 42px); line-height: 1.25; margin: 4px 0 12px; }
+.tool-heading p { color: var(--muted); margin: 0; }
+.eyebrow { color: var(--accent) !important; font-weight: 800; }
+.content-section { margin-top: 48px; }
+.content-section h2 { font-size: 24px; }
+.faq-list { display: grid; gap: 10px; }
+.faq-list details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.faq-list summary { cursor: pointer; font-weight: 700; }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 640px) { .header-note { display: none; } .footer-inner { align-items: flex-start; flex-direction: column; padding-block: 18px; } }
