@@ -1,0 +1,243 @@
+---
+import ToolLayout from "../../components/layout/ToolLayout.astro";
+import FileDrop from "../../components/file/FileDrop.astro";
+import ErrorMessage from "../../components/feedback/ErrorMessage.astro";
+import SuccessMessage from "../../components/feedback/SuccessMessage.astro";
+import { removeDuplicateLinesConfig as config } from "../../tools/remove-duplicate-lines/config";
+import "../../styles/tool.css";
+---
+<ToolLayout title={config.title} description={config.description} name={config.name} category={config.category} faqs={config.faqs}>
+  <section class="tool-card" aria-labelledby="dedupe-title">
+    <h2 id="dedupe-title">テキストを入力</h2>
+    <div class="privacy-note">
+      <span aria-hidden="true">🔒</span>
+      <div><strong>端末内だけで処理します</strong><br />入力したテキストやファイル内容がサーバーへ送信されることはありません。</div>
+    </div>
+
+    <div class="field">
+      <label for="source-text">テキストを貼り付け</label>
+      <textarea id="source-text" data-source-text rows="12" placeholder="1行に1件ずつ貼り付けてください"></textarea>
+    </div>
+
+    <div class="file-separator"><span>または</span></div>
+    <FileDrop accept=".txt,.log,.csv,text/plain,text/csv" multiple={false} hint="TXT・LOG・CSV / UTF-8 / 最大20MB" />
+    <ul class="file-list" data-file-list aria-live="polite"></ul>
+
+    <fieldset class="settings-fieldset">
+      <legend>重複時に残す行</legend>
+      <label class="radio-row"><input type="radio" name="keep" value="first" checked /> 最初の行を残す</label>
+      <label class="radio-row"><input type="radio" name="keep" value="last" /> 最後の行を残す</label>
+    </fieldset>
+
+    <div class="settings-grid">
+      <label class="checkbox-row"><input type="checkbox" data-ignore-blank checked /> 空行を無視</label>
+      <label class="checkbox-row"><input type="checkbox" data-ignore-whitespace checked /> 前後の空白を無視</label>
+      <label class="checkbox-row"><input type="checkbox" data-case-sensitive checked /> 大文字・小文字を区別</label>
+    </div>
+
+    <fieldset class="settings-fieldset">
+      <legend>出力順</legend>
+      <label class="radio-row"><input type="radio" name="order" value="original" checked /> 元の順序を維持</label>
+      <label class="radio-row"><input type="radio" name="order" value="sorted" /> 結果を並べ替える</label>
+    </fieldset>
+
+    <div class="actions">
+      <button class="button button-primary" type="button" data-process>重複行を削除</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+    </div>
+    <ErrorMessage />
+    <SuccessMessage />
+
+    <section class="results" data-results hidden aria-labelledby="text-results-title">
+      <h2 id="text-results-title">処理結果</h2>
+      <div class="stats-grid" aria-live="polite">
+        <div class="stat"><span>入力行数</span><strong data-input-count>0</strong></div>
+        <div class="stat"><span>出力行数</span><strong data-output-count>0</strong></div>
+        <div class="stat"><span>削除した重複数</span><strong data-duplicate-count>0</strong></div>
+        <div class="stat"><span>無視した空行</span><strong data-blank-count>0</strong></div>
+      </div>
+      <div class="field">
+        <label for="result-text">結果</label>
+        <textarea id="result-text" data-result-text rows="12" readonly></textarea>
+      </div>
+      <div class="actions">
+        <button class="button button-primary" type="button" data-copy>結果をコピー</button>
+        <button class="button button-secondary" type="button" data-download>TXTをダウンロード</button>
+      </div>
+    </section>
+  </section>
+
+  <section class="content-section">
+    <h2>使い方</h2>
+    <ol>
+      <li>テキストを貼り付けるか、TXT・LOG・CSVファイルを読み込みます。</li>
+      <li>残す重複行や比較条件、出力順を設定します。</li>
+      <li>「重複行を削除」を押し、結果をコピーまたはTXTで保存します。</li>
+    </ol>
+  </section>
+  <section class="content-section">
+    <h2>比較条件について</h2>
+    <p>「前後の空白を無視」は比較時だけ空白を無視し、出力する行の文字列自体は変更しません。「大文字・小文字を区別」を外すと、Apple と apple を同じ行として判定します。</p>
+  </section>
+</ToolLayout>
+
+<script>
+  import { formatBytes } from "../../core/files/file-size";
+  import { downloadBlob } from "../../core/download/download-file";
+  import { dedupeText } from "../../engines/text/dedupe-lines";
+
+  const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
+  const sourceText = $<HTMLTextAreaElement>("[data-source-text]");
+  const input = $<HTMLInputElement>("[data-file-input]");
+  const dropZone = $<HTMLElement>("[data-drop-zone]");
+  const fileList = $<HTMLUListElement>("[data-file-list]");
+  const ignoreBlank = $<HTMLInputElement>("[data-ignore-blank]");
+  const ignoreWhitespace = $<HTMLInputElement>("[data-ignore-whitespace]");
+  const caseSensitive = $<HTMLInputElement>("[data-case-sensitive]");
+  const processButton = $<HTMLButtonElement>("[data-process]");
+  const clearButton = $<HTMLButtonElement>("[data-clear]");
+  const errorBox = $<HTMLElement>("[data-error-box]");
+  const successBox = $<HTMLElement>("[data-success-box]");
+  const results = $<HTMLElement>("[data-results]");
+  const resultText = $<HTMLTextAreaElement>("[data-result-text]");
+  const inputCount = $<HTMLElement>("[data-input-count]");
+  const outputCount = $<HTMLElement>("[data-output-count]");
+  const duplicateCount = $<HTMLElement>("[data-duplicate-count]");
+  const blankCount = $<HTMLElement>("[data-blank-count]");
+  const copyButton = $<HTMLButtonElement>("[data-copy]");
+  const downloadButton = $<HTMLButtonElement>("[data-download]");
+
+  let loadedFilename = "";
+
+  function setMessage(element: HTMLElement, message = "") {
+    element.textContent = message;
+    element.hidden = !message;
+  }
+
+  function renderFile(file?: File) {
+    fileList.replaceChildren();
+    if (!file) return;
+    const item = document.createElement("li");
+    item.className = "file-item";
+    const name = document.createElement("span");
+    name.className = "file-name";
+    name.textContent = file.name;
+    const size = document.createElement("span");
+    size.textContent = formatBytes(file.size);
+    const remove = document.createElement("button");
+    remove.className = "button-danger-link";
+    remove.type = "button";
+    remove.textContent = "表示を消す";
+    remove.addEventListener("click", () => {
+      loadedFilename = "";
+      renderFile();
+    });
+    item.append(name, size, remove);
+    fileList.append(item);
+  }
+
+  async function loadFile(file?: File) {
+    setMessage(errorBox);
+    if (!file) return;
+    const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
+    if (![".txt", ".log", ".csv"].includes(ext)) {
+      setMessage(errorBox, "対応していない形式です。TXT・LOG・CSVファイルを選択してください。");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setMessage(errorBox, "ファイルサイズが上限20MBを超えています。");
+      return;
+    }
+    try {
+      sourceText.value = (await file.text()).replace(/^\uFEFF/, "");
+      loadedFilename = file.name;
+      renderFile(file);
+      results.hidden = true;
+      setMessage(successBox, `${file.name} を読み込みました。`);
+    } catch {
+      setMessage(errorBox, "ファイルを読み込めませんでした。UTF-8のテキストファイルか確認してください。");
+    }
+  }
+
+  input.addEventListener("change", () => { void loadFile(input.files?.[0]); input.value = ""; });
+  dropZone.addEventListener("click", () => input.click());
+  dropZone.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); input.click(); }
+  });
+  for (const eventName of ["dragenter", "dragover"]) {
+    dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.add("is-dragover"); });
+  }
+  for (const eventName of ["dragleave", "drop"]) {
+    dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.remove("is-dragover"); });
+  }
+  dropZone.addEventListener("drop", (event) => { void loadFile(event.dataTransfer?.files?.[0]); });
+
+  processButton.addEventListener("click", () => {
+    setMessage(errorBox);
+    setMessage(successBox);
+    if (!sourceText.value) {
+      setMessage(errorBox, "処理するテキストを入力するか、テキストファイルを読み込んでください。");
+      return;
+    }
+
+    const keep = document.querySelector<HTMLInputElement>('input[name="keep"]:checked')?.value === "last" ? "last" : "first";
+    const order = document.querySelector<HTMLInputElement>('input[name="order"]:checked')?.value === "sorted" ? "sorted" : "original";
+    const processed = dedupeText(sourceText.value, {
+      keep,
+      ignoreBlankLines: ignoreBlank.checked,
+      ignoreSurroundingWhitespace: ignoreWhitespace.checked,
+      caseSensitive: caseSensitive.checked,
+      order,
+    });
+
+    resultText.value = processed.lines.join("\n");
+    inputCount.textContent = processed.inputLineCount.toLocaleString();
+    outputCount.textContent = processed.outputLineCount.toLocaleString();
+    duplicateCount.textContent = processed.duplicateCount.toLocaleString();
+    blankCount.textContent = processed.ignoredBlankCount.toLocaleString();
+    results.hidden = false;
+    setMessage(successBox, `${processed.duplicateCount.toLocaleString()}行の重複を削除しました。`);
+  });
+
+  clearButton.addEventListener("click", () => {
+    sourceText.value = "";
+    resultText.value = "";
+    loadedFilename = "";
+    renderFile();
+    results.hidden = true;
+    setMessage(errorBox);
+    setMessage(successBox);
+  });
+
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(resultText.value);
+      setMessage(successBox, "結果をクリップボードにコピーしました。");
+    } catch {
+      setMessage(errorBox, "コピーできませんでした。結果欄を選択して手動でコピーしてください。");
+      resultText.focus();
+      resultText.select();
+    }
+  });
+
+  downloadButton.addEventListener("click", () => {
+    const filename = loadedFilename
+      ? `${loadedFilename.replace(/\.[^.]+$/, "")}-deduped.txt`
+      : "deduped-lines.txt";
+    downloadBlob(new Blob([resultText.value], { type: "text/plain;charset=utf-8" }), filename);
+  });
+</script>
+
+<style>
+  textarea { width: 100%; resize: vertical; min-height: 180px; border: 1px solid #b8c3d2; border-radius: 9px; padding: 12px; background: #fff; color: var(--text); font: 15px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+  .file-separator { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); }
+  .file-separator::before, .file-separator::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+  .settings-fieldset { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 22px 0 0; display: flex; flex-wrap: wrap; gap: 12px 24px; }
+  .settings-fieldset legend { padding: 0 7px; font-weight: 800; }
+  .radio-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 18px; }
+  .stat { background: var(--surface-muted); border-radius: 9px; padding: 12px; display: grid; gap: 2px; }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .stat strong { font-size: 22px; }
+  @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>

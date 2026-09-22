@@ -1,0 +1,85 @@
+import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+
+const onePixelPng = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+test("画像を変換してダウンロードできる", async ({ page }) => {
+  await page.goto("/image/batch-converter/");
+  await page.waitForLoadState("networkidle");
+
+  await page.locator("[data-file-input]").setInputFiles({
+    name: "sample.png",
+    mimeType: "image/png",
+    buffer: onePixelPng,
+  });
+  await expect(page.getByRole("button", { name: "変換を開始" })).toBeEnabled();
+  await page.getByRole("button", { name: "変換を開始" }).click();
+  await expect(page.getByText("1件の変換が完了しました。")).toBeVisible();
+  await expect(page.getByText("sample-converted.webp")).toBeVisible();
+
+  const individual = page.waitForEvent("download");
+  await page.locator("[data-result-list]").getByRole("button", { name: "ダウンロード" }).click();
+  expect((await individual).suggestedFilename()).toBe("sample-converted.webp");
+
+  const zip = page.waitForEvent("download");
+  await page.getByRole("button", { name: "ZIPで一括ダウンロード" }).click();
+  expect((await zip).suggestedFilename()).toBe("converted-images.zip");
+});
+
+test("CSVをクォート仕様を保ったまま分割してダウンロードできる", async ({ page }) => {
+  const csv = 'id,name,note\n1,"A,B","hello\nworld"\n2,"He said ""Hi""",ok\n3,,last\n';
+  await page.goto("/csv/split/");
+
+  await page.locator("[data-file-input]").setInputFiles({
+    name: "sample.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(csv, "utf8"),
+  });
+  await page.locator("[data-rows-per-file]").fill("1");
+  await page.getByRole("button", { name: "分割を開始" }).click();
+
+  await expect(page.getByText("3行を3ファイルに分割しました。")).toBeVisible();
+  await expect(page.getByText("split-001.csv")).toBeVisible();
+  await expect(page.getByText("split-003.csv")).toBeVisible();
+
+  const firstDownload = page.waitForEvent("download");
+  await page.locator("[data-result-list] .result-row").first().getByRole("button", { name: "ダウンロード" }).click();
+  const first = await firstDownload;
+  expect(first.suggestedFilename()).toBe("split-001.csv");
+  const path = await first.path();
+  expect(path).not.toBeNull();
+  const content = await readFile(path!, "utf8");
+  expect(content).toContain("id,name,note");
+  expect(content).toContain('"A,B"');
+  expect(content).toContain('"hello\nworld"');
+
+  const zipDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "ZIPで一括ダウンロード" }).click();
+  expect((await zipDownload).suggestedFilename()).toBe("split-csv.zip");
+});
+
+
+test("テキスト重複行を条件指定で削除してTXT保存できる", async ({ page }) => {
+  await page.goto("/text/remove-duplicates/");
+  await page.locator("[data-source-text]").fill("  Apple  \nBanana\nApple\n\nBanana\nCherry\n");
+
+  await page.getByRole("button", { name: "重複行を削除" }).click();
+
+  await expect(page.getByText("2行の重複を削除しました。")).toBeVisible();
+  await expect(page.locator("[data-input-count]")).toHaveText("6");
+  await expect(page.locator("[data-output-count]")).toHaveText("3");
+  await expect(page.locator("[data-duplicate-count]")).toHaveText("2");
+  await expect(page.locator("[data-blank-count]")).toHaveText("1");
+  await expect(page.locator("[data-result-text]")).toHaveValue("  Apple  \nBanana\nCherry");
+
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "TXTをダウンロード" }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe("deduped-lines.txt");
+  const path = await file.path();
+  expect(path).not.toBeNull();
+  expect(await readFile(path!, "utf8")).toBe("  Apple  \nBanana\nCherry");
+});

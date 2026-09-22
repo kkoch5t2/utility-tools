@@ -1,0 +1,15 @@
+---
+interface Props {
+  inputId?: string;
+  accept: string;
+  multiple?: boolean;
+  hint: string;
+}
+const { inputId = "file-input", accept, multiple = false, hint } = Astro.props;
+---
+<div class="file-drop" data-drop-zone tabindex="0" role="button" aria-controls={inputId}>
+  <input id={inputId} class="visually-hidden" type="file" accept={accept} multiple={multiple} data-file-input />
+  <strong>ファイルをドロップ</strong>
+  <span>またはクリックして選択</span>
+  <small>{hint}</small>
+</div>

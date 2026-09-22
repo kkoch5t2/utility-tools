@@ -1,0 +1,327 @@
+---
+import ToolLayout from "../../components/layout/ToolLayout.astro";
+import FileDrop from "../../components/file/FileDrop.astro";
+import ProgressBar from "../../components/feedback/ProgressBar.astro";
+import ErrorMessage from "../../components/feedback/ErrorMessage.astro";
+import SuccessMessage from "../../components/feedback/SuccessMessage.astro";
+import { imageToolConfig as config } from "../../tools/image-batch-converter/config";
+import "../../styles/tool.css";
+---
+<ToolLayout title={config.title} description={config.description} name={config.name} category={config.category} faqs={config.faqs}>
+  <section class="tool-card" aria-labelledby="converter-title">
+    <h2 id="converter-title">画像を選択して変換</h2>
+    <div class="privacy-note">
+      <span aria-hidden="true">🔒</span>
+      <div><strong>端末内だけで処理します</strong><br />ファイルがサーバーへ送信されることはありません。</div>
+    </div>
+
+    <FileDrop
+      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+      multiple={true}
+      hint="JPG・PNG・WebP / 最大100枚 / 1枚25MB / 合計250MB"
+    />
+    <ul class="file-list" data-file-list aria-live="polite"></ul>
+
+    <div class="settings-grid">
+      <div class="field">
+        <label for="resize-mode">サイズ</label>
+        <select id="resize-mode" data-resize-mode>
+          <option value="original">元サイズ</option>
+          <option value="long-edge" selected>長辺を指定</option>
+          <option value="width">横幅を指定</option>
+          <option value="height">高さを指定</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="target-size">指定サイズ（px）</label>
+        <input id="target-size" data-target-size type="number" min="1" max="20000" value="1600" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="output-format">出力形式</label>
+        <select id="output-format" data-format>
+          <option value="webp" selected>WebP</option>
+          <option value="jpeg">JPEG</option>
+          <option value="png">PNG</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="quality">品質 <output for="quality" data-quality-output>80%</output></label>
+        <input id="quality" data-quality type="range" min="1" max="100" value="80" />
+      </div>
+      <div class="field" data-background-field hidden>
+        <label for="background">JPEG背景色</label>
+        <input id="background" data-background type="color" value="#ffffff" />
+      </div>
+      <div class="field">
+        <label for="suffix">ファイル名の接尾辞</label>
+        <input id="suffix" data-suffix type="text" value="-converted" maxlength="40" />
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" data-upscale />
+        元画像より大きくすることを許可
+      </label>
+    </div>
+
+    <div class="actions">
+      <button class="button button-primary" type="button" data-start disabled>変換を開始</button>
+      <button class="button button-secondary" type="button" data-clear disabled>すべてクリア</button>
+    </div>
+    <ErrorMessage />
+    <SuccessMessage />
+    <ProgressBar />
+
+    <section class="results" data-results hidden aria-labelledby="results-title">
+      <div class="actions">
+        <h2 id="results-title">変換結果</h2>
+        <button class="button button-primary" type="button" data-download-zip>ZIPで一括ダウンロード</button>
+      </div>
+      <div class="result-list" data-result-list></div>
+    </section>
+  </section>
+
+  <section class="content-section">
+    <h2>使い方</h2>
+    <ol>
+      <li>画像をドラッグ＆ドロップ、またはクリックして選びます。</li>
+      <li>サイズ、出力形式、品質などを設定します。</li>
+      <li>「変換を開始」を押し、完了後に個別またはZIPで保存します。</li>
+    </ol>
+  </section>
+  <section class="content-section">
+    <h2>対応形式と注意点</h2>
+    <p>入力はJPG・JPEG・PNG・WebPに対応します。40メガピクセルを超える画像は、ブラウザのメモリ負荷を避けるため処理しません。</p>
+  </section>
+</ToolLayout>
+
+<script>
+  import { formatBytes } from "../../core/files/file-size";
+  import { fileIdentity, validateImageFiles } from "../../core/files/file-validator";
+  import { convertImage } from "../../engines/image/resize-image";
+  import { createZip } from "../../core/download/create-zip";
+  import { downloadBlob } from "../../core/download/download-file";
+  import { ProcessingCancelledError, throwIfAborted } from "../../core/processing/cancellation";
+
+  const limits = {
+    maxFiles: 100,
+    maxFileBytes: 25 * 1024 * 1024,
+    maxTotalBytes: 250 * 1024 * 1024,
+    acceptedExtensions: [".jpg", ".jpeg", ".png", ".webp"],
+    acceptedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  };
+
+  const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
+  const input = $<HTMLInputElement>("[data-file-input]");
+  const dropZone = $<HTMLElement>("[data-drop-zone]");
+  const fileList = $<HTMLUListElement>("[data-file-list]");
+  const startButton = $<HTMLButtonElement>("[data-start]");
+  const clearButton = $<HTMLButtonElement>("[data-clear]");
+  const resizeMode = $<HTMLSelectElement>("[data-resize-mode]");
+  const targetSize = $<HTMLInputElement>("[data-target-size]");
+  const format = $<HTMLSelectElement>("[data-format]");
+  const quality = $<HTMLInputElement>("[data-quality]");
+  const qualityOutput = $<HTMLOutputElement>("[data-quality-output]");
+  const backgroundField = $<HTMLElement>("[data-background-field]");
+  const background = $<HTMLInputElement>("[data-background]");
+  const suffix = $<HTMLInputElement>("[data-suffix]");
+  const upscale = $<HTMLInputElement>("[data-upscale]");
+  const errorBox = $<HTMLElement>("[data-error-box]");
+  const successBox = $<HTMLElement>("[data-success-box]");
+  const progressPanel = $<HTMLElement>("[data-progress-panel]");
+  const progress = $<HTMLProgressElement>("[data-progress]");
+  const progressLabel = $<HTMLElement>("[data-progress-label]");
+  const progressCount = $<HTMLElement>("[data-progress-count]");
+  const cancelButton = $<HTMLButtonElement>("[data-cancel]");
+  const resultsSection = $<HTMLElement>("[data-results]");
+  const resultList = $<HTMLElement>("[data-result-list]");
+  const zipButton = $<HTMLButtonElement>("[data-download-zip]");
+
+  let selectedFiles: File[] = [];
+  let results: Array<{ filename: string; blob: Blob; width: number; height: number; originalBytes: number }> = [];
+  let controller: AbortController | null = null;
+
+  function setMessage(element: HTMLElement, message = "") {
+    element.textContent = message;
+    element.hidden = !message;
+  }
+
+  function uniqueName(name: string, used: Set<string>): string {
+    if (!used.has(name)) { used.add(name); return name; }
+    const dot = name.lastIndexOf(".");
+    const stem = dot >= 0 ? name.slice(0, dot) : name;
+    const ext = dot >= 0 ? name.slice(dot) : "";
+    let index = 2;
+    while (used.has(`${stem}-${index}${ext}`)) index++;
+    const candidate = `${stem}-${index}${ext}`;
+    used.add(candidate);
+    return candidate;
+  }
+
+  function renderFiles() {
+    fileList.replaceChildren();
+    selectedFiles.forEach((file, index) => {
+      const li = document.createElement("li");
+      li.className = "file-item";
+      const name = document.createElement("span");
+      name.className = "file-name";
+      name.textContent = file.name;
+      const size = document.createElement("span");
+      size.textContent = formatBytes(file.size);
+      const remove = document.createElement("button");
+      remove.className = "button-danger-link";
+      remove.type = "button";
+      remove.textContent = "削除";
+      remove.addEventListener("click", () => {
+        selectedFiles.splice(index, 1);
+        renderFiles();
+      });
+      li.append(name, size, remove);
+      fileList.append(li);
+    });
+    startButton.disabled = selectedFiles.length === 0 || !!controller;
+    clearButton.disabled = selectedFiles.length === 0 || !!controller;
+  }
+
+  function addFiles(incoming: File[]) {
+    setMessage(errorBox);
+    const existing = new Set(selectedFiles.map(fileIdentity));
+    const merged = [...selectedFiles];
+    for (const file of incoming) {
+      if (!existing.has(fileIdentity(file))) {
+        merged.push(file);
+        existing.add(fileIdentity(file));
+      }
+    }
+    const errors = validateImageFiles(merged, limits);
+    if (errors.length) {
+      setMessage(errorBox, errors.slice(0, 8).join("\n") + (errors.length > 8 ? "\nほかにもエラーがあります。" : ""));
+      return;
+    }
+    selectedFiles = merged;
+    renderFiles();
+  }
+
+  input.addEventListener("change", () => {
+    addFiles(Array.from(input.files ?? []));
+    input.value = "";
+  });
+  dropZone.addEventListener("click", () => input.click());
+  dropZone.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); input.click(); }
+  });
+  for (const eventName of ["dragenter", "dragover"]) {
+    dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.add("is-dragover"); });
+  }
+  for (const eventName of ["dragleave", "drop"]) {
+    dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.remove("is-dragover"); });
+  }
+  dropZone.addEventListener("drop", (event) => addFiles(Array.from(event.dataTransfer?.files ?? [])));
+
+  resizeMode.addEventListener("change", () => { targetSize.disabled = resizeMode.value === "original"; });
+  format.addEventListener("change", () => { backgroundField.hidden = format.value !== "jpeg"; });
+  quality.addEventListener("input", () => { qualityOutput.value = `${quality.value}%`; });
+  clearButton.addEventListener("click", () => {
+    selectedFiles = [];
+    results = [];
+    resultList.replaceChildren();
+    resultsSection.hidden = true;
+    setMessage(errorBox);
+    setMessage(successBox);
+    renderFiles();
+  });
+  cancelButton.addEventListener("click", () => controller?.abort());
+
+  function renderResults() {
+    resultList.replaceChildren();
+    for (const result of results) {
+      const row = document.createElement("div");
+      row.className = "result-row";
+      const main = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = result.filename;
+      const meta = document.createElement("div");
+      meta.className = "result-meta";
+      const reduction = result.originalBytes ? Math.round((1 - result.blob.size / result.originalBytes) * 100) : 0;
+      meta.textContent = `${result.width}×${result.height}px / ${formatBytes(result.originalBytes)} → ${formatBytes(result.blob.size)} / ${reduction >= 0 ? reduction + "%削減" : Math.abs(reduction) + "%増加"}`;
+      main.append(name, meta);
+      const button = document.createElement("button");
+      button.className = "button button-secondary";
+      button.type = "button";
+      button.textContent = "ダウンロード";
+      button.addEventListener("click", () => downloadBlob(result.blob, result.filename));
+      row.append(main, button);
+      resultList.append(row);
+    }
+    resultsSection.hidden = results.length === 0;
+  }
+
+  startButton.addEventListener("click", async () => {
+    if (!selectedFiles.length) return;
+    setMessage(errorBox);
+    setMessage(successBox);
+    results = [];
+    renderResults();
+    controller = new AbortController();
+    renderFiles();
+    progressPanel.hidden = false;
+    progress.value = 0;
+    const failures: string[] = [];
+    const usedNames = new Set<string>();
+
+    try {
+      const numericTarget = Number(targetSize.value);
+      if (resizeMode.value !== "original" && (!Number.isFinite(numericTarget) || numericTarget < 1 || numericTarget > 20000)) {
+        throw new Error("指定サイズは1〜20000pxで入力してください。");
+      }
+      for (let index = 0; index < selectedFiles.length; index++) {
+        throwIfAborted(controller.signal);
+        const file = selectedFiles[index];
+        progressLabel.textContent = file.name;
+        progressCount.textContent = `${index + 1} / ${selectedFiles.length}`;
+        try {
+          const result = await convertImage(file, {
+            mode: resizeMode.value as "original" | "long-edge" | "width" | "height",
+            targetSize: numericTarget,
+            allowUpscale: upscale.checked,
+            format: format.value as "webp" | "jpeg" | "png",
+            quality: Number(quality.value) / 100,
+            backgroundColor: background.value,
+            suffix: suffix.value || "-converted",
+          });
+          result.filename = uniqueName(result.filename, usedNames);
+          results.push(result);
+        } catch (error) {
+          failures.push(`${file.name}: ${error instanceof Error ? error.message : "画像を処理できませんでした。"}`);
+        }
+        progress.value = Math.round(((index + 1) / selectedFiles.length) * 100);
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      }
+      renderResults();
+      if (failures.length) setMessage(errorBox, failures.slice(0, 8).join("\n"));
+      if (results.length) setMessage(successBox, `${results.length}件の変換が完了しました。`);
+    } catch (error) {
+      if (error instanceof ProcessingCancelledError) setMessage(errorBox, error.message);
+      else setMessage(errorBox, error instanceof Error ? error.message : "処理中にエラーが発生しました。");
+    } finally {
+      controller = null;
+      progressPanel.hidden = true;
+      renderFiles();
+    }
+  });
+
+  zipButton.addEventListener("click", async () => {
+    if (!results.length) return;
+    zipButton.disabled = true;
+    setMessage(errorBox);
+    try {
+      const zip = await createZip(results, (percent) => {
+        zipButton.textContent = `ZIP作成中 ${percent}%`;
+      });
+      downloadBlob(zip, "converted-images.zip");
+    } catch {
+      setMessage(errorBox, "ZIPファイルを作成できませんでした。もう一度お試しください。");
+    } finally {
+      zipButton.disabled = false;
+      zipButton.textContent = "ZIPで一括ダウンロード";
+    }
+  });
+</script>

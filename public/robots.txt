@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://utility-tools-jp.com/sitemap.xml
