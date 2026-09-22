@@ -1,0 +1,12 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "utility-tools-www-redirect",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-22",
+  "routes": [
+    {
+      "pattern": "www.utility-tools-jp.com",
+      "custom_domain": true
+    }
+  ]
+}
