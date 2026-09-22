@@ -12,7 +12,9 @@
     "astro": "astro",
     "check": "astro check",
     "test": "vitest run tests/unit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify": "npm run check && npm test && npm run build",
+    "deploy": "npm run verify && wrangler deploy"
   },
   "dependencies": {
     "astro": "^7.3.4",
