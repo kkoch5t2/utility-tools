@@ -83,3 +83,30 @@ test("テキスト重複行を条件指定で削除してTXT保存できる", as
   expect(path).not.toBeNull();
   expect(await readFile(path!, "utf8")).toBe("  Apple  \nBanana\nCherry");
 });
+
+
+test("不具合報告にツール情報を付けて送信できる", async ({ page }) => {
+  let payload: Record<string, string> = {};
+  await page.route("https://formsubmit.co/ajax/**", async (route) => {
+    payload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ success: "true" }),
+    });
+  });
+
+  await page.goto("/developer/base64/");
+  await page.getByRole("button", { name: "不具合を報告" }).click();
+  await expect(page.locator("[data-report-dialog]")).toBeVisible();
+  await page.locator("[name=issue_type]").selectOption("表示がおかしい");
+  await page.locator("[name=details]").fill("テスト報告");
+  await page.getByRole("button", { name: "送信", exact: true }).click();
+
+  await expect(page.locator("[data-report-status]")).toHaveText("報告を送信しました。ありがとうございます。");
+  expect(payload.tool).toBe("Base64エンコード・デコード");
+  expect(payload.issue_type).toBe("表示がおかしい");
+  expect(payload.details).toBe("テスト報告");
+  expect(payload.url).toContain("/developer/base64/");
+  expect(payload.browser).toBeTruthy();
+});
