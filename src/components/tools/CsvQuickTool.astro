@@ -29,10 +29,11 @@ const { meta } = Astro.props;
     {meta.mode === "csv-json" && <>
       <div class="field"><label for="direction">変換方向</label><select id="direction" data-direction><option value="csv-json">CSV → JSON</option><option value="json-csv">JSON → CSV</option></select></div>
       <div class="field" style="margin-top:16px">
-        <label for="convert-file">CSV・JSONファイルを選択</label>
+        <label for="convert-file">ファイルを選択</label>
         <input id="convert-file" data-file type="file" accept=".csv,.json,text/csv,application/json" />
       </div>
-      <div class="field" style="margin-top:16px"><label for="source">入力</label><textarea id="source" class="textarea" data-source placeholder="CSVまたはJSONを貼り付けるか、上からファイルを選択"></textarea></div>
+      <p class="inline-note" style="margin:14px 0;text-align:center;font-weight:700">または</p>
+      <div class="field"><label for="source">CSV / JSONを直接入力</label><textarea id="source" class="textarea" data-source placeholder="ここにCSVまたはJSONを貼り付け"></textarea></div>
       <div class="field" style="margin-top:16px"><label for="result">結果</label><textarea id="result" class="textarea" data-result readonly></textarea></div>
     </>}
 
