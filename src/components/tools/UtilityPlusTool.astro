@@ -1,0 +1,223 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+const dateModes = ["date-difference","age","date-add","business-days"];
+const calcModes = ["percent-change","ratio"];
+const showMainText = !dateModes.includes(meta.mode) && !calcModes.includes(meta.mode) && meta.mode !== "password-generator";
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-plus-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />入力した内容は外部サーバーへ送信しません。</div></div>
+
+    {meta.mode === "line-prefix-suffix" && <div class="settings-grid">
+      <div class="field"><label for="prefix">行頭に追加</label><input id="prefix" data-a type="text" placeholder="例: - " /></div>
+      <div class="field"><label for="suffix">行末に追加</label><input id="suffix" data-b type="text" placeholder="例: ;" /></div>
+    </div>}
+    {meta.mode === "line-numbers" && <div class="field"><label for="line-action">処理</label><select id="line-action" data-action><option value="add">行番号を追加</option><option value="remove">先頭の行番号を削除</option></select></div>}
+    {meta.mode === "tabs-spaces" && <div class="settings-grid">
+      <div class="field"><label for="tab-action">変換</label><select id="tab-action" data-action><option value="tabs-to-spaces">タブ → スペース</option><option value="spaces-to-tabs">スペース → タブ</option></select></div>
+      <div class="field"><label for="tab-width">スペース数</label><input id="tab-width" data-a type="number" min="1" max="16" value="4" /></div>
+    </div>}
+    {meta.mode === "sort-lines" && <div class="settings-grid">
+      <div class="field"><label for="sort-order">並び順</label><select id="sort-order" data-action><option value="asc">昇順</option><option value="desc">降順</option></select></div>
+      <label class="check-row"><input data-option type="checkbox" /> 大文字・小文字を区別しない</label>
+    </div>}
+    {meta.mode === "random-lines" && <div class="field"><label for="random-count">抽出行数</label><input id="random-count" data-a type="number" min="1" value="1" /></div>}
+    {meta.mode === "case-converter" && <div class="field"><label for="case-action">変換</label><select id="case-action" data-action><option value="upper">大文字</option><option value="lower">小文字</option><option value="title">単語の先頭を大文字</option><option value="swap">大文字・小文字を反転</option></select></div>}
+    {meta.mode === "json-flatten" && <div class="field"><label for="flat-separator">キー区切り文字</label><input id="flat-separator" data-a type="text" value="." maxlength="3" /></div>}
+    {meta.mode === "regex-tester" && <div class="settings-grid">
+      <div class="field"><label for="regex-pattern">正規表現</label><input id="regex-pattern" data-a type="text" placeholder="例: \d+" /></div>
+      <div class="field"><label for="regex-flags">フラグ</label><input id="regex-flags" data-b type="text" value="g" placeholder="gim" /></div>
+    </div>}
+    {meta.mode === "random-string" && <div class="settings-grid">
+      <div class="field"><label for="random-length">文字数</label><input id="random-length" data-a type="number" min="1" max="10000" value="32" /></div>
+      <div class="field"><label for="random-count">生成数</label><input id="random-count" data-b type="number" min="1" max="1000" value="5" /></div>
+    </div>}
+    {meta.mode === "password-generator" && <div class="settings-grid">
+      <div class="field"><label for="password-length">文字数</label><input id="password-length" data-a type="number" min="8" max="256" value="20" /></div>
+      <div class="field"><label for="password-count">生成数</label><input id="password-count" data-b type="number" min="1" max="100" value="10" /></div>
+      <label class="check-row"><input data-option type="checkbox" checked /> 記号を含める</label>
+    </div>}
+    {meta.mode === "sql-values" && <div class="field"><label for="sql-columns">列数</label><input id="sql-columns" data-a type="number" min="1" max="50" value="2" /></div>}
+    {meta.mode === "slug" && <div class="field"><label for="slug-separator">区切り文字</label><select id="slug-separator" data-action><option value="-">ハイフン (-)</option><option value="_">アンダースコア (_)</option></select></div>}
+    {meta.mode === "url-parts" && <p class="inline-note">URLを分解して protocol / host / path / query / hash を表示します。</p>}
+
+    {meta.mode === "date-difference" && <div class="settings-grid">
+      <div class="field"><label for="date-start">開始日</label><input id="date-start" data-a type="date" /></div>
+      <div class="field"><label for="date-end">終了日</label><input id="date-end" data-b type="date" /></div>
+    </div>}
+    {meta.mode === "age" && <div class="settings-grid">
+      <div class="field"><label for="birth-date">生年月日</label><input id="birth-date" data-a type="date" /></div>
+      <div class="field"><label for="age-date">基準日</label><input id="age-date" data-b type="date" /></div>
+    </div>}
+    {meta.mode === "date-add" && <div class="settings-grid">
+      <div class="field"><label for="base-date">基準日</label><input id="base-date" data-a type="date" /></div>
+      <div class="field"><label for="date-days">加減する日数</label><input id="date-days" data-b type="number" value="30" /></div>
+    </div>}
+    {meta.mode === "business-days" && <div class="settings-grid">
+      <div class="field"><label for="business-start">開始日</label><input id="business-start" data-a type="date" /></div>
+      <div class="field"><label for="business-end">終了日</label><input id="business-end" data-b type="date" /></div>
+    </div>}
+    {meta.mode === "percent-change" && <div class="settings-grid">
+      <div class="field"><label for="before-value">変更前</label><input id="before-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="after-value">変更後</label><input id="after-value" data-b type="number" step="any" /></div>
+    </div>}
+    {meta.mode === "ratio" && <div class="settings-grid">
+      <div class="field"><label for="ratio-a">値 A</label><input id="ratio-a" data-a type="number" step="any" /></div>
+      <div class="field"><label for="ratio-b">値 B</label><input id="ratio-b" data-b type="number" step="any" /></div>
+    </div>}
+    {showMainText && <div class="field" style="margin-top:16px"><label for="plus-source">入力</label><textarea id="plus-source" class="textarea" data-source placeholder="ここに入力"></textarea></div>}
+    <div class="field" style="margin-top:16px"><label for="plus-result">結果</label><textarea id="plus-result" class="textarea" data-result readonly></textarea></div>
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>処理する</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-copy>結果をコピー</button>
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <p class="inline-note" data-info></p>
+  </section>
+</ToolLayout>
+
+<script>
+  const root=document.querySelector<HTMLElement>("[data-plus-tool]")!;
+  const mode=root.dataset.mode!;
+  const source=root.querySelector<HTMLTextAreaElement>("[data-source]");
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+  const action=root.querySelector<HTMLSelectElement>("[data-action]");
+  const a=root.querySelector<HTMLInputElement>("[data-a]");
+  const b=root.querySelector<HTMLInputElement>("[data-b]");
+  const option=root.querySelector<HTMLInputElement>("[data-option]");
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const info=root.querySelector<HTMLElement>("[data-info]")!;
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const lines=(value:string)=>value.split(/\r\n|\r|\n/);
+  function deepSort(value:any):any{
+    if(Array.isArray(value))return value.map(deepSort);
+    if(value&&typeof value==="object"){
+      return Object.fromEntries(Object.keys(value).sort().map(key=>[key,deepSort(value[key])]));
+    }
+    return value;
+  }
+  function flatten(value:any,separator=".",prefix="",out:Record<string,any>={}){
+    if(Array.isArray(value)){
+      value.forEach((item,index)=>flatten(item,separator,prefix?prefix+separator+index:String(index),out));
+    }else if(value&&typeof value==="object"){
+      for(const [key,item] of Object.entries(value))flatten(item,separator,prefix?prefix+separator+key:key,out);
+    }else out[prefix]=value;
+    return out;
+  }
+  function collectKeys(value:any,prefix="",out=new Set<string>()){
+    if(Array.isArray(value))value.forEach(item=>collectKeys(item,prefix,out));
+    else if(value&&typeof value==="object")for(const [key,item] of Object.entries(value)){const path=prefix?prefix+"."+key:key;out.add(path);collectKeys(item,path,out);}
+    return out;
+  }
+  function toTsType(value:any,level=0):string{
+    if(value===null)return "null";
+    if(Array.isArray(value))return (value.length?toTsType(value[0],level):"unknown")+"[]";
+    if(typeof value==="string")return "string";
+    if(typeof value==="number")return "number";
+    if(typeof value==="boolean")return "boolean";
+    if(typeof value==="object"){
+      const indent="  ".repeat(level+1),close="  ".repeat(level);
+      return "{\n"+Object.entries(value).map(([k,v])=>indent+JSON.stringify(k)+": "+toTsType(v,level+1)+";").join("\n")+"\n"+close+"}";
+    }
+    return "unknown";
+  }
+  function secureRandomInt(max:number){
+    if(max<=0)return 0;
+    const arr=new Uint32Array(1);crypto.getRandomValues(arr);return arr[0]%max;
+  }
+  function randomFrom(chars:string,length:number){let out="";for(let i=0;i<length;i++)out+=chars[secureRandomInt(chars.length)];return out;}
+  function gcd(x:number,y:number){x=Math.abs(x);y=Math.abs(y);while(y){const t=y;y=x%y;x=t;}return x||1;}
+  function parseDate(value:string){if(!value)throw new Error("日付を入力してください。");const d=new Date(value+"T00:00:00");if(Number.isNaN(d.getTime()))throw new Error("日付を確認してください。");return d;}
+  function isoDate(d:Date){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+  if(mode==="age"&&b)b.value=isoDate(new Date());
+
+  run.addEventListener("click",()=>{
+    setMsg(errorBox);setMsg(successBox);info.textContent="";
+    try{
+      const value=source?.value??"";
+      if(mode==="line-prefix-suffix"){
+        result.value=lines(value).map(line=>(a?.value??"")+line+(b?.value??"")).join("\n");
+      }else if(mode==="line-numbers"){
+        result.value=action!.value==="add"?lines(value).map((line,i)=>String(i+1)+". "+line).join("\n"):lines(value).map(line=>line.replace(/^\s*\d+[\.\)\:\-]?\s*/,"")).join("\n");
+      }else if(mode==="remove-empty-lines"){
+        const all=lines(value),kept=all.filter(line=>line.trim()!=="");result.value=kept.join("\n");info.textContent=(all.length-kept.length)+"行を削除";
+      }else if(mode==="tabs-spaces"){
+        const width=Math.max(1,Math.min(16,Number(a?.value)||4));
+        result.value=action!.value==="tabs-to-spaces"?value.replace(/\t/g," ".repeat(width)):value.replace(new RegExp(" {"+width+"}","g"),"\t");
+      }else if(mode==="sort-lines"){
+        const arr=lines(value);const insensitive=!!option?.checked;
+        arr.sort((x,y)=>(insensitive?x.toLocaleLowerCase():x).localeCompare(insensitive?y.toLocaleLowerCase():y,"ja"));
+        if(action!.value==="desc")arr.reverse();result.value=arr.join("\n");
+      }else if(mode==="random-lines"){
+        const arr=lines(value).filter(Boolean),count=Math.max(1,Math.min(arr.length,Number(a?.value)||1));
+        for(let i=arr.length-1;i>0;i--){const j=secureRandomInt(i+1);[arr[i],arr[j]]=[arr[j],arr[i]];}result.value=arr.slice(0,count).join("\n");
+      }else if(mode==="case-converter"){
+        const ac=action!.value;
+        result.value=ac==="upper"?value.toUpperCase():ac==="lower"?value.toLowerCase():ac==="title"?value.replace(/\b[a-z]/gi,m=>m.toUpperCase()):Array.from(value).map(ch=>ch===ch.toUpperCase()?ch.toLowerCase():ch.toUpperCase()).join("");
+      }else if(mode==="trim-lines"){
+        result.value=lines(value).map(line=>line.trim()).join("\n");
+      }else if(mode==="json-key-list"){
+        result.value=Array.from(collectKeys(JSON.parse(value))).sort().join("\n");
+      }else if(mode==="json-sort-keys"){
+        result.value=JSON.stringify(deepSort(JSON.parse(value)),null,2);
+      }else if(mode==="json-flatten"){
+        result.value=JSON.stringify(flatten(JSON.parse(value),a?.value||"."),null,2);
+      }else if(mode==="json-typescript"){
+        result.value="type Root = "+toTsType(JSON.parse(value))+";";
+      }else if(mode==="regex-tester"){
+        const flags=b?.value??"g",regex=new RegExp(a?.value??"",flags);
+        if(flags.includes("g"))result.value=JSON.stringify(Array.from(value.matchAll(regex)).map(m=>({match:m[0],index:m.index,groups:Array.from(m).slice(1)})),null,2);
+        else{const m=value.match(regex);result.value=m?JSON.stringify({match:m[0],index:m.index,groups:Array.from(m).slice(1)},null,2):"一致なし";}
+      }else if(mode==="random-string"){
+        const length=Math.max(1,Math.min(10000,Number(a?.value)||32)),count=Math.max(1,Math.min(1000,Number(b?.value)||5));
+        const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";result.value=Array.from({length:count},()=>randomFrom(chars,length)).join("\n");
+      }else if(mode==="password-generator"){
+        const length=Math.max(8,Math.min(256,Number(a?.value)||20)),count=Math.max(1,Math.min(100,Number(b?.value)||10));
+        const chars="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"+(option?.checked?"!@#$%^&*_-+=":"");
+        result.value=Array.from({length:count},()=>randomFrom(chars,length)).join("\n");
+      }else if(mode==="sql-values"){
+        const cols=Math.max(1,Math.min(50,Number(a?.value)||2)),vals=value.split(/[\r\n,]+/).map(v=>v.trim()).filter(Boolean);
+        if(vals.length%cols!==0)throw new Error("値の個数が列数で割り切れません。");
+        const q=(v:string)=>"'"+v.replace(/'/g,"''")+"'";
+        const rows=[];for(let i=0;i<vals.length;i+=cols)rows.push("("+vals.slice(i,i+cols).map(q).join(", ")+")");result.value=rows.join(",\n");
+      }else if(mode==="slug"){
+        const sep=action!.value;result.value=value.normalize("NFKD").toLowerCase().trim().replace(/[^a-z0-9\s_-]/g,"").replace(/[\s_-]+/g,sep).replace(new RegExp("^"+sep+"|"+sep+"$","g"),"");
+      }else if(mode==="url-parts"){
+        const u=new URL(value.trim());result.value=JSON.stringify({protocol:u.protocol,host:u.host,hostname:u.hostname,port:u.port,pathname:u.pathname,search:u.search,hash:u.hash,query:Object.fromEntries(u.searchParams.entries())},null,2);
+      }else if(mode==="date-difference"){
+        const start=parseDate(a?.value??""),end=parseDate(b?.value??"");const diff=Math.round((end.getTime()-start.getTime())/86400000);
+        result.value="日数差: "+diff+"日\n絶対値: "+Math.abs(diff)+"日";
+      }else if(mode==="age"){
+        const birth=parseDate(a?.value??""),base=parseDate(b?.value??"");if(base<birth)throw new Error("基準日は生年月日以降にしてください。");
+        let age=base.getFullYear()-birth.getFullYear();const before=base.getMonth()<birth.getMonth()||(base.getMonth()===birth.getMonth()&&base.getDate()<birth.getDate());if(before)age--;
+        result.value=String(age)+"歳";
+      }else if(mode==="date-add"){
+        const date=parseDate(a?.value??"");date.setDate(date.getDate()+(Number(b?.value)||0));result.value=isoDate(date);
+      }else if(mode==="business-days"){
+        let start=parseDate(a?.value??""),end=parseDate(b?.value??"");if(start>end)[start,end]=[end,start];
+        let count=0;for(const cur=new Date(start);cur<=end;cur.setDate(cur.getDate()+1)){const day=cur.getDay();if(day!==0&&day!==6)count++;}
+        result.value=String(count)+"営業日";info.textContent="土日だけを除外しています。祝日は含みます。";
+      }else if(mode==="percent-change"){
+        const before=Number(a?.value),after=Number(b?.value);if(!Number.isFinite(before)||!Number.isFinite(after))throw new Error("数値を入力してください。");if(before===0)throw new Error("変更前を0以外にしてください。");
+        const pct=(after-before)/Math.abs(before)*100;result.value=(pct>=0?"+":"")+pct.toFixed(2)+"%";
+      }else if(mode==="ratio"){
+        const x=Number(a?.value),y=Number(b?.value);if(!Number.isFinite(x)||!Number.isFinite(y)||x===0||y===0)throw new Error("0以外の数値を入力してください。");
+        const scale=1000,xi=Math.round(Math.abs(x)*scale),yi=Math.round(Math.abs(y)*scale),g=gcd(xi,yi);result.value=(xi/g)+":"+(yi/g)+"\nA/B = "+(x/y).toFixed(6);
+      }
+      setMsg(successBox,"処理しました。");
+    }catch(error){setMsg(errorBox,error instanceof Error?error.message:"処理に失敗しました。");}
+  });
+  copy.addEventListener("click",async()=>{if(!result.value)return;try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"コピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}});
+  clear.addEventListener("click",()=>{if(source)source.value="";result.value="";info.textContent="";setMsg(errorBox);setMsg(successBox);});
+</script>
