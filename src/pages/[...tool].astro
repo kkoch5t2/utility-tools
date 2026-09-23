@@ -1,0 +1,28 @@
+---
+import { extraTools, type ExtraToolMeta } from "../config/extra-tools";
+import ImageQuickTool from "../components/tools/ImageQuickTool.astro";
+import CsvQuickTool from "../components/tools/CsvQuickTool.astro";
+import TextQuickTool from "../components/tools/TextQuickTool.astro";
+import PdfQuickTool from "../components/tools/PdfQuickTool.astro";
+import QrQuickTool from "../components/tools/QrQuickTool.astro";
+import DeveloperQuickTool from "../components/tools/DeveloperQuickTool.astro";
+
+export function getStaticPaths() {
+  return extraTools.map((meta) => ({
+    params: { tool: meta.href.replace(/^\/|\/$/g, "") },
+    props: { meta },
+  }));
+}
+
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+const Component =
+  meta.family === "image" ? ImageQuickTool :
+  meta.family === "csv" ? CsvQuickTool :
+  meta.family === "text" ? TextQuickTool :
+  meta.family === "pdf" ? PdfQuickTool :
+  meta.family === "qr" ? QrQuickTool :
+  DeveloperQuickTool;
+---
+<Component meta={meta} />
+

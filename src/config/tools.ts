@@ -1,13 +1,15 @@
+import { extraTools } from "./extra-tools";
+
 export type ToolDefinition = {
   id: string;
   name: string;
-  category: "image" | "csv" | "text";
+  category: "image" | "csv" | "text" | "pdf" | "qr" | "developer";
   href: string;
   description: string;
   status: "available" | "planned";
 };
 
-export const tools: ToolDefinition[] = [
+const baseTools: ToolDefinition[] = [
   {
     id: "image-batch-converter",
     name: "画像一括リサイズ・圧縮・WebP変換",
@@ -32,4 +34,16 @@ export const tools: ToolDefinition[] = [
     description: "重複行を条件指定で削除し、コピーやTXT保存ができます。",
     status: "available",
   },
+];
+
+export const tools: ToolDefinition[] = [
+  ...baseTools,
+  ...extraTools.map((tool) => ({
+    id: tool.id,
+    name: tool.name,
+    category: tool.categoryKey,
+    href: tool.href,
+    description: tool.description,
+    status: "available" as const,
+  })),
 ];

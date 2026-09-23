@@ -1,0 +1,166 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+const isQuality = ["compress","png-to-jpg","webp-converter"].includes(meta.mode);
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-image-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />画像はサーバーへ送信されません。</div></div>
+    <div class="field">
+      <label for="image-file">画像を選択</label>
+      <input id="image-file" data-file type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+    </div>
+    <p class="inline-note" data-file-info>JPG・PNG・WebPに対応</p>
+    <div class="settings-grid">
+      {isQuality && <div class="field"><label for="quality">品質 <output data-quality-output>80%</output></label><input id="quality" data-quality type="range" min="10" max="100" value="80" /></div>}
+      {meta.mode === "compress" && <div class="field"><label for="format">出力形式</label><select id="format" data-format><option value="webp">WebP</option><option value="jpeg">JPEG</option></select></div>}
+      {meta.mode === "webp-converter" && <div class="field"><label for="format">出力形式</label><select id="format" data-format><option value="jpeg">JPEG</option><option value="png">PNG</option></select></div>}
+      {meta.mode === "png-to-jpg" && <div class="field"><label for="background">透明部分の背景色</label><input id="background" data-background type="color" value="#ffffff" /></div>}
+      {meta.mode === "resize" && <>
+        <div class="field"><label for="width">横幅（px）</label><input id="width" data-width type="number" min="1" max="20000" value="1200" /></div>
+        <div class="field"><label for="height">高さ（px）</label><input id="height" data-height type="number" min="1" max="20000" value="800" /></div>
+        <label class="checkbox-row"><input data-keep-aspect type="checkbox" checked /> 縦横比を維持</label>
+      </>}
+      {meta.mode === "crop" && <>
+        <div class="field"><label for="crop-x">X</label><input id="crop-x" data-crop-x type="number" min="0" value="0" /></div>
+        <div class="field"><label for="crop-y">Y</label><input id="crop-y" data-crop-y type="number" min="0" value="0" /></div>
+        <div class="field"><label for="crop-w">幅</label><input id="crop-w" data-crop-w type="number" min="1" value="100" /></div>
+        <div class="field"><label for="crop-h">高さ</label><input id="crop-h" data-crop-h type="number" min="1" value="100" /></div>
+      </>}
+      {meta.mode === "target-filesize" && <>
+        <div class="field"><label for="target-kb">目標容量（KB）</label><input id="target-kb" data-target-kb type="number" min="10" max="50000" value="500" /></div>
+        <div class="field"><label for="format">出力形式</label><select id="format" data-format><option value="jpeg">JPEG</option><option value="webp">WebP</option></select></div>
+      </>}
+    </div>
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run disabled>処理する</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <div class="preview-box" data-preview hidden><canvas data-canvas></canvas></div>
+    <section class="results" data-result hidden>
+      <p><strong data-result-info></strong></p>
+      <button class="button button-primary" type="button" data-download>ダウンロード</button>
+    </section>
+  </section>
+</ToolLayout>
+
+<script>
+  import { downloadBlob } from "../../core/download/download-file";
+  const root = document.querySelector<HTMLElement>("[data-image-tool]")!;
+  const mode = root.dataset.mode!;
+  const fileInput = root.querySelector<HTMLInputElement>("[data-file]")!;
+  const run = root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear = root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const errorBox = root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox = root.querySelector<HTMLElement>("[data-success-box]")!;
+  const preview = root.querySelector<HTMLElement>("[data-preview]")!;
+  const canvas = root.querySelector<HTMLCanvasElement>("[data-canvas]")!;
+  const info = root.querySelector<HTMLElement>("[data-file-info]")!;
+  const result = root.querySelector<HTMLElement>("[data-result]")!;
+  const resultInfo = root.querySelector<HTMLElement>("[data-result-info]")!;
+  const download = root.querySelector<HTMLButtonElement>("[data-download]")!;
+  let file: File | null = null;
+  let output: Blob | null = null;
+  let outputName = "";
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const ext=(name:string)=>name.slice(name.lastIndexOf(".")+1).toLowerCase();
+  const bytes=(n:number)=> n<1024 ? n+" B" : n<1048576 ? (n/1024).toFixed(1)+" KB" : (n/1048576).toFixed(2)+" MB";
+  const field=<T extends Element>(s:string)=>root.querySelector<T>(s);
+
+  fileInput.addEventListener("change", async()=>{
+    setMsg(errorBox); setMsg(successBox); output=null; result.hidden=true; preview.hidden=true;
+    const next=fileInput.files?.[0] ?? null;
+    if(!next) return;
+    if(next.size>50*1024*1024){setMsg(errorBox,"50MB以下の画像を選択してください。");fileInput.value="";return;}
+    const e=ext(next.name);
+    if(!["jpg","jpeg","png","webp"].includes(e)){setMsg(errorBox,"JPG・PNG・WebP画像を選択してください。");return;}
+    if(mode==="png-to-jpg" && e!=="png"){setMsg(errorBox,"PNG画像を選択してください。");return;}
+    if(mode==="webp-converter" && e!=="webp"){setMsg(errorBox,"WebP画像を選択してください。");return;}
+    file=next; run.disabled=false;
+    info.textContent=next.name+" / "+bytes(next.size);
+    try{
+      const bmp=await createImageBitmap(next);
+      if(mode==="crop"){
+        field<HTMLInputElement>("[data-crop-w]")!.value=String(bmp.width);
+        field<HTMLInputElement>("[data-crop-h]")!.value=String(bmp.height);
+      }
+      if(mode==="resize"){
+        field<HTMLInputElement>("[data-width]")!.value=String(bmp.width);
+        field<HTMLInputElement>("[data-height]")!.value=String(bmp.height);
+      }
+      bmp.close();
+    }catch{ setMsg(errorBox,"画像を読み込めませんでした。"); }
+  });
+
+  const q=field<HTMLInputElement>("[data-quality]");
+  const qo=field<HTMLOutputElement>("[data-quality-output]");
+  q?.addEventListener("input",()=>{ if(qo) qo.value=q.value+"%"; });
+
+  function toBlob(c:HTMLCanvasElement,type:string,quality?:number){
+    return new Promise<Blob>((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error("画像を出力できませんでした。")),type,quality));
+  }
+  function baseName(name:string){return name.replace(/\.[^.]+$/,"");}
+
+  run.addEventListener("click", async()=>{
+    if(!file) return;
+    run.disabled=true; setMsg(errorBox); setMsg(successBox); result.hidden=true;
+    try{
+      const bmp=await createImageBitmap(file);
+      let sx=0,sy=0,sw=bmp.width,sh=bmp.height,dw=bmp.width,dh=bmp.height;
+      if(mode==="resize"){
+        const w=Number(field<HTMLInputElement>("[data-width]")!.value);
+        const h=Number(field<HTMLInputElement>("[data-height]")!.value);
+        if(!w||!h) throw new Error("幅と高さを入力してください。");
+        if(field<HTMLInputElement>("[data-keep-aspect]")!.checked){
+          const ratio=Math.min(w/bmp.width,h/bmp.height);
+          dw=Math.max(1,Math.round(bmp.width*ratio)); dh=Math.max(1,Math.round(bmp.height*ratio));
+        }else{dw=w;dh=h;}
+      }
+      if(mode==="crop"){
+        sx=Number(field<HTMLInputElement>("[data-crop-x]")!.value);
+        sy=Number(field<HTMLInputElement>("[data-crop-y]")!.value);
+        sw=Number(field<HTMLInputElement>("[data-crop-w]")!.value);
+        sh=Number(field<HTMLInputElement>("[data-crop-h]")!.value);
+        if(sx<0||sy<0||sw<1||sh<1||sx+sw>bmp.width||sy+sh>bmp.height) throw new Error("切り抜き範囲が画像サイズを超えています。");
+        dw=sw;dh=sh;
+      }
+      canvas.width=dw;canvas.height=dh;
+      const ctx=canvas.getContext("2d")!;
+      const wantsJpeg=mode==="png-to-jpg" || field<HTMLSelectElement>("[data-format]")?.value==="jpeg";
+      if(wantsJpeg){ctx.fillStyle=field<HTMLInputElement>("[data-background]")?.value||"#ffffff";ctx.fillRect(0,0,dw,dh);}
+      ctx.drawImage(bmp,sx,sy,sw,sh,0,0,dw,dh); bmp.close();
+
+      let type="image/png", suffix="-processed.png", quality=(Number(q?.value||80)/100);
+      if(mode==="compress"){const f=field<HTMLSelectElement>("[data-format]")!.value;type=f==="jpeg"?"image/jpeg":"image/webp";suffix="-compressed."+(f==="jpeg"?"jpg":"webp");}
+      else if(mode==="png-to-jpg"){type="image/jpeg";suffix=".jpg";}
+      else if(mode==="webp-converter"){const f=field<HTMLSelectElement>("[data-format]")!.value;type=f==="jpeg"?"image/jpeg":"image/png";suffix="."+(f==="jpeg"?"jpg":"png");}
+      else if(mode==="resize"){type=file.type==="image/png"?"image/png":file.type==="image/webp"?"image/webp":"image/jpeg";suffix="-resized."+(type==="image/png"?"png":type==="image/webp"?"webp":"jpg");quality=.9;}
+      else if(mode==="crop"){type=file.type==="image/png"?"image/png":file.type==="image/webp"?"image/webp":"image/jpeg";suffix="-cropped."+(type==="image/png"?"png":type==="image/webp"?"webp":"jpg");quality=.9;}
+      if(mode==="target-filesize"){
+        const target=Number(field<HTMLInputElement>("[data-target-kb]")!.value)*1024;
+        if(!target||target<10240) throw new Error("目標容量は10KB以上で指定してください。");
+        const f=field<HTMLSelectElement>("[data-format]")!.value;type=f==="webp"?"image/webp":"image/jpeg";suffix="-target."+(f==="webp"?"webp":"jpg");
+        let lo=.05,hi=.95,best:Blob|null=null;
+        for(let i=0;i<9;i++){const mid=(lo+hi)/2;const b=await toBlob(canvas,type,mid);if(b.size<=target){best=b;lo=mid;}else hi=mid;}
+        output=best ?? await toBlob(canvas,type,.05);
+      }else output=await toBlob(canvas,type,quality);
+      outputName=baseName(file.name)+suffix;
+      preview.hidden=false;result.hidden=false;
+      resultInfo.textContent=dw+"×"+dh+"px / "+bytes(file.size)+" → "+bytes(output.size);
+      setMsg(successBox,"処理が完了しました。");
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}
+    finally{run.disabled=!file;}
+  });
+
+  download.addEventListener("click",()=>{if(output) downloadBlob(output,outputName);});
+  clear.addEventListener("click",()=>{
+    file=null;output=null;fileInput.value="";run.disabled=true;preview.hidden=true;result.hidden=true;info.textContent="JPG・PNG・WebPに対応";setMsg(errorBox);setMsg(successBox);
+  });
+</script>
+
