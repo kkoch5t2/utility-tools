@@ -61,48 +61,119 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
         ))}
       </div>
 
+      <nav class="pagination" data-pagination aria-label="ツール一覧のページ" hidden>
+        <button class="page-button page-nav" type="button" data-page-prev>← 前へ</button>
+        <div class="page-numbers" data-page-numbers></div>
+        <button class="page-button page-nav" type="button" data-page-next>次へ →</button>
+      </nav>
+
       <p class="no-results" data-no-results hidden>このカテゴリのツールはまだありません。</p>
     </section>
   </div>
 </BaseLayout>
 
 <script>
-  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-filter]"));
+  const PAGE_SIZE = 12;
+  const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-filter]"));
   const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-tool-card]"));
   const count = document.querySelector<HTMLElement>("[data-visible-count]");
   const empty = document.querySelector<HTMLElement>("[data-no-results]");
+  const pagination = document.querySelector<HTMLElement>("[data-pagination]");
+  const pageNumbers = document.querySelector<HTMLElement>("[data-page-numbers]");
+  const prev = document.querySelector<HTMLButtonElement>("[data-page-prev]");
+  const next = document.querySelector<HTMLButtonElement>("[data-page-next]");
 
-  function applyFilter(category: string, updateUrl = true) {
-    let visible = 0;
+  let currentCategory = "all";
+  let currentPage = 1;
 
-    for (const card of cards) {
-      const show = category === "all" || card.dataset.category === category;
-      card.hidden = !show;
-      if (show) visible++;
-    }
-
-    for (const button of buttons) {
-      button.setAttribute("aria-pressed", String(button.dataset.filter === category));
-    }
-
-    if (count) count.textContent = visible + "件";
-    if (empty) empty.hidden = visible !== 0;
-
-    if (updateUrl) {
-      const url = new URL(window.location.href);
-      if (category === "all") url.searchParams.delete("category");
-      else url.searchParams.set("category", category);
-      history.replaceState(null, "", url);
-    }
+  function matchingCards(category: string) {
+    return cards.filter((card) => category === "all" || card.dataset.category === category);
   }
 
-  for (const button of buttons) {
-    button.addEventListener("click", () => applyFilter(button.dataset.filter ?? "all"));
+  function updateUrl(push = false) {
+    const url = new URL(window.location.href);
+    if (currentCategory === "all") url.searchParams.delete("category");
+    else url.searchParams.set("category", currentCategory);
+    if (currentPage === 1) url.searchParams.delete("page");
+    else url.searchParams.set("page", String(currentPage));
+    history[push ? "pushState" : "replaceState"](null, "", url);
   }
 
-  const initial = new URL(window.location.href).searchParams.get("category") ?? "all";
-  const valid = buttons.some((button) => button.dataset.filter === initial);
-  applyFilter(valid ? initial : "all", false);
+  function render(updateHistory = true, push = false) {
+    const matched = matchingCards(currentCategory);
+    const totalPages = Math.max(1, Math.ceil(matched.length / PAGE_SIZE));
+    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const visibleCards = new Set(matched.slice(start, start + PAGE_SIZE));
+
+    for (const card of cards) card.hidden = !visibleCards.has(card);
+    for (const button of filterButtons) {
+      button.setAttribute("aria-pressed", String(button.dataset.filter === currentCategory));
+    }
+
+    if (count) count.textContent = matched.length + "件";
+    if (empty) empty.hidden = matched.length !== 0;
+
+    if (pagination && pageNumbers && prev && next) {
+      pagination.hidden = totalPages <= 1;
+      prev.disabled = currentPage <= 1;
+      next.disabled = currentPage >= totalPages;
+      pageNumbers.replaceChildren();
+
+      for (let page = 1; page <= totalPages; page++) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "page-button page-number";
+        button.textContent = String(page);
+        button.dataset.page = String(page);
+        button.setAttribute("aria-label", page + "ページ目");
+        if (page === currentPage) {
+          button.setAttribute("aria-current", "page");
+          button.disabled = true;
+        }
+        button.addEventListener("click", () => {
+          currentPage = page;
+          render(true, true);
+        });
+        pageNumbers.append(button);
+      }
+    }
+
+    if (updateHistory) updateUrl(push);
+  }
+
+  for (const button of filterButtons) {
+    button.addEventListener("click", () => {
+      currentCategory = button.dataset.filter ?? "all";
+      currentPage = 1;
+      render(true, true);
+    });
+  }
+
+  prev?.addEventListener("click", () => {
+    if (currentPage <= 1) return;
+    currentPage--;
+    render(true, true);
+  });
+
+  next?.addEventListener("click", () => {
+    const totalPages = Math.max(1, Math.ceil(matchingCards(currentCategory).length / PAGE_SIZE));
+    if (currentPage >= totalPages) return;
+    currentPage++;
+    render(true, true);
+  });
+
+  function applyFromUrl() {
+    const url = new URL(window.location.href);
+    const category = url.searchParams.get("category") ?? "all";
+    currentCategory = filterButtons.some((button) => button.dataset.filter === category) ? category : "all";
+    const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
+    currentPage = Number.isFinite(page) && page > 0 ? page : 1;
+    render(false);
+  }
+
+  window.addEventListener("popstate", applyFromUrl);
+  applyFromUrl();
 </script>
 
 <style>
@@ -167,11 +238,21 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .category { color: var(--accent) !important; font-weight: 800; font-size: 13px; }
   .is-planned { opacity: .72; }
   .planned { color: var(--muted); font-weight: 700; }
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 28px; }
+  .pagination[hidden] { display: none; }
+  .page-numbers { display: flex; align-items: center; gap: 8px; }
+  .page-button { min-width: 42px; min-height: 42px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-weight: 800; cursor: pointer; }
+  .page-button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .page-button[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .page-button:disabled { cursor: default; opacity: .55; }
+  .page-button[aria-current="page"]:disabled { opacity: 1; }
   .no-results { padding: 28px 0; color: var(--muted); text-align: center; }
 
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
     .tool-grid { grid-template-columns: 1fr; }
     .tool-filters { margin-inline: -2px; }
+    .pagination { gap: 6px; }
+    .page-button { min-width: 38px; min-height: 40px; padding-inline: 10px; }
   }
 </style>
