@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import IssueReport from "../feedback/IssueReport.astro";
 
 interface Props {
   title: string;
@@ -39,6 +40,7 @@ const faqJson = {
         {faqs.map(([question, answer]) => <details><summary>{question}</summary><p>{answer}</p></details>)}
       </div>
     </section>
+    <IssueReport toolName={name} />
   </div>
   <script type="application/ld+json" set:html={JSON.stringify(faqJson)} />
 </BaseLayout>

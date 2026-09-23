@@ -1,0 +1,114 @@
+---
+interface Props { toolName: string; }
+const { toolName } = Astro.props;
+---
+
+<section class="issue-report" aria-labelledby="issue-report-title">
+  <div>
+    <h2 id="issue-report-title">このツールが動かない場合</h2>
+    <p>不具合だけ匿名で知らせられます。返信は行っていません。</p>
+  </div>
+  <button type="button" class="report-open" data-report-open>不具合を報告</button>
+</section>
+
+<dialog class="report-dialog" data-report-dialog>
+  <form data-report-form>
+    <div class="report-head">
+      <div>
+        <strong>不具合を報告</strong>
+        <p>{toolName}</p>
+      </div>
+      <button type="button" class="report-close" data-report-close aria-label="閉じる">×</button>
+    </div>
+    <label>
+      発生したこと
+      <select name="issue_type" required>
+        <option value="処理できない">処理できない</option>
+        <option value="ダウンロードできない">ダウンロードできない</option>
+        <option value="表示がおかしい">表示がおかしい</option>
+        <option value="その他">その他</option>
+      </select>
+    </label>
+    <label>
+      詳細（任意）
+      <textarea name="details" rows="4" maxlength="1000" placeholder="例：ボタンを押しても反応しない"></textarea>
+    </label>
+    <input type="text" name="_honey" class="report-honey" tabindex="-1" autocomplete="off" />
+    <input type="hidden" name="tool" value={toolName} />
+    <input type="hidden" name="url" data-report-url />
+    <input type="hidden" name="browser" data-report-browser />
+    <input type="hidden" name="_subject" value={"[便利ツール不具合] " + toolName} />
+    <p class="report-note">ツールに入力したファイルやテキスト自体は送信しません。</p>
+    <p class="report-status" data-report-status aria-live="polite"></p>
+    <div class="report-actions">
+      <button type="button" class="report-cancel" data-report-close>キャンセル</button>
+      <button type="submit" class="report-submit">送信</button>
+    </div>
+  </form>
+</dialog>
+<script>
+  const dialog = document.querySelector("[data-report-dialog]");
+  const form = document.querySelector("[data-report-form]");
+  const openButton = document.querySelector("[data-report-open]");
+  const closeButtons = document.querySelectorAll("[data-report-close]");
+  const status = document.querySelector("[data-report-status]");
+
+  openButton?.addEventListener("click", () => {
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    const url = form?.querySelector("[data-report-url]");
+    const browser = form?.querySelector("[data-report-browser]");
+    if (url instanceof HTMLInputElement) url.value = location.href;
+    if (browser instanceof HTMLInputElement) browser.value = navigator.userAgent;
+    if (status) status.textContent = "";
+    dialog.showModal();
+  });
+
+  closeButtons.forEach((button) => button.addEventListener("click", () => {
+    if (dialog instanceof HTMLDialogElement) dialog.close();
+  }));
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!(form instanceof HTMLFormElement)) return;
+    const submit = form.querySelector(".report-submit");
+    if (submit instanceof HTMLButtonElement) submit.disabled = true;
+    if (status) status.textContent = "送信中…";
+    try {
+      const data = Object.fromEntries(new FormData(form).entries());
+      const response = await fetch("https://formsubmit.co/ajax/prog16xwxp@gmail.com", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("send failed");
+      if (status) status.textContent = "報告を送信しました。ありがとうございます。";
+      setTimeout(() => {
+        if (dialog instanceof HTMLDialogElement) dialog.close();
+        form.reset();
+      }, 900);
+    } catch {
+      if (status) status.textContent = "送信できませんでした。時間をおいて再度お試しください。";
+    } finally {
+      if (submit instanceof HTMLButtonElement) submit.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .issue-report{margin-top:28px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--surface)}
+  .issue-report h2{margin:0 0 4px;font-size:16px}.issue-report p{margin:0;color:var(--muted);font-size:13px}
+  .report-open,.report-submit{border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:800;cursor:pointer;padding:9px 13px;white-space:nowrap}
+  .report-dialog{width:min(92vw,480px);border:0;border-radius:16px;padding:0;box-shadow:0 24px 70px rgba(15,23,42,.25)}
+  .report-dialog::backdrop{background:rgba(15,23,42,.48)}
+  .report-dialog form{padding:20px}.report-head{display:flex;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .report-head strong{font-size:18px}.report-head p{margin:3px 0 0;color:var(--muted);font-size:13px}
+  .report-close{border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:var(--muted)}
+  .report-dialog label{display:grid;gap:6px;margin:14px 0;font-size:13px;font-weight:800}
+  .report-dialog select,.report-dialog textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:var(--surface);color:var(--text);font:inherit}
+  .report-dialog textarea{resize:vertical}.report-honey{position:absolute!important;left:-9999px!important}
+  .report-note,.report-status{font-size:12px;color:var(--muted);margin:10px 0}.report-status{min-height:18px;font-weight:700}
+  .report-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  .report-cancel{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-weight:700;padding:9px 12px;cursor:pointer}
+  .report-submit:disabled{opacity:.55;cursor:wait}
+  @media(max-width:600px){.issue-report{align-items:flex-start;flex-direction:column}.report-open{width:100%}}
+</style>
