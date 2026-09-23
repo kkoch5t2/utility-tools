@@ -6,7 +6,7 @@ import type { ExtraToolMeta } from "../../config/extra-tools";
 import "../../styles/tool.css";
 interface Props { meta: ExtraToolMeta; }
 const { meta } = Astro.props;
-const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid"];
+const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid","semver-compare","month-difference","time-duration"];
 ---
 <ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
   <section class="tool-card" data-general-more data-mode={meta.mode}>
@@ -20,6 +20,13 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       <div class="field"><label for="replace-text">置換文字列</label><input id="replace-text" data-b type="text" /></div>
     </div>}
     {meta.mode === "line-ending" && <div class="field"><label for="line-ending-action">変換先</label><select id="line-ending-action" data-action><option value="lf">LF (Unix)</option><option value="crlf">CRLF (Windows)</option><option value="cr">CR</option></select></div>}
+    {meta.mode === "join-lines" && <div class="field"><label for="join-delimiter">区切り文字</label><input id="join-delimiter" data-a type="text" value=", " /></div>}
+    {meta.mode === "split-delimiter" && <div class="field"><label for="split-delimiter">区切り文字</label><input id="split-delimiter" data-a type="text" value="," /></div>}
+    {meta.mode === "pad-lines" && <div class="settings-grid">
+      <div class="field"><label for="pad-width">文字幅</label><input id="pad-width" data-a type="number" min="1" max="10000" value="20" /></div>
+      <div class="field"><label for="pad-direction">方向</label><select id="pad-direction" data-action><option value="right">右側を空白で埋める</option><option value="left">左側を空白で埋める</option></select></div>
+    </div>}
+    {meta.mode === "json-pick-keys" && <div class="field"><label for="json-pick-keys">残すキー（カンマ区切り）</label><input id="json-pick-keys" data-a type="text" placeholder="name,email,status" /></div>}
     {meta.mode === "punctuation-normalize" && <div class="field"><label for="punctuation-action">変換方向</label><select id="punctuation-action" data-action><option value="ascii">日本語記号 → ASCII寄り</option><option value="japanese">ASCII記号 → 日本語寄り</option></select></div>}
     {meta.mode === "space-normalize" && <div class="field"><label for="space-action">処理</label><select id="space-action" data-action><option value="collapse">連続空白を1つに</option><option value="remove">空白をすべて削除</option><option value="half">全角空白を半角へ</option></select></div>}
     {meta.mode === "querystring" && <div class="field"><label for="query-action">処理</label><select id="query-action" data-action><option value="parse">クエリ文字列 → JSON</option><option value="build">JSON → クエリ文字列</option></select></div>}
@@ -28,8 +35,18 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       <div class="field"><label for="to-base">変換先の基数</label><input id="to-base" data-b type="number" min="2" max="36" value="16" /></div>
     </div>}
     {meta.mode === "ulid" && <div class="field"><label for="ulid-count">生成数</label><input id="ulid-count" data-a type="number" min="1" max="1000" value="10" /></div>}
+    {meta.mode === "hex-text" && <div class="field"><label for="hex-action">変換方向</label><select id="hex-action" data-action><option value="text-hex">テキスト → HEX</option><option value="hex-text">HEX → テキスト</option></select></div>}
+    {meta.mode === "identifier-case" && <div class="field"><label for="identifier-action">変換形式</label><select id="identifier-action" data-action><option value="camel">camelCase</option><option value="pascal">PascalCase</option><option value="snake">snake_case</option><option value="kebab">kebab-case</option><option value="constant">CONSTANT_CASE</option></select></div>}
+    {meta.mode === "semver-compare" && <div class="settings-grid">
+      <div class="field"><label for="semver-a">Version A</label><input id="semver-a" data-a type="text" placeholder="1.2.3" /></div>
+      <div class="field"><label for="semver-b">Version B</label><input id="semver-b" data-b type="text" placeholder="2.0.0" /></div>
+    </div>}
     {meta.mode === "weekday" && <div class="field"><label for="weekday-date">日付</label><input id="weekday-date" data-a type="date" /></div>}
     {meta.mode === "iso-week" && <div class="field"><label for="iso-week-date">日付</label><input id="iso-week-date" data-a type="date" /></div>}
+    {meta.mode === "month-difference" && <div class="settings-grid">
+      <div class="field"><label for="month-start">開始日</label><input id="month-start" data-a type="date" /></div>
+      <div class="field"><label for="month-end">終了日</label><input id="month-end" data-b type="date" /></div>
+    </div>}
     {meta.mode === "percentage" && <div class="settings-grid">
       <div class="field"><label for="part-value">値</label><input id="part-value" data-a type="number" step="any" /></div>
       <div class="field"><label for="whole-value">全体</label><input id="whole-value" data-b type="number" step="any" /></div>
@@ -46,6 +63,10 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
     {meta.mode === "aspect-ratio" && <div class="settings-grid">
       <div class="field"><label for="ratio-width">幅</label><input id="ratio-width" data-a type="number" step="1" min="1" /></div>
       <div class="field"><label for="ratio-height">高さ</label><input id="ratio-height" data-b type="number" step="1" min="1" /></div>
+    </div>}
+    {meta.mode === "time-duration" && <div class="settings-grid">
+      <div class="field"><label for="time-start">開始時刻</label><input id="time-start" data-a type="time" /></div>
+      <div class="field"><label for="time-end">終了時刻</label><input id="time-end" data-b type="time" /></div>
     </div>}
     {!noTextModes.includes(meta.mode) && <div class="field" style="margin-top:16px"><label for="general-more-source">入力</label><textarea id="general-more-source" class="textarea" data-source placeholder="ここに入力"></textarea></div>}
     <div class="field" style="margin-top:16px"><label for="general-more-result">結果</label><textarea id="general-more-result" class="textarea" data-result readonly></textarea></div>
@@ -97,6 +118,31 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
   }
   function median(nums:number[]){const s=[...nums].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
   function stddev(nums:number[]){const avg=nums.reduce((s,n)=>s+n,0)/nums.length;return Math.sqrt(nums.reduce((s,n)=>s+(n-avg)**2,0)/nums.length);}
+  function textToHex(value:string){return Array.from(new TextEncoder().encode(value)).map(b=>b.toString(16).padStart(2,"0")).join(" ");}
+  function hexToText(value:string){
+    const clean=value.replace(/0x/gi,"").replace(/[^0-9a-f]/gi,"");
+    if(!clean||clean.length%2)throw new Error("偶数桁の16進数を入力してください。");
+    const bytes=new Uint8Array(clean.match(/.{2}/g)!.map(pair=>parseInt(pair,16)));
+    return new TextDecoder().decode(bytes);
+  }
+  function crc32(value:string){
+    let crc=0xffffffff;
+    const bytes=new TextEncoder().encode(value);
+    for(const byte of bytes){crc^=byte;for(let i=0;i<8;i++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}
+    return ((crc^0xffffffff)>>>0).toString(16).toUpperCase().padStart(8,"0");
+  }
+  function identifierWords(value:string){
+    return value.trim().replace(/([a-z0-9])([A-Z])/g,"$1 $2").replace(/[^A-Za-z0-9]+/g," ").trim().split(/\s+/).filter(Boolean).map(w=>w.toLowerCase());
+  }
+  function compareSemver(aValue:string,bValue:string){
+    const parse=(v:string)=>{const m=v.trim().replace(/^v/i,"").match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/);if(!m)throw new Error("x.y.z 形式のバージョンを入力してください。");return {nums:[+m[1],+m[2],+m[3]],pre:m[4]?.split(".")??[]};};
+    const x=parse(aValue),y=parse(bValue);
+    for(let i=0;i<3;i++){if(x.nums[i]!==y.nums[i])return x.nums[i]>y.nums[i]?1:-1;}
+    if(!x.pre.length&&!y.pre.length)return 0;if(!x.pre.length)return 1;if(!y.pre.length)return -1;
+    const len=Math.max(x.pre.length,y.pre.length);
+    for(let i=0;i<len;i++){if(x.pre[i]===undefined)return -1;if(y.pre[i]===undefined)return 1;if(x.pre[i]===y.pre[i])continue;const xn=/^\d+$/.test(x.pre[i]),yn=/^\d+$/.test(y.pre[i]);if(xn&&yn)return Number(x.pre[i])>Number(y.pre[i])?1:-1;if(xn!==yn)return xn?-1:1;return x.pre[i]>y.pre[i]?1:-1;}
+    return 0;
+  }
   run.addEventListener("click",()=>{
     setMsg(errorBox);setMsg(successBox);info.textContent="";
     try{
@@ -116,6 +162,12 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       }else if(mode==="json-string-codec"){
         if(action?.value==="escape")result.value=JSON.stringify(value);
         else{const parsed=JSON.parse(value);if(typeof parsed!=="string")throw new Error("JSON文字列を入力してください。");result.value=parsed;}
+      }else if(mode==="json-pick-keys"){
+        const parsed=JSON.parse(value),keys=(a?.value??"").split(",").map(k=>k.trim()).filter(Boolean);
+        if(!keys.length)throw new Error("残すキーを入力してください。");
+        const pick=(obj:any)=>Object.fromEntries(keys.filter(key=>Object.prototype.hasOwnProperty.call(obj,key)).map(key=>[key,obj[key]]));
+        if(Array.isArray(parsed)){if(parsed.some(item=>!item||typeof item!=="object"||Array.isArray(item)))throw new Error("オブジェクト配列を入力してください。");result.value=JSON.stringify(parsed.map(pick),null,2);}
+        else{if(!parsed||typeof parsed!=="object")throw new Error("JSONオブジェクトを入力してください。");result.value=JSON.stringify(pick(parsed),null,2);}
       }else if(mode==="find-replace"){
         const find=a?.value??"";if(!find)throw new Error("検索文字列を入力してください。");
         result.value=value.split(find).join(b?.value??"");
@@ -131,6 +183,14 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       }else if(mode==="line-ending"){
         const normalized=value.replace(/\r\n|\r|\n/g,"\n"),sep=action?.value==="crlf"?"\r\n":action?.value==="cr"?"\r":"\n";
         result.value=normalized.split("\n").join(sep);
+      }else if(mode==="join-lines"){
+        const delimiter=a?.value??",";result.value=splitLines(value).join(delimiter);
+      }else if(mode==="split-delimiter"){
+        const delimiter=a?.value??",";if(delimiter==="")throw new Error("区切り文字を入力してください。");
+        result.value=value.split(delimiter).map(v=>v.trim()).join("\n");
+      }else if(mode==="pad-lines"){
+        const width=Math.max(1,Math.min(10000,Number(a?.value)||20));
+        result.value=splitLines(value).map(line=>action?.value==="left"?line.padStart(width):line.padEnd(width)).join("\n");
       }else if(mode==="kana-normalize"){
         result.value=value.normalize("NFKC");
       }else if(mode==="punctuation-normalize"){
@@ -157,11 +217,30 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
         if(ok){const m=v.match(/^[^-]+-[^-]+-([0-9a-f])/) ;if(m)info.textContent="version "+m[1];}
       }else if(mode==="ulid"){
         const count=Math.max(1,Math.min(1000,Number(a?.value)||10));result.value=Array.from({length:count},()=>ulid()).join("\n");
+      }else if(mode==="hex-text"){
+        result.value=action?.value==="hex-text"?hexToText(value):textToHex(value);
+      }else if(mode==="crc32"){
+        result.value=crc32(value);
+      }else if(mode==="identifier-case"){
+        const words=identifierWords(value);if(!words.length)throw new Error("英数字を含む識別子を入力してください。");
+        const cap=(w:string)=>w.charAt(0).toUpperCase()+w.slice(1);
+        result.value=action?.value==="pascal"?words.map(cap).join(""):action?.value==="snake"?words.join("_"):action?.value==="kebab"?words.join("-"):action?.value==="constant"?words.join("_").toUpperCase():words[0]+words.slice(1).map(cap).join("");
+      }else if(mode==="semver-compare"){
+        const av=a?.value??"",bv=b?.value??"",cmp=compareSemver(av,bv);
+        result.value=cmp===0?av+" = "+bv:cmp>0?av+" > "+bv:av+" < "+bv;
       }else if(mode==="weekday"){
         const date=parseDate(a?.value??"");const ja=["日曜日","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日"],en=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
         result.value=ja[date.getDay()]+" ("+en[date.getDay()]+")";
       }else if(mode==="iso-week"){
         const date=parseDate(a?.value??""),iso=getIsoWeek(date);result.value=String(iso.year)+"-W"+String(iso.week).padStart(2,"0");
+      }else if(mode==="month-difference"){
+        let start=parseDate(a?.value??""),end=parseDate(b?.value??""),sign=1;if(start>end){[start,end]=[end,start];sign=-1;}
+        let months=(end.getFullYear()-start.getFullYear())*12+(end.getMonth()-start.getMonth());
+        let anchor=new Date(start);anchor.setMonth(anchor.getMonth()+months);
+        if(anchor>end){months--;anchor=new Date(start);anchor.setMonth(anchor.getMonth()+months);}
+        const days=Math.round((end.getTime()-anchor.getTime())/86400000);
+        const prefix=sign<0?"-":"";
+        result.value=prefix+months+"か月 "+days+"日\n合計月数(概算): "+prefix+(months+days/30.436875).toFixed(2);
       }else if(mode==="percentage"){
         const part=Number(a?.value),whole=Number(b?.value);if(!Number.isFinite(part)||!Number.isFinite(whole)||whole===0)throw new Error("全体は0以外の数値にしてください。");
         result.value=(part/whole*100).toFixed(2)+"%";
@@ -178,6 +257,10 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       }else if(mode==="aspect-ratio"){
         const w=Number(a?.value),h=Number(b?.value);if(!Number.isFinite(w)||!Number.isFinite(h)||w<=0||h<=0)throw new Error("0より大きい幅と高さを入力してください。");
         const g=gcd(w,h);result.value=(Math.round(w)/g)+":"+(Math.round(h)/g)+"\n幅÷高さ = "+(w/h).toFixed(6);
+      }else if(mode==="time-duration"){
+        const parseTime=(v:string)=>{const m=v.match(/^(\d{2}):(\d{2})$/);if(!m)throw new Error("開始・終了時刻を入力してください。");return Number(m[1])*60+Number(m[2]);};
+        const start=parseTime(a?.value??""),end=parseTime(b?.value??"");let minutes=end-start;let overnight=false;if(minutes<0){minutes+=1440;overnight=true;}
+        const hours=Math.floor(minutes/60),mins=minutes%60;result.value=hours+"時間 "+mins+"分\n合計: "+minutes+"分";if(overnight)info.textContent="終了時刻を翌日として計算しました。";
       }
       setMsg(successBox,"処理しました。");
     }catch(error){setMsg(errorBox,error instanceof Error?error.message:"処理に失敗しました。");}
