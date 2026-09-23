@@ -28,7 +28,11 @@ const { meta } = Astro.props;
 
     {meta.mode === "csv-json" && <>
       <div class="field"><label for="direction">変換方向</label><select id="direction" data-direction><option value="csv-json">CSV → JSON</option><option value="json-csv">JSON → CSV</option></select></div>
-      <div class="field" style="margin-top:16px"><label for="source">入力</label><textarea id="source" class="textarea" data-source placeholder="ここにCSVまたはJSONを貼り付け"></textarea></div>
+      <div class="field" style="margin-top:16px">
+        <label for="convert-file">CSV・JSONファイルを選択</label>
+        <input id="convert-file" data-file type="file" accept=".csv,.json,text/csv,application/json" />
+      </div>
+      <div class="field" style="margin-top:16px"><label for="source">入力</label><textarea id="source" class="textarea" data-source placeholder="CSVまたはJSONを貼り付けるか、上からファイルを選択"></textarea></div>
       <div class="field" style="margin-top:16px"><label for="result">結果</label><textarea id="result" class="textarea" data-result readonly></textarea></div>
     </>}
 
@@ -67,6 +71,16 @@ const { meta } = Astro.props;
     const files=Array.from(input.files??[]);
     if(files.some(f=>f.size>200*1024*1024)){setMsg(errorBox,"1ファイル200MB以下にしてください。");return;}
     info.textContent=files.length?files.map(f=>f.name).join(" / "):"";
+    if(mode==="csv-json"&&files[0]){
+      const file=files[0];
+      const ext=file.name.toLowerCase().split(".").pop();
+      if(!["csv","json"].includes(ext??"")){setMsg(errorBox,"CSVまたはJSONファイルを選択してください。");input.value="";return;}
+      if(file.size>20*1024*1024){setMsg(errorBox,"CSV・JSON変換は20MB以下のファイルに対応しています。");input.value="";return;}
+      root.querySelector<HTMLTextAreaElement>("[data-source]")!.value=await file.text();
+      root.querySelector<HTMLSelectElement>("[data-direction]")!.value=ext==="json"?"json-csv":"csv-json";
+      info.textContent=file.name+" を読み込みました。";
+      return;
+    }
     if(mode==="columns"&&files[0]){
       const parsed=parseCsv(await files[0].text());
       if(parsed.errors.length){setMsg(errorBox,"CSVを解析できませんでした。");return;}
@@ -83,15 +97,22 @@ const { meta } = Astro.props;
         const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
         const direction=root.querySelector<HTMLSelectElement>("[data-direction]")!.value;
         if(!source.trim()) throw new Error("入力してください。");
+        const selected=input?.files?.[0];
+        const nameBase=selected?base(selected.name):"converted";
         if(direction==="csv-json"){
           const parsed=parseCsv(source);
           if(parsed.errors.length) throw new Error(parsed.errors[0].message);
           result.value=JSON.stringify(parsed.data,null,2);
+          outBlob=new Blob([result.value],{type:"application/json;charset=utf-8"});
+          outName=nameBase+".json";
         }else{
           const value=JSON.parse(source);
           if(!Array.isArray(value)) throw new Error("JSONはオブジェクトの配列にしてください。");
           result.value=Papa.unparse(value,{newline:"\r\n"});
+          outBlob=new Blob(["\uFEFF",result.value],{type:"text/csv;charset=utf-8"});
+          outName=nameBase+".csv";
         }
+        download.hidden=false;
         setMsg(successBox,"変換しました。");return;
       }
 

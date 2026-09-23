@@ -23,13 +23,31 @@ test("追加ツールの全ページが表示できる", async ({ page }) => {
 
 test("CSVとJSONを相互変換できる", async ({ page }) => {
   await page.goto("/csv/json-converter/");
-  await page.locator("[data-source]").fill("name,age\nAlice,30\nBob,25");
+
+  await page.locator("[data-file]").setInputFiles({
+    name:"people.csv",
+    mimeType:"text/csv",
+    buffer:Buffer.from("name,age\nAlice,30\nBob,25"),
+  });
+  await expect(page.locator("[data-source]")).toHaveValue(/Alice,30/);
+  await expect(page.locator("[data-direction]")).toHaveValue("csv-json");
+  const jsonDownload=page.waitForEvent("download");
   await page.getByRole("button",{name:"変換"}).click();
   await expect(page.locator("[data-result]")).toHaveValue(/"name": "Alice"/);
-  await page.locator("[data-direction]").selectOption("json-csv");
-  await page.locator("[data-source]").fill('[{"name":"Alice","age":30}]');
+  await page.getByRole("button",{name:"ダウンロード"}).click();
+  expect((await jsonDownload).suggestedFilename()).toBe("people.json");
+
+  await page.locator("[data-file]").setInputFiles({
+    name:"people.json",
+    mimeType:"application/json",
+    buffer:Buffer.from('[{"name":"Alice","age":30}]'),
+  });
+  await expect(page.locator("[data-direction]")).toHaveValue("json-csv");
+  const csvDownload=page.waitForEvent("download");
   await page.getByRole("button",{name:"変換"}).click();
   await expect(page.locator("[data-result]")).toHaveValue(/name,age/);
+  await page.getByRole("button",{name:"ダウンロード"}).click();
+  expect((await csvDownload).suggestedFilename()).toBe("people.csv");
 });
 
 test("文字数カウントとUUID生成が動く", async ({ page }) => {
