@@ -271,14 +271,14 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     min-height: 38px;
     padding: 8px 13px;
     border-radius: 10px;
-    background: var(--text);
+    background: var(--accent);
     color: #fff;
     font-size: 14px;
     font-weight: 800;
     text-decoration: none;
     transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
   }
-  .tool-open:hover { background: var(--accent); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0, 94, 184, .18); }
+  .tool-open:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0, 94, 184, .22); }
   .tool-open span:last-child { font-size: 16px; line-height: 1; transition: transform .15s ease; }
   .tool-open:hover span:last-child { transform: translateX(3px); }
   .is-planned { opacity: .72; }
