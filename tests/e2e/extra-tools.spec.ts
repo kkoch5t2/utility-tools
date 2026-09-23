@@ -6,7 +6,7 @@ const routes = [
   "/csv/merge/","/csv/columns/","/csv/encoding/","/csv/json-converter/",
   "/text/json-formatter/","/text/character-count/","/text/fullwidth-halfwidth/","/text/newline-converter/",
   "/pdf/merge/","/pdf/split/","/pdf/to-images/",
-  "/qr/generate/","/qr/read/","/developer/uuid/","/developer/unix-time/",
+  "/qr/generate/","/qr/read/","/video/compress/","/video/to-mp3/","/developer/uuid/","/developer/unix-time/",
 ];
 
 test("追加ツールの全ページが表示できる", async ({ page }) => {
@@ -97,7 +97,7 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(24);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(26);
 
   await page.getByRole("button", { name: /PDF/ }).click();
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
@@ -110,5 +110,5 @@ test("トップページでカテゴリ絞り込みができる", async ({ page 
   await expect(page.locator("[data-visible-count]")).toHaveText("7件");
 
   await page.getByRole("button", { name: /すべて/ }).click();
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(24);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(26);
 });

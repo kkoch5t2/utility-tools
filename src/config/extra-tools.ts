@@ -1,4 +1,4 @@
-export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "developer";
+export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer";
 
 export type ExtraToolMeta = {
   id: string;
@@ -110,6 +110,20 @@ export const extraTools: ExtraToolMeta[] = [
     title: "改行削除・置換ツール｜空白・カンマへ一括変換",
     description: "改行を削除したり、空白・カンマ・任意文字列へ置換します。",
     faqs: [["CRLFとLFの両方に対応しますか？", "はい。Windows・Unix系の改行をまとめて処理します。"], privacyFaq],
+  },
+  {
+    id: "video-compress", mode: "compress", family: "video", category: "動画", categoryKey: "video",
+    href: "/video/compress/", name: "動画圧縮",
+    title: "動画圧縮ツール｜MP4をブラウザ内で軽量化",
+    description: "動画をブラウザ内で再エンコードし、画質を選びながらファイル容量を小さくします。",
+    faqs: [["どのくらい圧縮できますか？", "元動画や選択した圧縮レベルによって変わります。標準では画質と容量のバランスを取って圧縮します。"], ["動画はサーバーへ送信されますか？", "いいえ。動画ファイル自体は送信せず、ブラウザ内のFFmpegで処理します。"]],
+  },
+  {
+    id: "video-to-mp3", mode: "to-mp3", family: "video", category: "動画", categoryKey: "video",
+    href: "/video/to-mp3/", name: "動画 → MP3変換",
+    title: "動画をMP3に変換｜音声をブラウザ内で抽出",
+    description: "動画ファイルから音声を抽出し、128〜320kbpsのMP3として保存します。",
+    faqs: [["音質は選べますか？", "はい。128、192、256、320kbpsから選択できます。"], ["動画はサーバーへ送信されますか？", "いいえ。動画ファイル自体は送信せず、ブラウザ内のFFmpegで処理します。"]],
   },
   {
     id: "pdf-merge", mode: "merge", family: "pdf", category: "PDF", categoryKey: "pdf",
