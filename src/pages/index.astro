@@ -48,6 +48,16 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
         ))}
       </div>
 
+      <div class="mobile-filter">
+        <select data-mobile-filter aria-label="ツールのカテゴリを選ぶ">
+          {categories.map((category) => (
+            <option value={category.key}>
+              {category.label}（{category.key === "all" ? tools.length : (counts.get(category.key) ?? 0)}件）
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div class="tool-grid" data-tool-grid>
         {tools.map((tool) => (
           <article
@@ -80,6 +90,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
 <script>
   const PAGE_SIZE = 12;
   const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-filter]"));
+  const mobileFilter = document.querySelector<HTMLSelectElement>("[data-mobile-filter]");
   const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-tool-card]"));
   const count = document.querySelector<HTMLElement>("[data-visible-count]");
   const empty = document.querySelector<HTMLElement>("[data-no-results]");
@@ -116,6 +127,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     for (const button of filterButtons) {
       button.setAttribute("aria-pressed", String(button.dataset.filter === currentCategory));
     }
+    if (mobileFilter) mobileFilter.value = currentCategory;
 
     if (count) count.textContent = matched.length + "件";
     if (empty) empty.hidden = matched.length !== 0;
@@ -156,6 +168,12 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
       render(true, true);
     });
   }
+
+  mobileFilter?.addEventListener("change", () => {
+    currentCategory = mobileFilter.value;
+    currentPage = 1;
+    render(true, true);
+  });
 
   prev?.addEventListener("click", () => {
     if (currentPage <= 1) return;
@@ -235,6 +253,19 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .filter-button[aria-pressed="true"] small {
     background: rgba(255,255,255,.18);
     color: #fff;
+  }
+
+  .mobile-filter { display: none; margin-bottom: 16px; }
+  .mobile-filter select {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 42px 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 800;
   }
 
   .tool-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
@@ -348,25 +379,8 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     .home { padding-top: 32px; }
     h1 { font-size: clamp(18px, 5.8vw, 21px); letter-spacing: -0.045em; }
     .tool-grid { grid-template-columns: 1fr; }
-    .tool-filters {
-      flex-wrap: wrap;
-      overflow-x: visible;
-      gap: 8px;
-      padding: 2px 0 8px;
-      margin-inline: 0;
-      scrollbar-width: none;
-    }
-    .tool-filters::-webkit-scrollbar { display: none; }
-    .filter-button {
-      min-height: 38px;
-      padding: 6px 11px;
-      font-size: 12px;
-    }
-    .filter-button small {
-      min-width: 20px;
-      padding-inline: 5px;
-      font-size: 10px;
-    }
+    .tool-filters { display: none; }
+    .mobile-filter { display: block; }
     .pagination { width: 100%; gap: 10px; }
     .page-numbers { display: none; }
     .page-status { display: inline-block; }
