@@ -1,10 +1,10 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
-<BaseLayout title="プライバシー｜Utility Tools" description="Utility Toolsのファイル処理とプライバシーに関する方針です。">
+<BaseLayout title={"プライバシー｜" + siteConfig.name} description={siteConfig.name + "のファイル処理とプライバシーに関する方針です。"}>
   <article class="shell page-shell content-section">
     <h1>プライバシー</h1>
-    <p>Utility ToolsのMVPでは、選択したファイルの内容をサーバーへアップロードしません。画像の読み込み、変換、ZIP生成、ダウンロード用データの作成はブラウザ内で行います。</p>
+    <p>{siteConfig.name}では、選択したファイルの内容を処理目的で当サイトのサーバーへアップロードせず、対応ツールの処理は原則としてブラウザ内で行います。</p>
     <h2>外部送信しない情報</h2>
     <p>ファイル内容、ファイル名、画像そのものを処理目的で外部APIへ送信する実装はありません。</p>
     <h2>アクセス解析</h2>
