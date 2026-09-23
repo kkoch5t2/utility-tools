@@ -63,6 +63,36 @@
   <url><loc>https://utility-tools-jp.com/date/business-days/</loc></url>
   <url><loc>https://utility-tools-jp.com/calculator/percent-change/</loc></url>
   <url><loc>https://utility-tools-jp.com/calculator/ratio/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/sort/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/filter/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/add-row-number/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/rename-headers/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/transpose/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/value-count/</loc></url>
+  <url><loc>https://utility-tools-jp.com/json/array-dedupe/</loc></url>
+  <url><loc>https://utility-tools-jp.com/json/array-sort/</loc></url>
+  <url><loc>https://utility-tools-jp.com/json/path-extractor/</loc></url>
+  <url><loc>https://utility-tools-jp.com/json/string-escape/</loc></url>
+  <url><loc>https://utility-tools-jp.com/text/find-replace/</loc></url>
+  <url><loc>https://utility-tools-jp.com/text/reverse-lines/</loc></url>
+  <url><loc>https://utility-tools-jp.com/text/shuffle-lines/</loc></url>
+  <url><loc>https://utility-tools-jp.com/text/word-frequency/</loc></url>
+  <url><loc>https://utility-tools-jp.com/text/line-ending/</loc></url>
+  <url><loc>https://utility-tools-jp.com/japanese/kana-normalize/</loc></url>
+  <url><loc>https://utility-tools-jp.com/japanese/punctuation-normalize/</loc></url>
+  <url><loc>https://utility-tools-jp.com/japanese/space-normalize/</loc></url>
+  <url><loc>https://utility-tools-jp.com/japanese/character-types/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/query-string/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/base-converter/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/uuid-validate/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/ulid/</loc></url>
+  <url><loc>https://utility-tools-jp.com/date/weekday/</loc></url>
+  <url><loc>https://utility-tools-jp.com/date/iso-week/</loc></url>
+  <url><loc>https://utility-tools-jp.com/calculator/percentage/</loc></url>
+  <url><loc>https://utility-tools-jp.com/calculator/discount/</loc></url>
+  <url><loc>https://utility-tools-jp.com/calculator/statistics/</loc></url>
+  <url><loc>https://utility-tools-jp.com/calculator/bytes/</loc></url>
+  <url><loc>https://utility-tools-jp.com/calculator/aspect-ratio/</loc></url>
   <url><loc>https://utility-tools-jp.com/video/compress/</loc></url>
   <url><loc>https://utility-tools-jp.com/video/to-mp3/</loc></url>
   <url><loc>https://utility-tools-jp.com/developer/uuid/</loc></url>

@@ -19,6 +19,13 @@ const routes = [
   "/developer/sql-values/","/developer/slug/","/developer/url-parts/",
   "/date/difference/","/date/age/","/date/add-subtract/","/date/business-days/",
   "/calculator/percent-change/","/calculator/ratio/",
+  "/csv/sort/","/csv/filter/","/csv/add-row-number/","/csv/rename-headers/","/csv/transpose/","/csv/value-count/",
+  "/json/array-dedupe/","/json/array-sort/","/json/path-extractor/","/json/string-escape/",
+  "/text/find-replace/","/text/reverse-lines/","/text/shuffle-lines/","/text/word-frequency/","/text/line-ending/",
+  "/japanese/kana-normalize/","/japanese/punctuation-normalize/","/japanese/space-normalize/","/japanese/character-types/",
+  "/developer/query-string/","/developer/base-converter/","/developer/uuid-validate/","/developer/ulid/",
+  "/date/weekday/","/date/iso-week/",
+  "/calculator/percentage/","/calculator/discount/","/calculator/statistics/","/calculator/bytes/","/calculator/aspect-ratio/",
   "/developer/uuid/","/developer/unix-time/",
 ];
 
@@ -212,6 +219,83 @@ test("追加した日付・計算ツールが動く", async ({ page }) => {
   await expect(page.locator("[data-result]")).toHaveValue(/16:9/);
 });
 
+test("さらに追加したCSV・JSON・TEXTツールが動く", async ({ page }) => {
+  await page.goto("/csv/sort/");
+  await page.locator("[data-source]").fill("name,age\nAlice,30\nBob,20");
+  await page.locator("[data-a]").fill("age");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/Bob,20\r?\nAlice,30/);
+
+  await page.goto("/csv/filter/");
+  await page.locator("[data-source]").fill("name,status\nAlice,active\nBob,inactive");
+  await page.locator("[data-a]").fill("status");
+  await page.locator("[data-b]").fill("active");
+  await page.locator("[data-action]").selectOption("equals");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/Alice,active/);
+  await expect(page.locator("[data-result]")).not.toHaveValue(/Bob/);
+
+  await page.goto("/json/array-dedupe/");
+  await page.locator("[data-source]").fill('[1,2,1,{"a":1},{"a":1}]');
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/\[\n  1,\n  2,/);
+
+  await page.goto("/json/path-extractor/");
+  await page.locator("[data-a]").fill("user.name");
+  await page.locator("[data-source]").fill('{"user":{"name":"Alice"}}');
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("Alice");
+
+  await page.goto("/text/find-replace/");
+  await page.locator("[data-a]").fill("foo");
+  await page.locator("[data-b]").fill("bar");
+  await page.locator("[data-source]").fill("foo foo");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("bar bar");
+});
+
+test("さらに追加した日本語・開発者・日付・計算ツールが動く", async ({ page }) => {
+  await page.goto("/japanese/kana-normalize/");
+  await page.locator("[data-source]").fill("ｶﾀｶﾅ ＡＢＣ");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("カタカナ ABC");
+
+  await page.goto("/developer/query-string/");
+  await page.locator("[data-source]").fill("a=1&b=hello%20world");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/"b": "hello world"/);
+
+  await page.goto("/developer/base-converter/");
+  await page.locator("[data-a]").fill("10");
+  await page.locator("[data-b]").fill("16");
+  await page.locator("[data-source]").fill("255");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("FF");
+
+  await page.goto("/developer/ulid/");
+  await page.locator("[data-a]").fill("3");
+  await page.getByRole("button",{name:"処理する"}).click();
+  const ulids=(await page.locator("[data-result]").inputValue()).trim().split("\n");
+  expect(ulids).toHaveLength(3);
+  expect(ulids.every((v)=>v.length===26)).toBeTruthy();
+
+  await page.goto("/date/weekday/");
+  await page.locator("[data-a]").fill("2026-09-23");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/水曜日/);
+
+  await page.goto("/calculator/statistics/");
+  await page.locator("[data-source]").fill("1,2,3,4,5");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/平均: 3/);
+
+  await page.goto("/calculator/aspect-ratio/");
+  await page.locator("[data-a]").fill("1920");
+  await page.locator("[data-b]").fill("1080");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/16:9/);
+});
+
 test("文字数カウントとUUID生成が動く", async ({ page }) => {
   await page.goto("/text/character-count/");
   await page.locator("[data-source]").fill("abc\nあいう");
@@ -259,10 +343,10 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みとページングができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-visible-count]")).toHaveText("65件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("95件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page.locator("[data-pagination]")).toBeVisible();
-  await expect(page.locator("[data-page-numbers] button")).toHaveCount(6);
+  await expect(page.locator("[data-page-numbers] button")).toHaveCount(8);
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=2$/);
@@ -283,7 +367,15 @@ test("トップページでカテゴリ絞り込みとページングができ�
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=6$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(5);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
+
+  await page.getByRole("button", { name: "次へ →" }).click();
+  await expect(page).toHaveURL(/\?page=7$/);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
+
+  await page.getByRole("button", { name: "次へ →" }).click();
+  await expect(page).toHaveURL(/\?page=8$/);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(11);
 
   await page.getByRole("button", { name: /PDF/ }).click();
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);

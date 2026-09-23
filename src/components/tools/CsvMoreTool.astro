@@ -1,0 +1,119 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-csv-more data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />CSVファイルや入力内容は外部サーバーへ送信しません。</div></div>
+    <div class="field"><label for="csv-more-file">CSVファイルを選択</label><input id="csv-more-file" data-file type="file" accept=".csv,text/csv" /></div>
+    <p class="inline-note" style="margin:14px 0;text-align:center;font-weight:700">または</p>
+
+    {meta.mode === "csv-sort" && <div class="settings-grid">
+      <div class="field"><label for="sort-column">列名</label><input id="sort-column" data-a type="text" placeholder="例: age" /></div>
+      <div class="field"><label for="sort-order">並び順</label><select id="sort-order" data-action><option value="asc">昇順</option><option value="desc">降順</option></select></div>
+    </div>}
+    {meta.mode === "csv-filter" && <div class="settings-grid">
+      <div class="field"><label for="filter-column">列名</label><input id="filter-column" data-a type="text" placeholder="例: status" /></div>
+      <div class="field"><label for="filter-value">条件値</label><input id="filter-value" data-b type="text" placeholder="例: active" /></div>
+      <div class="field"><label for="filter-op">条件</label><select id="filter-op" data-action><option value="contains">含む</option><option value="equals">完全一致</option><option value="not-equals">一致しない</option><option value="starts">前方一致</option><option value="ends">後方一致</option></select></div>
+    </div>}
+    {meta.mode === "csv-row-number" && <div class="field"><label for="row-column">追加する列名</label><input id="row-column" data-a type="text" value="row_number" /></div>}
+    {meta.mode === "csv-rename-headers" && <div class="field"><label for="rename-rules">列名変更ルール（1行1件 old=new）</label><textarea id="rename-rules" class="textarea" data-rules placeholder={"old_name=new_name\nemail=mail_address"}></textarea></div>}
+    {meta.mode === "csv-value-count" && <div class="field"><label for="count-column">集計する列名</label><input id="count-column" data-a type="text" placeholder="例: category" /></div>}
+
+    <div class="field" style="margin-top:16px"><label for="csv-more-source">CSVを直接入力</label><textarea id="csv-more-source" class="textarea" data-source placeholder="ここにCSVを貼り付け"></textarea></div>
+    <div class="field" style="margin-top:16px"><label for="csv-more-result">結果</label><textarea id="csv-more-result" class="textarea" data-result readonly></textarea></div>
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>処理する</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-copy>結果をコピー</button>
+      <button class="button button-secondary" type="button" data-download hidden>ダウンロード</button>
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <p class="inline-note" data-info></p>
+  </section>
+</ToolLayout>
+
+<script>
+  import Papa from "papaparse";
+  import { downloadBlob } from "../../core/download/download-file";
+  const root=document.querySelector<HTMLElement>("[data-csv-more]")!;
+  const mode=root.dataset.mode!;
+  const input=root.querySelector<HTMLInputElement>("[data-file]")!;
+  const source=root.querySelector<HTMLTextAreaElement>("[data-source]")!;
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+  const a=root.querySelector<HTMLInputElement>("[data-a]");
+  const b=root.querySelector<HTMLInputElement>("[data-b]");
+  const action=root.querySelector<HTMLSelectElement>("[data-action]");
+  const rules=root.querySelector<HTMLTextAreaElement>("[data-rules]");
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]")!;
+  const download=root.querySelector<HTMLButtonElement>("[data-download]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const info=root.querySelector<HTMLElement>("[data-info]")!;
+  let outBlob:Blob|null=null,outName="";
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const base=(name:string)=>name.replace(/\.[^.]+$/,"");
+  function parseCsv(value:string){
+    const parsed=Papa.parse<string[]>(value.replace(/^\uFEFF/,""),{skipEmptyLines:false});
+    if(parsed.errors.length)throw new Error(parsed.errors[0].message);
+    if(!parsed.data.length||!parsed.data[0].length)throw new Error("CSVが空です。");
+    return parsed.data;
+  }
+  input.addEventListener("change",async()=>{
+    setMsg(errorBox);setMsg(successBox);download.hidden=true;outBlob=null;
+    const file=input.files?.[0];
+    if(!file)return;
+    if(file.size>100*1024*1024){setMsg(errorBox,"100MB以下のCSVにしてください。");input.value="";return;}
+    source.value=await file.text();
+    info.textContent=file.name+" / "+(file.size/1024/1024).toFixed(2)+" MB";
+  });
+
+  run.addEventListener("click",()=>{
+    setMsg(errorBox);setMsg(successBox);download.hidden=true;outBlob=null;
+    try{
+      const rows=parseCsv(source.value),header=rows[0],body=rows.slice(1);
+      let output:string[][]=[];
+      if(mode==="csv-sort"){
+        const name=a?.value.trim()??"",index=header.indexOf(name);if(index<0)throw new Error("列名が見つかりません: "+name);
+        const sorted=[...body].sort((x,y)=>{
+          const xv=x[index]??"",yv=y[index]??"",xn=Number(xv),yn=Number(yv);
+          const cmp=xv!==""&&yv!==""&&Number.isFinite(xn)&&Number.isFinite(yn)?xn-yn:xv.localeCompare(yv,"ja",{numeric:true});
+          return action?.value==="desc"?-cmp:cmp;
+        });
+        output=[header,...sorted];
+      }else if(mode==="csv-filter"){
+        const name=a?.value.trim()??"",needle=b?.value??"",index=header.indexOf(name);if(index<0)throw new Error("列名が見つかりません: "+name);
+        const match=(cell:string)=>action?.value==="equals"?cell===needle:action?.value==="not-equals"?cell!==needle:action?.value==="starts"?cell.startsWith(needle):action?.value==="ends"?cell.endsWith(needle):cell.includes(needle);
+        const filtered=body.filter(row=>match(row[index]??""));output=[header,...filtered];info.textContent=filtered.length+"行を抽出";
+      }else if(mode==="csv-row-number"){
+        const col=(a?.value.trim()||"row_number");output=[[col,...header],...body.map((row,i)=>[String(i+1),...row])];
+      }else if(mode==="csv-rename-headers"){
+        const map=new Map<string,string>();
+        for(const line of (rules?.value??"").split(/\r?\n/)){if(!line.trim())continue;const idx=line.indexOf("=");if(idx<1)throw new Error("変更ルールは old=new 形式で入力してください。");map.set(line.slice(0,idx).trim(),line.slice(idx+1).trim());}
+        if(!map.size)throw new Error("変更ルールを入力してください。");
+        output=[header.map(h=>map.get(h)??h),...body];
+      }else if(mode==="csv-transpose"){
+        const width=Math.max(...rows.map(row=>row.length));output=Array.from({length:width},(_,col)=>rows.map(row=>row[col]??""));
+      }else if(mode==="csv-value-count"){
+        const name=a?.value.trim()??"",index=header.indexOf(name);if(index<0)throw new Error("列名が見つかりません: "+name);
+        const counts=new Map<string,number>();for(const row of body){const key=row[index]??"";counts.set(key,(counts.get(key)??0)+1);}
+        output=[[name,"count"],...Array.from(counts.entries()).sort((x,y)=>y[1]-x[1]).map(([value,count])=>[value,String(count)])];
+      }
+      result.value=Papa.unparse(output,{newline:"\r\n"});
+      outBlob=new Blob(["\uFEFF",result.value],{type:"text/csv;charset=utf-8"});
+      outName=(input.files?.[0]?base(input.files[0].name):"result")+"-"+mode.replace(/^csv-/,"")+".csv";
+      download.hidden=false;setMsg(successBox,"処理しました。");
+    }catch(error){setMsg(errorBox,error instanceof Error?error.message:"処理に失敗しました。");}
+  });
+  download.addEventListener("click",()=>{if(outBlob)downloadBlob(outBlob,outName);});
+  copy.addEventListener("click",async()=>{if(!result.value)return;try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"コピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}});
+  clear.addEventListener("click",()=>{input.value="";source.value="";result.value="";if(rules)rules.value="";info.textContent="";download.hidden=true;outBlob=null;setMsg(errorBox);setMsg(successBox);});
+</script>
