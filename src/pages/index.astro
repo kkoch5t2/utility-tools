@@ -235,20 +235,25 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
 
   .tool-filters {
     display: flex;
+    flex-wrap: nowrap;
     gap: 8px;
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 2px 2px 10px;
+    padding: 2px 18px 10px 2px;
     margin-bottom: 12px;
     scrollbar-width: none;
     -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
+    scroll-padding-inline: 2px 18px;
     overscroll-behavior-x: contain;
   }
   .tool-filters::-webkit-scrollbar { display: none; }
   .filter-button {
     flex: 0 0 auto;
+    scroll-snap-align: start;
     min-height: 40px;
     display: inline-flex;
     align-items: center;
@@ -401,32 +406,14 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
     .tool-grid { grid-template-columns: 1fr; }
-    .tool-filters { display: none; }
-    .filter-select-wrap {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      margin-bottom: 18px;
-    }
-    .filter-select-wrap label {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-    }
-    .filter-select-wrap select {
-      width: 100%;
-      min-width: 0;
-      min-height: 44px;
-      padding: 9px 38px 9px 13px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--surface);
-      color: var(--text);
-      font: inherit;
-      font-size: 14px;
-      font-weight: 800;
+    .filter-select-wrap { display: none; }
+    .tool-filters {
+      display: flex;
+      width: calc(100% + 16px);
+      max-width: calc(100% + 16px);
+      margin-right: -16px;
+      padding: 2px 24px 10px 0;
+      scroll-padding-inline: 0 24px;
     }
     .pagination {
       width: 100%;
@@ -435,6 +422,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
       padding-inline: 0;
       overflow: hidden;
     }
+
     .page-numbers { flex: 0 1 auto; gap: 2px; }
     .page-nav { min-width: 56px; min-height: 34px; padding: 6px 8px; font-size: 12px; }
     :global(.page-number) { width: 32px; height: 32px; line-height: 32px; flex: 0 0 32px; }
