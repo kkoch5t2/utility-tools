@@ -1,0 +1,99 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-text-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>入力内容は端末内だけで処理</strong><br />外部サーバーへ送信しません。</div></div>
+    {meta.mode === "json-formatter" && <div class="field"><label for="json-action">処理</label><select id="json-action" data-action><option value="format">整形（インデント2）</option><option value="minify">圧縮（1行）</option><option value="validate">構文チェック</option></select></div>}
+    {meta.mode === "fullwidth-halfwidth" && <div class="field"><label for="width-action">変換</label><select id="width-action" data-action><option value="half">全角 → 半角</option><option value="full">半角 → 全角</option></select></div>}
+    {meta.mode === "newline-converter" && <div class="settings-grid">
+      <div class="field"><label for="newline-action">置換先</label><select id="newline-action" data-action><option value="">削除</option><option value=" ">半角スペース</option><option value=",">カンマ</option><option value="custom">任意文字列</option></select></div>
+      <div class="field"><label for="custom">任意文字列</label><input id="custom" data-custom type="text" placeholder=" / " /></div>
+    </div>}
+    <div class="field" style="margin-top:16px"><label for="text-source">入力</label><textarea id="text-source" class="textarea" data-source placeholder="ここにテキストを入力"></textarea></div>
+
+    {meta.mode === "character-count" && <div class="stat-grid">
+      <div class="stat-card"><span>文字数</span><strong data-chars>0</strong></div>
+      <div class="stat-card"><span>空白除外</span><strong data-no-space>0</strong></div>
+      <div class="stat-card"><span>行数</span><strong data-lines>0</strong></div>
+      <div class="stat-card"><span>UTF-8バイト</span><strong data-bytes>0</strong></div>
+    </div>}
+
+    {meta.mode !== "character-count" && <div class="field" style="margin-top:16px"><label for="text-result">結果</label><textarea id="text-result" class="textarea" data-result readonly></textarea></div>}
+    <div class="actions">
+      {meta.mode !== "character-count" && <button class="button button-primary" type="button" data-run>処理する</button>}
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      {meta.mode !== "character-count" && <button class="button button-secondary" type="button" data-copy>結果をコピー</button>}
+    </div>
+    <ErrorMessage /><SuccessMessage />
+  </section>
+</ToolLayout>
+
+<script>
+  const root=document.querySelector<HTMLElement>("[data-text-tool]")!;
+  const mode=root.dataset.mode!;
+  const source=root.querySelector<HTMLTextAreaElement>("[data-source]")!;
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]");
+  const run=root.querySelector<HTMLButtonElement>("[data-run]");
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]");
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+
+  function updateCounts(){
+    if(mode!=="character-count")return;
+    const value=source.value;
+    root.querySelector<HTMLElement>("[data-chars]")!.textContent=String(Array.from(value).length);
+    root.querySelector<HTMLElement>("[data-no-space]")!.textContent=String(Array.from(value.replace(/\s/g,"")).length);
+    root.querySelector<HTMLElement>("[data-lines]")!.textContent=String(value?value.split(/\r\n|\r|\n/).length:0);
+    root.querySelector<HTMLElement>("[data-bytes]")!.textContent=String(new TextEncoder().encode(value).length);
+  }
+  source.addEventListener("input",updateCounts);
+  updateCounts();
+
+  function toHalf(value:string){
+    return value.replace(/[\uFF01-\uFF5E]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/\u3000/g," ");
+  }
+  function toFull(value:string){
+    return value.replace(/[!-~]/g,ch=>String.fromCharCode(ch.charCodeAt(0)+0xFEE0)).replace(/ /g,"\u3000");
+  }
+
+  run?.addEventListener("click",()=>{
+    setMsg(errorBox);setMsg(successBox);
+    try{
+      const value=source.value;
+      if(mode==="json-formatter"){
+        const parsed=JSON.parse(value);
+        const action=root.querySelector<HTMLSelectElement>("[data-action]")!.value;
+        result!.value=action==="minify"?JSON.stringify(parsed):JSON.stringify(parsed,null,2);
+        setMsg(successBox,action==="validate"?"有効なJSONです。":"処理しました。");
+      }else if(mode==="fullwidth-halfwidth"){
+        const action=root.querySelector<HTMLSelectElement>("[data-action]")!.value;
+        result!.value=action==="full"?toFull(value):toHalf(value);
+        setMsg(successBox,"変換しました。");
+      }else if(mode==="newline-converter"){
+        const action=root.querySelector<HTMLSelectElement>("[data-action]")!.value;
+        const replacement=action==="custom"?(root.querySelector<HTMLInputElement>("[data-custom]")!.value):action;
+        result!.value=value.replace(/\r\n|\r|\n/g,replacement);
+        setMsg(successBox,"改行を処理しました。");
+      }
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}
+  });
+
+  copy?.addEventListener("click",async()=>{
+    if(!result?.value)return;
+    try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"コピーしました。");}
+    catch{setMsg(errorBox,"コピーできませんでした。");}
+  });
+  clear.addEventListener("click",()=>{
+    source.value="";if(result)result.value="";setMsg(errorBox);setMsg(successBox);updateCounts();
+  });
+</script>
+

@@ -1,0 +1,91 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-qr-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />入力内容や画像は外部へ送信されません。</div></div>
+    {meta.mode === "generate" ? <>
+      <div class="field"><label for="qr-text">URL・テキスト</label><textarea id="qr-text" class="textarea" data-source placeholder="https://example.com"></textarea></div>
+      <div class="settings-grid">
+        <div class="field"><label for="qr-size">サイズ</label><select id="qr-size" data-size><option value="256">256px</option><option value="512" selected>512px</option><option value="1024">1024px</option></select></div>
+        <div class="field"><label for="qr-level">誤り訂正</label><select id="qr-level" data-level><option value="L">L</option><option value="M" selected>M</option><option value="Q">Q</option><option value="H">H</option></select></div>
+      </div>
+    </> : <>
+      <div class="field"><label for="qr-file">QRコード画像</label><input id="qr-file" data-file type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" /></div>
+    </>}
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>{meta.mode === "generate" ? "QRコードを生成" : "QRコードを読み取る"}</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      {meta.mode === "generate" && <button class="button button-secondary" type="button" data-download hidden>PNGをダウンロード</button>}
+      {meta.mode === "read" && <button class="button button-secondary" type="button" data-copy hidden>結果をコピー</button>}
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <div class="preview-box" data-preview hidden><canvas data-canvas></canvas></div>
+    {meta.mode === "read" && <div class="field" data-result-wrap hidden style="margin-top:16px"><label for="qr-result">読み取り結果</label><textarea id="qr-result" class="textarea" data-result readonly></textarea></div>}
+  </section>
+</ToolLayout>
+
+<script>
+  import QRCode from "qrcode";
+  import jsQR from "jsqr";
+  import { downloadBlob } from "../../core/download/download-file";
+  const root=document.querySelector<HTMLElement>("[data-qr-tool]")!;
+  const mode=root.dataset.mode!;
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const canvas=root.querySelector<HTMLCanvasElement>("[data-canvas]")!;
+  const preview=root.querySelector<HTMLElement>("[data-preview]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const download=root.querySelector<HTMLButtonElement>("[data-download]");
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]");
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+
+  run.addEventListener("click",async()=>{
+    setMsg(errorBox);setMsg(successBox);
+    try{
+      if(mode==="generate"){
+        const text=root.querySelector<HTMLTextAreaElement>("[data-source]")!.value.trim();
+        if(!text) throw new Error("URLまたはテキストを入力してください。");
+        const width=Number(root.querySelector<HTMLSelectElement>("[data-size]")!.value);
+        const level=root.querySelector<HTMLSelectElement>("[data-level]")!.value as "L"|"M"|"Q"|"H";
+        await QRCode.toCanvas(canvas,text,{width,errorCorrectionLevel:level,margin:2});
+        preview.hidden=false;if(download)download.hidden=false;setMsg(successBox,"QRコードを生成しました。");
+      }else{
+        const file=root.querySelector<HTMLInputElement>("[data-file]")!.files?.[0];
+        if(!file) throw new Error("QRコード画像を選択してください。");
+        const bmp=await createImageBitmap(file);
+        canvas.width=bmp.width;canvas.height=bmp.height;
+        const ctx=canvas.getContext("2d")!;ctx.drawImage(bmp,0,0);bmp.close();
+        const image=ctx.getImageData(0,0,canvas.width,canvas.height);
+        const code=jsQR(image.data,image.width,image.height,{inversionAttempts:"attemptBoth"});
+        if(!code) throw new Error("QRコードを読み取れませんでした。画像を明るく、QRコード全体が入るようにしてください。");
+        const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+        result.value=code.data;root.querySelector<HTMLElement>("[data-result-wrap]")!.hidden=false;
+        preview.hidden=false;if(copy)copy.hidden=false;setMsg(successBox,"QRコードを読み取りました。");
+      }
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}
+  });
+
+  download?.addEventListener("click",async()=>{
+    const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error()),"image/png"));
+    downloadBlob(blob,"qr-code.png");
+  });
+  copy?.addEventListener("click",async()=>{
+    const value=root.querySelector<HTMLTextAreaElement>("[data-result]")!.value;
+    await navigator.clipboard.writeText(value);setMsg(successBox,"コピーしました。");
+  });
+  clear.addEventListener("click",()=>{
+    root.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>("[data-source],[data-file],[data-result]").forEach(el=>el.value="");
+    preview.hidden=true;if(download)download.hidden=true;if(copy)copy.hidden=true;
+    const wrap=root.querySelector<HTMLElement>("[data-result-wrap]");if(wrap)wrap.hidden=true;
+    setMsg(errorBox);setMsg(successBox);
+  });
+</script>
+

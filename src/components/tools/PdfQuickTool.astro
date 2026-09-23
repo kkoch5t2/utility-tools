@@ -1,0 +1,124 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-pdf-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>PDFはブラウザ内だけで処理</strong><br />サーバーへ送信されません。</div></div>
+    <div class="field">
+      <label for="pdf-file">{meta.mode === "merge" ? "PDFを複数選択" : "PDFを選択"}</label>
+      <input id="pdf-file" data-file type="file" accept=".pdf,application/pdf" multiple={meta.mode === "merge"} />
+    </div>
+    {meta.mode === "split" && <div class="field" style="margin-top:16px">
+      <label for="ranges">ページ範囲（例: 1-3,4-6,8）</label>
+      <input id="ranges" data-ranges type="text" placeholder="1-3,4-6,8" />
+    </div>}
+    {meta.mode === "to-images" && <div class="field" style="margin-top:16px">
+      <label for="scale">画像倍率</label>
+      <select id="scale" data-scale><option value="1">1x</option><option value="1.5" selected>1.5x</option><option value="2">2x</option></select>
+    </div>}
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>処理する</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <p class="inline-note" data-info></p>
+  </section>
+</ToolLayout>
+
+<script>
+  import { PDFDocument } from "pdf-lib";
+  import JSZip from "jszip";
+  import * as pdfjsLib from "pdfjs-dist";
+  import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+  import { downloadBlob } from "../../core/download/download-file";
+  pdfjsLib.GlobalWorkerOptions.workerSrc=workerSrc;
+
+  const root=document.querySelector<HTMLElement>("[data-pdf-tool]")!;
+  const mode=root.dataset.mode!;
+  const input=root.querySelector<HTMLInputElement>("[data-file]")!;
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const info=root.querySelector<HTMLElement>("[data-info]")!;
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const base=(name:string)=>name.replace(/\.[^.]+$/,"");
+  input.addEventListener("change",()=>{info.textContent=Array.from(input.files??[]).map(f=>f.name).join(" / ");});
+
+  function parseRanges(text:string,total:number){
+    const groups:number[][]=[];
+    for(const part of text.split(",").map(v=>v.trim()).filter(Boolean)){
+      const m=part.match(/^(\d+)(?:-(\d+))?$/);
+      if(!m) throw new Error("ページ範囲の形式が正しくありません。");
+      const a=Number(m[1]),b=Number(m[2]??m[1]);
+      if(a<1||b<a||b>total) throw new Error("ページ範囲がPDFのページ数を超えています。");
+      groups.push(Array.from({length:b-a+1},(_,i)=>a-1+i));
+    }
+    if(!groups.length) throw new Error("ページ範囲を入力してください。");
+    return groups;
+  }
+
+  run.addEventListener("click",async()=>{
+    setMsg(errorBox);setMsg(successBox);run.disabled=true;
+    try{
+      const files=Array.from(input.files??[]);
+      if(!files.length) throw new Error("PDFを選択してください。");
+      if(files.some(f=>f.size>100*1024*1024)) throw new Error("1ファイル100MB以下にしてください。");
+
+      if(mode==="merge"){
+        const out=await PDFDocument.create();
+        let pages=0;
+        for(const file of files){
+          const src=await PDFDocument.load(await file.arrayBuffer());
+          const copied=await out.copyPages(src,src.getPageIndices());
+          copied.forEach(p=>out.addPage(p)); pages+=copied.length;
+        }
+        const bytes=await out.save();
+        downloadBlob(new Blob([bytes.buffer as ArrayBuffer],{type:"application/pdf"}),"merged.pdf");
+        setMsg(successBox,files.length+"ファイル・"+pages+"ページを結合しました。");
+      }else if(mode==="split"){
+        const file=files[0];
+        const src=await PDFDocument.load(await file.arrayBuffer());
+        const groups=parseRanges(root.querySelector<HTMLInputElement>("[data-ranges]")!.value,src.getPageCount());
+        const zip=new JSZip();
+        for(let i=0;i<groups.length;i++){
+          const out=await PDFDocument.create();
+          const copied=await out.copyPages(src,groups[i]);
+          copied.forEach(p=>out.addPage(p));
+          zip.file(base(file.name)+"-part-"+String(i+1).padStart(2,"0")+".pdf",await out.save());
+        }
+        downloadBlob(await zip.generateAsync({type:"blob"}),base(file.name)+"-split.zip");
+        setMsg(successBox,groups.length+"個のPDFに分割しました。");
+      }else if(mode==="to-images"){
+        const file=files[0];
+        const data=new Uint8Array(await file.arrayBuffer());
+        const pdf=await pdfjsLib.getDocument({data}).promise;
+        const scale=Number(root.querySelector<HTMLSelectElement>("[data-scale]")!.value);
+        const zip=new JSZip();
+        for(let n=1;n<=pdf.numPages;n++){
+          info.textContent="ページ "+n+" / "+pdf.numPages+" を変換中";
+          const page=await pdf.getPage(n);
+          const viewport=page.getViewport({scale});
+          const canvas=document.createElement("canvas");
+          canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+          const ctx=canvas.getContext("2d")!;
+          await page.render({canvasContext:ctx,viewport,canvas}).promise;
+          const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("画像化に失敗しました。")),"image/png"));
+          zip.file(base(file.name)+"-page-"+String(n).padStart(3,"0")+".png",blob);
+        }
+        downloadBlob(await zip.generateAsync({type:"blob"}),base(file.name)+"-images.zip");
+        setMsg(successBox,pdf.numPages+"ページをPNGへ変換しました。");
+      }
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"PDF処理に失敗しました。");}
+    finally{run.disabled=false;}
+  });
+
+  clear.addEventListener("click",()=>{input.value="";const r=root.querySelector<HTMLInputElement>("[data-ranges]");if(r)r.value="";info.textContent="";setMsg(errorBox);setMsg(successBox);});
+</script>
+

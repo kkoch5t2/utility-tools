@@ -1,0 +1,151 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-csv-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />内容は外部へ送信されません。</div></div>
+
+    {meta.mode !== "csv-json" && <div class="field">
+      <label for="csv-file">{meta.mode === "merge" ? "CSVファイルを複数選択" : "CSVファイルを選択"}</label>
+      <input id="csv-file" data-file type="file" accept=".csv,text/csv" multiple={meta.mode === "merge"} />
+    </div>}
+
+    {meta.mode === "columns" && <div class="field" style="margin-top:16px">
+      <label for="columns">出力する列名（カンマ区切り・この順で出力）</label>
+      <input id="columns" data-columns type="text" placeholder="name,email,age" />
+    </div>}
+
+    {meta.mode === "encoding" && <div class="settings-grid">
+      <div class="field"><label for="source-encoding">入力文字コード</label><select id="source-encoding" data-source-encoding><option value="AUTO">自動判定</option><option value="UTF8">UTF-8</option><option value="SJIS">Shift_JIS</option></select></div>
+      <div class="field"><label for="dest-encoding">出力文字コード</label><select id="dest-encoding" data-dest-encoding><option value="UTF8">UTF-8</option><option value="UTF8_BOM">UTF-8（BOM付き）</option><option value="SJIS">Shift_JIS</option></select></div>
+    </div>}
+
+    {meta.mode === "csv-json" && <>
+      <div class="field"><label for="direction">変換方向</label><select id="direction" data-direction><option value="csv-json">CSV → JSON</option><option value="json-csv">JSON → CSV</option></select></div>
+      <div class="field" style="margin-top:16px"><label for="source">入力</label><textarea id="source" class="textarea" data-source placeholder="ここにCSVまたはJSONを貼り付け"></textarea></div>
+      <div class="field" style="margin-top:16px"><label for="result">結果</label><textarea id="result" class="textarea" data-result readonly></textarea></div>
+    </>}
+
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>{meta.mode === "csv-json" ? "変換" : "処理する"}</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-download hidden>ダウンロード</button>
+      {meta.mode === "csv-json" && <button class="button button-secondary" type="button" data-copy>結果をコピー</button>}
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <p class="inline-note" data-info></p>
+  </section>
+</ToolLayout>
+
+<script>
+  import Papa from "papaparse";
+  import * as Encoding from "encoding-japanese";
+  import { downloadBlob } from "../../core/download/download-file";
+  const root=document.querySelector<HTMLElement>("[data-csv-tool]")!;
+  const mode=root.dataset.mode!;
+  const input=root.querySelector<HTMLInputElement>("[data-file]");
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const download=root.querySelector<HTMLButtonElement>("[data-download]")!;
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]");
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const info=root.querySelector<HTMLElement>("[data-info]")!;
+  let outBlob:Blob|null=null,outName="";
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const parseCsv=(text:string)=>Papa.parse<Record<string,string>>(text.replace(/^\uFEFF/,""),{header:true,skipEmptyLines:false});
+  const base=(name:string)=>name.replace(/\.[^.]+$/,"");
+
+  input?.addEventListener("change",async()=>{
+    setMsg(errorBox);setMsg(successBox);outBlob=null;download.hidden=true;
+    const files=Array.from(input.files??[]);
+    if(files.some(f=>f.size>200*1024*1024)){setMsg(errorBox,"1ファイル200MB以下にしてください。");return;}
+    info.textContent=files.length?files.map(f=>f.name).join(" / "):"";
+    if(mode==="columns"&&files[0]){
+      const parsed=parseCsv(await files[0].text());
+      if(parsed.errors.length){setMsg(errorBox,"CSVを解析できませんでした。");return;}
+      const cols=root.querySelector<HTMLInputElement>("[data-columns]")!;
+      cols.value=(parsed.meta.fields??[]).join(",");
+    }
+  });
+
+  run.addEventListener("click",async()=>{
+    setMsg(errorBox);setMsg(successBox);outBlob=null;download.hidden=true;
+    try{
+      if(mode==="csv-json"){
+        const source=root.querySelector<HTMLTextAreaElement>("[data-source]")!.value;
+        const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+        const direction=root.querySelector<HTMLSelectElement>("[data-direction]")!.value;
+        if(!source.trim()) throw new Error("入力してください。");
+        if(direction==="csv-json"){
+          const parsed=parseCsv(source);
+          if(parsed.errors.length) throw new Error(parsed.errors[0].message);
+          result.value=JSON.stringify(parsed.data,null,2);
+        }else{
+          const value=JSON.parse(source);
+          if(!Array.isArray(value)) throw new Error("JSONはオブジェクトの配列にしてください。");
+          result.value=Papa.unparse(value,{newline:"\r\n"});
+        }
+        setMsg(successBox,"変換しました。");return;
+      }
+
+      const files=Array.from(input?.files??[]);
+      if(!files.length) throw new Error("CSVファイルを選択してください。");
+
+      if(mode==="merge"){
+        const rows:Record<string,string>[]=[];const fields:string[]=[];
+        for(const file of files){
+          const parsed=parseCsv(await file.text());
+          if(parsed.errors.length) throw new Error(file.name+" を解析できません。");
+          for(const f of parsed.meta.fields??[]) if(!fields.includes(f)) fields.push(f);
+          rows.push(...parsed.data);
+        }
+        const csv=Papa.unparse({fields,data:rows.map(r=>fields.map(f=>r[f]??""))},{newline:"\r\n"});
+        outBlob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});outName="merged.csv";
+        info.textContent=files.length+"ファイル / "+rows.length.toLocaleString()+"行";
+      }else if(mode==="columns"){
+        const parsed=parseCsv(await files[0].text());
+        if(parsed.errors.length) throw new Error("CSVを解析できませんでした。");
+        const wanted=root.querySelector<HTMLInputElement>("[data-columns]")!.value.split(",").map(v=>v.trim()).filter(Boolean);
+        const available=parsed.meta.fields??[];
+        const missing=wanted.filter(v=>!available.includes(v));
+        if(!wanted.length) throw new Error("列名を入力してください。");
+        if(missing.length) throw new Error("存在しない列: "+missing.join(", "));
+        const csv=Papa.unparse({fields:wanted,data:parsed.data.map(r=>wanted.map(f=>r[f]??""))},{newline:"\r\n"});
+        outBlob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});outName=base(files[0].name)+"-columns.csv";
+      }else if(mode==="encoding"){
+        const bytes=new Uint8Array(await files[0].arrayBuffer());
+        const src=root.querySelector<HTMLSelectElement>("[data-source-encoding]")!.value as Encoding.Encoding;
+        const dest=root.querySelector<HTMLSelectElement>("[data-dest-encoding]")!.value;
+        const from=src==="AUTO"?(Encoding.detect(bytes)||"UTF8") as Encoding.Encoding:src;
+        if(dest==="UTF8_BOM"){
+          const converted=Encoding.convert(bytes,{to:"UTF8",from,type:"array"});
+          outBlob=new Blob([new Uint8Array([0xef,0xbb,0xbf]),new Uint8Array(converted)],{type:"text/csv"});
+        }else{
+          const converted=Encoding.convert(bytes,{to:dest as Encoding.Encoding,from,type:"array"});
+          outBlob=new Blob([new Uint8Array(converted)],{type:"text/csv"});
+        }
+        outName=base(files[0].name)+"-"+dest.toLowerCase()+".csv";
+        info.textContent="検出: "+from+" → "+dest;
+      }
+      if(outBlob){download.hidden=false;setMsg(successBox,"処理が完了しました。");}
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}
+  });
+
+  download.addEventListener("click",()=>{if(outBlob)downloadBlob(outBlob,outName);});
+  copy?.addEventListener("click",async()=>{
+    const value=root.querySelector<HTMLTextAreaElement>("[data-result]")!.value;
+    if(!value)return;await navigator.clipboard.writeText(value);setMsg(successBox,"コピーしました。");
+  });
+  clear.addEventListener("click",()=>{
+    if(input)input.value="";root.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>("[data-columns],[data-source],[data-result]").forEach(el=>el.value="");
+    outBlob=null;download.hidden=true;info.textContent="";setMsg(errorBox);setMsg(successBox);
+  });
+</script>
+

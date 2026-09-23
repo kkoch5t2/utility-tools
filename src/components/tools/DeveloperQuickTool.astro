@@ -1,0 +1,67 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-dev-tool data-mode={meta.mode}>
+    {meta.mode === "uuid" ? <>
+      <div class="field"><label for="uuid-count">生成数</label><input id="uuid-count" data-count type="number" min="1" max="1000" value="10" /></div>
+      <div class="field" style="margin-top:16px"><label for="uuid-result">結果</label><textarea id="uuid-result" class="textarea" data-result readonly></textarea></div>
+      <div class="actions"><button class="button button-primary" type="button" data-run>UUIDを生成</button><button class="button button-secondary" type="button" data-copy>コピー</button></div>
+    </> : <>
+      <div class="settings-grid">
+        <div class="field"><label for="unix-value">Unix時間または日時</label><input id="unix-value" data-value type="text" placeholder="1727088000 または 2026-09-23 20:00:00" /></div>
+        <div class="field"><label for="unix-mode">変換</label><select id="unix-mode" data-action><option value="auto">自動判定</option><option value="to-date">Unix → 日時</option><option value="to-unix">日時 → Unix</option></select></div>
+      </div>
+      <div class="actions"><button class="button button-primary" type="button" data-run>変換</button><button class="button button-secondary" type="button" data-now>現在時刻を入力</button></div>
+      <div class="field" style="margin-top:16px"><label for="unix-result">結果</label><textarea id="unix-result" class="textarea" data-result readonly></textarea></div>
+    </>}
+    <ErrorMessage /><SuccessMessage />
+  </section>
+</ToolLayout>
+
+<script>
+  const root=document.querySelector<HTMLElement>("[data-dev-tool]")!;
+  const mode=root.dataset.mode!;
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+
+  run.addEventListener("click",()=>{
+    setMsg(errorBox);setMsg(successBox);
+    try{
+      if(mode==="uuid"){
+        const count=Number(root.querySelector<HTMLInputElement>("[data-count]")!.value);
+        if(!Number.isInteger(count)||count<1||count>1000) throw new Error("生成数は1〜1000で指定してください。");
+        result.value=Array.from({length:count},()=>crypto.randomUUID()).join("\n");
+        setMsg(successBox,count+"件生成しました。");
+      }else{
+        const input=root.querySelector<HTMLInputElement>("[data-value]")!.value.trim();
+        const action=root.querySelector<HTMLSelectElement>("[data-action]")!.value;
+        if(!input) throw new Error("値を入力してください。");
+        const numeric=/^-?\d+(?:\.\d+)?$/.test(input);
+        const toDate=action==="to-date"||(action==="auto"&&numeric);
+        if(toDate){
+          const raw=Number(input);const ms=Math.abs(raw)<1e12?raw*1000:raw;
+          const date=new Date(ms);if(Number.isNaN(date.getTime())) throw new Error("Unix時間を解析できません。");
+          result.value="ISO: "+date.toISOString()+"\nローカル: "+date.toLocaleString()+"\nミリ秒: "+date.getTime()+"\n秒: "+Math.floor(date.getTime()/1000);
+        }else{
+          const date=new Date(input.replace(" ","T"));if(Number.isNaN(date.getTime())) throw new Error("日時を解析できません。");
+          result.value="秒: "+Math.floor(date.getTime()/1000)+"\nミリ秒: "+date.getTime()+"\nISO: "+date.toISOString();
+        }
+        setMsg(successBox,"変換しました。");
+      }
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-copy]")?.addEventListener("click",async()=>{if(result.value){await navigator.clipboard.writeText(result.value);setMsg(successBox,"コピーしました。");}});
+  root.querySelector<HTMLButtonElement>("[data-now]")?.addEventListener("click",()=>{root.querySelector<HTMLInputElement>("[data-value]")!.value=String(Math.floor(Date.now()/1000));});
+</script>
+
