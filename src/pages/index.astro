@@ -1,7 +1,20 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { tools } from "../config/tools";
+import { tools, type ToolDefinition } from "../config/tools";
 import { siteConfig } from "../config/site";
+
+const categories: Array<{ key: "all" | ToolDefinition["category"]; label: string }> = [
+  { key: "all", label: "すべて" },
+  { key: "image", label: "IMAGE" },
+  { key: "csv", label: "CSV" },
+  { key: "text", label: "TEXT" },
+  { key: "pdf", label: "PDF" },
+  { key: "qr", label: "QR" },
+  { key: "developer", label: "DEVELOPER" },
+];
+
+const counts = new Map<string, number>();
+for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?? 0) + 1);
 ---
 <BaseLayout title={siteConfig.name} description={siteConfig.description}>
   <div class="shell home">
@@ -9,32 +22,155 @@ import { siteConfig } from "../config/site";
       <h1>必要な処理を、ブラウザですぐに。</h1>
       <p>無料・登録不要。ファイルは外部サーバーへ送らず、端末内で処理します。</p>
     </header>
+
     <section aria-labelledby="tools-title">
-      <h2 id="tools-title">ツール一覧</h2>
-      <div class="tool-grid">
+      <div class="tools-heading">
+        <h2 id="tools-title">ツール一覧</h2>
+        <span class="visible-count" data-visible-count aria-live="polite">{tools.length}件</span>
+      </div>
+
+      <div class="tool-filters" aria-label="ツールのカテゴリで絞り込む">
+        {categories.map((category) => (
+          <button
+            class="filter-button"
+            type="button"
+            data-filter={category.key}
+            aria-pressed={category.key === "all" ? "true" : "false"}
+          >
+            <span>{category.label}</span>
+            <small>{category.key === "all" ? tools.length : (counts.get(category.key) ?? 0)}</small>
+          </button>
+        ))}
+      </div>
+
+      <div class="tool-grid" data-tool-grid>
         {tools.map((tool) => (
-          <article class:list={["home-tool", tool.status === "planned" && "is-planned"]}>
+          <article
+            class:list={["home-tool", tool.status === "planned" && "is-planned"]}
+            data-tool-card
+            data-category={tool.category}
+          >
             <p class="category">{tool.category.toUpperCase()}</p>
             <h3>{tool.name}</h3>
             <p>{tool.description}</p>
-            {tool.status === "available" ? <a href={tool.href}>ツールを開く →</a> : <span class="planned">準備中</span>}
+            {tool.status === "available"
+              ? <a href={tool.href}>ツールを開く →</a>
+              : <span class="planned">準備中</span>}
           </article>
         ))}
       </div>
+
+      <p class="no-results" data-no-results hidden>このカテゴリのツールはまだありません。</p>
     </section>
   </div>
 </BaseLayout>
+
+<script>
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-filter]"));
+  const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-tool-card]"));
+  const count = document.querySelector<HTMLElement>("[data-visible-count]");
+  const empty = document.querySelector<HTMLElement>("[data-no-results]");
+
+  function applyFilter(category: string, updateUrl = true) {
+    let visible = 0;
+
+    for (const card of cards) {
+      const show = category === "all" || card.dataset.category === category;
+      card.hidden = !show;
+      if (show) visible++;
+    }
+
+    for (const button of buttons) {
+      button.setAttribute("aria-pressed", String(button.dataset.filter === category));
+    }
+
+    if (count) count.textContent = visible + "件";
+    if (empty) empty.hidden = visible !== 0;
+
+    if (updateUrl) {
+      const url = new URL(window.location.href);
+      if (category === "all") url.searchParams.delete("category");
+      else url.searchParams.set("category", category);
+      history.replaceState(null, "", url);
+    }
+  }
+
+  for (const button of buttons) {
+    button.addEventListener("click", () => applyFilter(button.dataset.filter ?? "all"));
+  }
+
+  const initial = new URL(window.location.href).searchParams.get("category") ?? "all";
+  const valid = buttons.some((button) => button.dataset.filter === initial);
+  applyFilter(valid ? initial : "all", false);
+</script>
+
 <style>
   .home { padding-top: 48px; }
   .home-intro { max-width: 760px; margin-bottom: 40px; }
   h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.2; margin: 0 0 14px; }
   .home-intro p { color: var(--muted); font-size: 18px; }
+
+  .tools-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .tools-heading h2 { margin-bottom: 12px; }
+  .visible-count { color: var(--muted); font-size: 14px; font-weight: 700; }
+
+  .tool-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 14px;
+    margin-bottom: 12px;
+    scrollbar-width: thin;
+  }
+  .filter-button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .filter-button small {
+    min-width: 22px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+  }
+  .filter-button:hover { border-color: #9fb0c7; }
+  .filter-button[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+  .filter-button[aria-pressed="true"] small {
+    background: rgba(255,255,255,.18);
+    color: #fff;
+  }
+
   .tool-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
   .home-tool { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .home-tool[hidden] { display: none; }
   .home-tool h3 { margin: 4px 0 8px; line-height: 1.4; }
   .home-tool p { color: var(--muted); }
   .category { color: var(--accent) !important; font-weight: 800; font-size: 13px; }
   .is-planned { opacity: .72; }
   .planned { color: var(--muted); font-weight: 700; }
-  @media (max-width: 760px) { .tool-grid { grid-template-columns: 1fr; } }
+  .no-results { padding: 28px 0; color: var(--muted); text-align: center; }
+
+  @media (max-width: 760px) {
+    .home { padding-top: 32px; }
+    .tool-grid { grid-template-columns: 1fr; }
+    .tool-filters { margin-inline: -2px; }
+  }
 </style>
