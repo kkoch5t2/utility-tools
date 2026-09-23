@@ -1,11 +1,12 @@
-export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer";
+export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility";
+export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer";
 
 export type ExtraToolMeta = {
   id: string;
   mode: string;
   family: ExtraToolFamily;
   category: string;
-  categoryKey: ExtraToolFamily;
+  categoryKey: ExtraToolCategory;
   href: string;
   name: string;
   title: string;
@@ -110,6 +111,111 @@ export const extraTools: ExtraToolMeta[] = [
     title: "改行削除・置換ツール｜空白・カンマへ一括変換",
     description: "改行を削除したり、空白・カンマ・任意文字列へ置換します。",
     faqs: [["CRLFとLFの両方に対応しますか？", "はい。Windows・Unix系の改行をまとめて処理します。"], privacyFaq],
+  },
+  {
+    id: "csv-duplicates", mode: "csv-duplicates", family: "utility", category: "CSV", categoryKey: "csv",
+    href: "/csv/find-duplicates/", name: "CSV重複行検出",
+    title: "CSV重複行検出｜重複レコードをブラウザ内で確認",
+    description: "CSV内で完全一致する重複行を検出し、重複回数付きで一覧化します。",
+    faqs: [["何を重複と判定しますか？", "すべての列の値が一致する行を重複として判定します。"], privacyFaq],
+  },
+  {
+    id: "csv-remove-empty", mode: "csv-remove-empty", family: "utility", category: "CSV", categoryKey: "csv",
+    href: "/csv/remove-empty-rows/", name: "CSV空行削除",
+    title: "CSV空行削除｜空のレコードを無料で一括削除",
+    description: "CSVを正しく解析し、すべての列が空の行だけを削除して保存します。",
+    faqs: [["ヘッダーは残りますか？", "はい。先頭行はヘッダーとしてそのまま残します。"], privacyFaq],
+  },
+  {
+    id: "csv-tsv", mode: "csv-tsv", family: "utility", category: "CSV", categoryKey: "csv",
+    href: "/csv/tsv-converter/", name: "CSV ⇔ TSV変換",
+    title: "CSVとTSVを相互変換｜タブ区切り・カンマ区切り",
+    description: "CSVをTSVへ、TSVをCSVへ相互変換し、ファイルとして保存できます。",
+    faqs: [["引用符付きの値にも対応しますか？", "はい。CSV/TSVパーサーで区切り文字や引用符を解析します。"], privacyFaq],
+  },
+  {
+    id: "jsonl-json", mode: "jsonl-json", family: "utility", category: "JSON", categoryKey: "json",
+    href: "/json/jsonl-converter/", name: "JSON Lines ⇔ JSON変換",
+    title: "JSON LinesとJSON配列を相互変換｜JSONL変換",
+    description: "1行1JSONのJSON Linesと通常のJSON配列を相互変換します。",
+    faqs: [["JSON Linesとは何ですか？", "1行ごとに独立したJSONオブジェクトを記述する形式です。"], privacyFaq],
+  },
+  {
+    id: "invisible-chars", mode: "invisible-chars", family: "utility", category: "テキスト", categoryKey: "text",
+    href: "/text/invisible-characters/", name: "不可視文字検出",
+    title: "不可視文字検出｜ゼロ幅スペース・NBSP・タブを確認",
+    description: "テキスト内のゼロ幅スペース、NBSP、タブ、改行など見えにくい文字を位置付きで検出します。",
+    faqs: [["どんな文字を検出しますか？", "ゼロ幅スペース、各種空白、タブ、改行、BOMなどを検出します。"], privacyFaq],
+  },
+  {
+    id: "unicode-normalize", mode: "unicode-normalize", family: "utility", category: "テキスト", categoryKey: "text",
+    href: "/text/unicode-normalize/", name: "Unicode正規化",
+    title: "Unicode正規化｜NFC・NFKC・NFD・NFKD変換",
+    description: "Unicode文字列をNFC、NFKC、NFD、NFKDの各形式へ正規化します。",
+    faqs: [["NFKCは何に使えますか？", "互換文字をまとめたい場合などに利用できます。"], privacyFaq],
+  },
+  {
+    id: "kana-converter", mode: "kana-converter", family: "utility", category: "日本語", categoryKey: "japanese",
+    href: "/japanese/hiragana-katakana/", name: "ひらがな ⇔ カタカナ変換",
+    title: "ひらがな・カタカナ変換｜相互変換ツール",
+    description: "ひらがなをカタカナへ、カタカナをひらがなへ一括変換します。",
+    faqs: [["漢字も変換されますか？", "いいえ。ひらがな・カタカナ部分だけを変換します。"], privacyFaq],
+  },
+  {
+    id: "wareki", mode: "wareki", family: "utility", category: "日本語", categoryKey: "japanese",
+    href: "/japanese/wareki/", name: "西暦 ⇔ 和暦変換",
+    title: "西暦・和暦変換｜令和・平成・昭和・大正・明治",
+    description: "西暦の日付と令和・平成・昭和・大正・明治の和暦を相互変換します。",
+    faqs: [["どの元号に対応しますか？", "明治以降の主要元号に対応しています。"], privacyFaq],
+  },
+  {
+    id: "base64", mode: "base64", family: "utility", category: "開発者", categoryKey: "developer",
+    href: "/developer/base64/", name: "Base64エンコード・デコード",
+    title: "Base64エンコード・デコード｜UTF-8対応",
+    description: "日本語を含むUTF-8テキストをBase64へエンコード・デコードします。",
+    faqs: [["日本語にも対応しますか？", "はい。UTF-8として安全に変換します。"], privacyFaq],
+  },
+  {
+    id: "url-codec", mode: "url-codec", family: "utility", category: "開発者", categoryKey: "developer",
+    href: "/developer/url-encode/", name: "URLエンコード・デコード",
+    title: "URLエンコード・デコード｜パーセントエンコーディング",
+    description: "URLに含める文字列をencodeURIComponent互換でエンコード・デコードします。",
+    faqs: [["スペースや日本語も変換できますか？", "はい。URLコンポーネント向けに変換します。"], privacyFaq],
+  },
+  {
+    id: "html-codec", mode: "html-codec", family: "utility", category: "開発者", categoryKey: "developer",
+    href: "/developer/html-escape/", name: "HTMLエスケープ・解除",
+    title: "HTMLエスケープ・アンエスケープ｜特殊文字変換",
+    description: "HTMLの &, <, >, 引用符などを安全な文字参照へ変換・復元します。",
+    faqs: [["どの文字をエスケープしますか？", "&、<、>、ダブルクォート、シングルクォートを変換します。"], privacyFaq],
+  },
+  {
+    id: "sha", mode: "sha", family: "utility", category: "開発者", categoryKey: "developer",
+    href: "/developer/sha/", name: "SHA-256・SHA-512生成",
+    title: "SHA-256・SHA-512ハッシュ生成｜ブラウザ内計算",
+    description: "入力テキストからSHA-256またはSHA-512のハッシュ値を生成します。",
+    faqs: [["パスワード保存用ですか？", "単純なSHAハッシュ生成です。パスワード保存には専用のパスワードハッシュ方式を利用してください。"], privacyFaq],
+  },
+  {
+    id: "file-sha", mode: "file-sha", family: "utility", category: "開発者", categoryKey: "developer",
+    href: "/developer/file-hash/", name: "ファイルSHA-256・SHA-512計算",
+    title: "ファイルSHA-256・SHA-512計算｜ハッシュ値確認",
+    description: "選択したファイルのSHA-256またはSHA-512をブラウザ内で計算します。",
+    faqs: [["ファイルはアップロードされますか？", "いいえ。ファイル内容はブラウザ内だけで読み込み、ハッシュを計算します。"], privacyFaq],
+  },
+  {
+    id: "jwt-decode", mode: "jwt-decode", family: "utility", category: "開発者", categoryKey: "developer",
+    href: "/developer/jwt-decode/", name: "JWTデコード",
+    title: "JWTデコード｜Header・Payloadをブラウザ内で確認",
+    description: "JWTのHeaderとPayloadをデコードして読みやすいJSONで表示します。",
+    faqs: [["署名も検証できますか？", "いいえ。このツールは内容のデコードのみで、署名の正当性は検証しません。"], privacyFaq],
+  },
+  {
+    id: "sql-in", mode: "sql-in", family: "utility", category: "開発者", categoryKey: "developer",
+    href: "/developer/sql-in/", name: "SQL IN句生成",
+    title: "SQL IN句生成｜改行・カンマ区切りから一括作成",
+    description: "値の一覧からSQLのIN句に貼り付けられる形式を生成します。文字列のクォートも自動処理します。",
+    faqs: [["シングルクォートを含む値はどうなりますか？", "SQL文字列として扱えるようシングルクォートを二重化します。"], privacyFaq],
   },
   {
     id: "video-compress", mode: "compress", family: "video", category: "動画", categoryKey: "video",

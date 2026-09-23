@@ -1,0 +1,218 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+const fileModes = ["csv-duplicates", "csv-remove-empty", "csv-tsv", "file-sha"];
+const downloadableModes = ["csv-duplicates", "csv-remove-empty", "csv-tsv"];
+const showSource = meta.mode !== "file-sha";
+const showFile = fileModes.includes(meta.mode);
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-utility-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />入力内容やファイルは外部サーバーへ送信しません。</div></div>
+    {showFile && <div class="field">
+      <label for="utility-file">{meta.mode === "file-sha" ? "ファイルを選択" : "CSV / TSVファイルを選択"}</label>
+      <input id="utility-file" data-file type="file" accept={meta.mode === "file-sha" ? "*" : ".csv,.tsv,text/csv,text/tab-separated-values"} />
+    </div>}
+    {showFile && meta.mode !== "file-sha" && <p class="inline-note" style="margin:14px 0;text-align:center;font-weight:700">または</p>}
+    {meta.mode === "csv-tsv" && <div class="field" style="margin-bottom:16px"><label for="direction">変換方向</label><select id="direction" data-action><option value="csv-tsv">CSV → TSV</option><option value="tsv-csv">TSV → CSV</option></select></div>}
+    {meta.mode === "jsonl-json" && <div class="field" style="margin-bottom:16px"><label for="direction">変換方向</label><select id="direction" data-action><option value="jsonl-json">JSON Lines → JSON</option><option value="json-jsonl">JSON → JSON Lines</option></select></div>}
+    {meta.mode === "unicode-normalize" && <div class="field" style="margin-bottom:16px"><label for="normalize-form">正規化形式</label><select id="normalize-form" data-action><option value="NFC">NFC</option><option value="NFKC" selected>NFKC</option><option value="NFD">NFD</option><option value="NFKD">NFKD</option></select></div>}
+    {meta.mode === "kana-converter" && <div class="field" style="margin-bottom:16px"><label for="kana-direction">変換方向</label><select id="kana-direction" data-action><option value="hira-kata">ひらがな → カタカナ</option><option value="kata-hira">カタカナ → ひらがな</option></select></div>}
+    {["base64","url-codec","html-codec"].includes(meta.mode) && <div class="field" style="margin-bottom:16px"><label for="codec-action">処理</label><select id="codec-action" data-action><option value="encode">エンコード</option><option value="decode">デコード</option></select></div>}
+    {meta.mode === "sha" && <div class="field" style="margin-bottom:16px"><label for="hash-algorithm">ハッシュ方式</label><select id="hash-algorithm" data-action><option value="SHA-256">SHA-256</option><option value="SHA-512">SHA-512</option></select></div>}
+    {meta.mode === "file-sha" && <div class="field" style="margin-top:16px"><label for="file-hash-algorithm">ハッシュ方式</label><select id="file-hash-algorithm" data-action><option value="SHA-256">SHA-256</option><option value="SHA-512">SHA-512</option></select></div>}
+    {meta.mode === "sql-in" && <div class="field" style="margin-bottom:16px"><label for="sql-type">値の種類</label><select id="sql-type" data-action><option value="text">文字列</option><option value="number">数値</option></select></div>}
+    {meta.mode === "wareki" && <div class="field" style="margin-bottom:16px"><label for="era-direction">変換方向</label><select id="era-direction" data-action><option value="western-era">西暦 → 和暦</option><option value="era-western">和暦 → 西暦</option></select></div>}
+    {showSource && <div class="field"><label for="utility-source">入力</label><textarea id="utility-source" class="textarea" data-source placeholder={meta.mode === "wareki" ? "例: 2026-09-23 または 令和8年9月23日" : "ここに入力"}></textarea></div>}
+    <div class="field" style="margin-top:16px"><label for="utility-result">結果</label><textarea id="utility-result" class="textarea" data-result readonly></textarea></div>
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>処理する</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-copy>結果をコピー</button>
+      {downloadableModes.includes(meta.mode) && <button class="button button-secondary" type="button" data-download hidden>ダウンロード</button>}
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <p class="inline-note" data-info></p>
+  </section>
+</ToolLayout>
+
+<script>
+  import Papa from "papaparse";
+  import { downloadBlob } from "../../core/download/download-file";
+  const root=document.querySelector<HTMLElement>("[data-utility-tool]")!;
+  const mode=root.dataset.mode!;
+  const source=root.querySelector<HTMLTextAreaElement>("[data-source]");
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+  const input=root.querySelector<HTMLInputElement>("[data-file]");
+  const action=root.querySelector<HTMLSelectElement>("[data-action]");
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]")!;
+  const download=root.querySelector<HTMLButtonElement>("[data-download]");
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const info=root.querySelector<HTMLElement>("[data-info]")!;
+  let outBlob:Blob|null=null,outName="";
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const base=(name:string)=>name.replace(/\.[^.]+$/,"");
+  const bytesToHex=(buffer:ArrayBuffer)=>Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,"0")).join("");
+
+  function parseDelimited(value:string,delimiter=","){
+    const parsed=Papa.parse<string[]>(value.replace(/^\uFEFF/,""),{delimiter,skipEmptyLines:false});
+    if(parsed.errors.length)throw new Error(parsed.errors[0].message);
+    return parsed.data;
+  }
+  function utf8ToBase64(value:string){
+    const bytes=new TextEncoder().encode(value);let binary="";
+    for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+    return btoa(binary);
+  }
+  function base64ToUtf8(value:string){
+    const binary=atob(value.replace(/\s+/g,""));
+    return new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)));
+  }
+  const htmlEscape=(value:string)=>value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  const htmlUnescape=(value:string)=>{const area=document.createElement("textarea");area.innerHTML=value;return area.value;};
+  const hiraToKata=(value:string)=>value.replace(/[\u3041-\u3096]/g,ch=>String.fromCharCode(ch.charCodeAt(0)+0x60));
+  const kataToHira=(value:string)=>value.replace(/[\u30A1-\u30F6]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60));
+
+  const invisibleNames:Record<number,string>={
+    0x0009:"TAB",0x000a:"LF",0x000d:"CR",0x0020:"SPACE",0x00a0:"NO-BREAK SPACE",
+    0x00ad:"SOFT HYPHEN",0x200b:"ZERO WIDTH SPACE",0x200c:"ZERO WIDTH NON-JOINER",
+    0x200d:"ZERO WIDTH JOINER",0x202f:"NARROW NO-BREAK SPACE",0x2060:"WORD JOINER",
+    0x3000:"IDEOGRAPHIC SPACE",0xfeff:"BOM / ZERO WIDTH NO-BREAK SPACE",
+  };
+  function detectInvisible(value:string){
+    const rows:string[]=[];let index=0;
+    for(const char of value){
+      const cp=char.codePointAt(0)!;
+      const name=invisibleNames[cp]||(cp<0x20||cp===0x7f?"CONTROL":"");
+      if(name)rows.push(String(index+1)+": "+name+" / U+"+cp.toString(16).toUpperCase().padStart(4,"0"));
+      index++;
+    }
+    return rows.length?rows.join("\n"):"不可視文字は見つかりませんでした。";
+  }
+  const eras=[
+    {name:"令和",start:new Date(2019,4,1)},
+    {name:"平成",start:new Date(1989,0,8)},
+    {name:"昭和",start:new Date(1926,11,25)},
+    {name:"大正",start:new Date(1912,6,30)},
+    {name:"明治",start:new Date(1868,0,25)},
+  ];
+  function westernToEra(value:string){
+    const match=value.trim().match(/^(\d{4})[-\/]?(\d{1,2})[-\/]?(\d{1,2})$/);
+    if(!match)throw new Error("YYYY-MM-DD形式で入力してください。");
+    const y=Number(match[1]),m=Number(match[2]),d=Number(match[3]);
+    const date=new Date(y,m-1,d);
+    if(date.getFullYear()!==y||date.getMonth()!==m-1||date.getDate()!==d)throw new Error("日付を確認してください。");
+    const era=eras.find(item=>date>=item.start);
+    if(!era)throw new Error("明治以降の日付に対応しています。");
+    const year=y-era.start.getFullYear()+1;
+    return era.name+(year===1?"元":String(year))+"年"+m+"月"+d+"日";
+  }
+  function eraToWestern(value:string){
+    const match=value.trim().match(/^(令和|平成|昭和|大正|明治)(元|\d+)年(\d{1,2})月(\d{1,2})日$/);
+    if(!match)throw new Error("例: 令和8年9月23日 の形式で入力してください。");
+    const era=eras.find(item=>item.name===match[1])!;
+    const eraYear=match[2]==="元"?1:Number(match[2]);
+    const y=era.start.getFullYear()+eraYear-1,m=Number(match[3]),d=Number(match[4]);
+    const date=new Date(y,m-1,d);
+    if(date.getFullYear()!==y||date.getMonth()!==m-1||date.getDate()!==d)throw new Error("日付を確認してください。");
+    if(eraYear===1&&date<era.start)throw new Error(era.name+"の開始日より前です。");
+    return String(y).padStart(4,"0")+"-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+  }
+
+  input?.addEventListener("change",async()=>{
+    setMsg(errorBox);setMsg(successBox);outBlob=null;if(download)download.hidden=true;
+    const file=input.files?.[0];
+    info.textContent=file?file.name+" / "+(file.size/1024).toFixed(file.size<1024*1024?1:0)+" KB":"";
+    if(!file||mode==="file-sha")return;
+    if(file.size>50*1024*1024){setMsg(errorBox,"50MB以下のファイルにしてください。");input.value="";return;}
+    if(source)source.value=await file.text();
+  });
+
+  run.addEventListener("click",async()=>{
+    setMsg(errorBox);setMsg(successBox);outBlob=null;if(download)download.hidden=true;
+    try{
+      const value=source?.value??"";
+      if(mode==="csv-duplicates"){
+        if(!value.trim())throw new Error("CSVを入力してください。");
+        const rows=parseDelimited(value,",");if(!rows.length)throw new Error("CSVに行がありません。");
+        const header=rows[0],counts=new Map<string,number>();
+        for(const row of rows.slice(1)){const key=JSON.stringify(row);counts.set(key,(counts.get(key)??0)+1);}
+        const duplicated=rows.slice(1).filter((row,i,arr)=>counts.get(JSON.stringify(row))!>1&&arr.findIndex(r=>JSON.stringify(r)===JSON.stringify(row))===i);
+        result.value=Papa.unparse([header.concat("__duplicate_count"),...duplicated.map(row=>row.concat(String(counts.get(JSON.stringify(row)))))],{newline:"\r\n"});
+        info.textContent=duplicated.length?duplicated.length+"種類の重複行を検出":"重複行はありません。";
+        outName=(input?.files?.[0]?base(input.files[0].name):"duplicates")+"-duplicates.csv";
+      }else if(mode==="csv-remove-empty"){
+        const rows=parseDelimited(value,",");
+        const kept=rows.filter((row,index)=>index===0||row.some(cell=>String(cell??"").trim()!==""));
+        result.value=Papa.unparse(kept,{newline:"\r\n"});
+        info.textContent=(rows.length-kept.length)+"行の空行を削除";
+        outName=(input?.files?.[0]?base(input.files[0].name):"cleaned")+"-no-empty.csv";
+      }else if(mode==="csv-tsv"){
+        const direction=action!.value;
+        const rows=parseDelimited(value,direction==="csv-tsv"?",":"\t");
+        result.value=Papa.unparse(rows,{delimiter:direction==="csv-tsv"?"\t":",",newline:"\r\n"});
+        outName=(input?.files?.[0]?base(input.files[0].name):"converted")+(direction==="csv-tsv"?".tsv":".csv");
+      }else if(mode==="jsonl-json"){
+        if(action!.value==="jsonl-json"){
+          const lines=value.split(/\r?\n/).filter(line=>line.trim());
+          result.value=JSON.stringify(lines.map((line,index)=>{try{return JSON.parse(line);}catch{throw new Error(String(index+1)+"行目のJSONが不正です。");}}),null,2);
+        }else{
+          const parsed=JSON.parse(value);if(!Array.isArray(parsed))throw new Error("JSON配列を入力してください。");
+          result.value=parsed.map(item=>JSON.stringify(item)).join("\n");
+        }
+      }else if(mode==="invisible-chars"){
+        result.value=detectInvisible(value);
+      }else if(mode==="unicode-normalize"){
+        result.value=value.normalize(action!.value as "NFC"|"NFD"|"NFKC"|"NFKD");
+      }else if(mode==="kana-converter"){
+        result.value=action!.value==="hira-kata"?hiraToKata(value):kataToHira(value);
+      }else if(mode==="base64"){
+        result.value=action!.value==="encode"?utf8ToBase64(value):base64ToUtf8(value);
+      }else if(mode==="url-codec"){
+        result.value=action!.value==="encode"?encodeURIComponent(value):decodeURIComponent(value);
+      }else if(mode==="html-codec"){
+        result.value=action!.value==="encode"?htmlEscape(value):htmlUnescape(value);
+      }else if(mode==="sha"){
+        result.value=bytesToHex(await crypto.subtle.digest(action!.value,new TextEncoder().encode(value)));
+      }else if(mode==="file-sha"){
+        const file=input?.files?.[0];if(!file)throw new Error("ファイルを選択してください。");
+        if(file.size>500*1024*1024)throw new Error("500MB以下のファイルにしてください。");
+        result.value=bytesToHex(await crypto.subtle.digest(action!.value,await file.arrayBuffer()));
+        info.textContent=file.name+" / "+action!.value;
+      }else if(mode==="jwt-decode"){
+        const parts=value.trim().split(".");if(parts.length<2)throw new Error("JWT形式ではありません。");
+        const decodePart=(part:string)=>{const padded=part.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(part.length/4)*4,"=");return JSON.parse(base64ToUtf8(padded));};
+        result.value=JSON.stringify({header:decodePart(parts[0]),payload:decodePart(parts[1])},null,2);
+        info.textContent="署名の検証は行っていません。";
+      }else if(mode==="sql-in"){
+        const values=value.split(/[\r\n,]+/).map(v=>v.trim()).filter(Boolean);
+        if(!values.length)throw new Error("値を入力してください。");
+        if(action!.value==="number"){
+          if(values.some(v=>!/^-(?:\d+|\d*\.\d+)$|^\d+(?:\.\d+)?$/.test(v)))throw new Error("数値以外が含まれています。");
+          result.value="("+values.join(", ")+")";
+        }else{
+          result.value="("+values.map(v=>"'"+v.replace(/'/g,"''")+"'").join(", ")+")";
+        }
+      }else if(mode==="wareki"){
+        result.value=action!.value==="western-era"?westernToEra(value):eraToWestern(value);
+      }
+      if(["csv-duplicates","csv-remove-empty","csv-tsv"].includes(mode)){
+        outBlob=new Blob(["\uFEFF",result.value],{type:mode==="csv-tsv"&&action?.value==="csv-tsv"?"text/tab-separated-values;charset=utf-8":"text/csv;charset=utf-8"});
+        if(download)download.hidden=false;
+      }
+      setMsg(successBox,"処理しました。");
+    }catch(error){setMsg(errorBox,error instanceof Error?error.message:"処理に失敗しました。");}
+  });
+
+  download?.addEventListener("click",()=>{if(outBlob)downloadBlob(outBlob,outName);});
+  copy.addEventListener("click",async()=>{if(!result.value)return;try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"コピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}});
+  clear.addEventListener("click",()=>{if(input)input.value="";if(source)source.value="";result.value="";info.textContent="";outBlob=null;outName="";if(download)download.hidden=true;setMsg(errorBox);setMsg(successBox);});
+</script>

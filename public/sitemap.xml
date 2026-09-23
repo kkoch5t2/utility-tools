@@ -24,6 +24,21 @@
   <url><loc>https://utility-tools-jp.com/pdf/to-images/</loc></url>
   <url><loc>https://utility-tools-jp.com/qr/generate/</loc></url>
   <url><loc>https://utility-tools-jp.com/qr/read/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/find-duplicates/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/remove-empty-rows/</loc></url>
+  <url><loc>https://utility-tools-jp.com/csv/tsv-converter/</loc></url>
+  <url><loc>https://utility-tools-jp.com/json/jsonl-converter/</loc></url>
+  <url><loc>https://utility-tools-jp.com/text/invisible-characters/</loc></url>
+  <url><loc>https://utility-tools-jp.com/text/unicode-normalize/</loc></url>
+  <url><loc>https://utility-tools-jp.com/japanese/hiragana-katakana/</loc></url>
+  <url><loc>https://utility-tools-jp.com/japanese/wareki/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/base64/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/url-encode/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/html-escape/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/sha/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/file-hash/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/jwt-decode/</loc></url>
+  <url><loc>https://utility-tools-jp.com/developer/sql-in/</loc></url>
   <url><loc>https://utility-tools-jp.com/video/compress/</loc></url>
   <url><loc>https://utility-tools-jp.com/video/to-mp3/</loc></url>
   <url><loc>https://utility-tools-jp.com/developer/uuid/</loc></url>
