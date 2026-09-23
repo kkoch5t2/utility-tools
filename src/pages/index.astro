@@ -262,22 +262,24 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     letter-spacing: .04em;
   }
   .tool-open {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    min-height: 44px;
-    padding: 10px 14px;
-    border-radius: 11px;
+    justify-content: center;
+    align-self: flex-start;
+    gap: 9px;
+    width: fit-content;
+    min-height: 38px;
+    padding: 8px 13px;
+    border-radius: 10px;
     background: var(--text);
     color: #fff;
+    font-size: 14px;
     font-weight: 800;
     text-decoration: none;
-    transition: background .15s ease, transform .15s ease;
+    transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
   }
-  .tool-open:hover { background: var(--accent); transform: translateY(-1px); }
-  .tool-open span:last-child { font-size: 18px; line-height: 1; transition: transform .15s ease; }
+  .tool-open:hover { background: var(--accent); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0, 94, 184, .18); }
+  .tool-open span:last-child { font-size: 16px; line-height: 1; transition: transform .15s ease; }
   .tool-open:hover span:last-child { transform: translateX(3px); }
   .is-planned { opacity: .72; }
   .planned { color: var(--muted); font-weight: 700; }
@@ -287,43 +289,59 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     margin: 30px auto 0;
-    padding: 5px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, .05);
   }
   .pagination[hidden] { display: none; }
-  .page-numbers { display: flex; align-items: center; gap: 2px; }
+  .page-numbers { display: flex; align-items: center; gap: 4px; }
   .page-button {
-    min-width: 36px;
     min-height: 36px;
-    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .page-nav { min-width: 72px; padding: 7px 12px; }
+  .page-button:hover:not(:disabled) { border-color: #b7c6da; background: #f8fafc; color: var(--text); transform: translateY(-1px); }
+  .page-button:disabled { cursor: default; opacity: .35; }
+
+  :global(.page-number) {
+    width: 34px;
+    height: 34px;
+    padding: 0;
     border: 0;
-    border-radius: 999px;
+    border-radius: 50%;
     background: transparent;
     color: var(--muted);
     font: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
+    line-height: 34px;
+    text-align: center;
     cursor: pointer;
-    transition: background .15s ease, color .15s ease, transform .15s ease;
+    transition: background .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease;
   }
-  .page-button:hover:not(:disabled) { background: var(--surface-muted); color: var(--text); }
-  .page-number[aria-current="page"] { background: var(--accent); color: #fff; box-shadow: 0 3px 10px rgba(0, 94, 184, .22); }
-  .page-nav { padding-inline: 13px; }
-  .page-button:disabled { cursor: default; opacity: .35; }
-  .page-number[aria-current="page"]:disabled { opacity: 1; }
+  :global(.page-number:hover:not(:disabled)) { background: #eef3f8; color: var(--text); transform: translateY(-1px); }
+  :global(.page-number[aria-current="page"]) {
+    background: var(--text);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .16);
+  }
+  :global(.page-number:disabled) { cursor: default; }
+  :global(.page-number[aria-current="page"]:disabled) { opacity: 1; }
   .no-results { padding: 28px 0; color: var(--muted); text-align: center; }
 
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
     .tool-grid { grid-template-columns: 1fr; }
     .tool-filters { margin-inline: -2px; }
-    .pagination { gap: 2px; padding: 4px; }
-    .page-button { min-width: 34px; min-height: 34px; padding-inline: 8px; font-size: 13px; }
-    .page-nav { padding-inline: 10px; }
+    .pagination { gap: 5px; }
+    .page-nav { min-width: 64px; min-height: 34px; padding: 6px 9px; font-size: 12px; }
+    :global(.page-number) { width: 32px; height: 32px; line-height: 32px; }
   }
 </style>
