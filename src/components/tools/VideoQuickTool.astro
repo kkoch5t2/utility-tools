@@ -1,0 +1,208 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card" data-video-tool data-mode={meta.mode}>
+    <div class="privacy-note">
+      <span>🔒</span>
+      <div><strong>動画は外部へ送信されません</strong><br />処理はブラウザ内で実行します。初回処理時のみFFmpegエンジン（約31MB）を読み込みます。</div>
+    </div>
+    <div class="field">
+      <label for="video-file">動画ファイルを選択</label>
+      <input id="video-file" data-file type="file" accept="video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v" />
+    </div>
+    <p class="inline-note" data-file-info>最大500MB。端末性能によって処理できるサイズは異なります。</p>
+    <div class="settings-grid">
+      {meta.mode === "compress" ? (
+        <div class="field">
+          <label for="video-quality">圧縮レベル</label>
+          <select id="video-quality" data-quality>
+            <option value="23">高画質</option>
+            <option value="28" selected>標準</option>
+            <option value="32">容量優先</option>
+          </select>
+        </div>
+      ) : (
+        <div class="field">
+          <label for="audio-bitrate">MP3音質</label>
+          <select id="audio-bitrate" data-bitrate>
+            <option value="128">128 kbps</option>
+            <option value="192" selected>192 kbps</option>
+            <option value="256">256 kbps</option>
+            <option value="320">320 kbps</option>
+          </select>
+        </div>
+      )}
+    </div>
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run disabled>{meta.mode === "compress" ? "動画を圧縮" : "MP3に変換"}</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-cancel hidden>中止</button>
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <div class="progress-panel" data-progress-panel hidden>
+      <div class="progress-copy"><strong data-progress-label>準備中...</strong><span data-progress-percent>0%</span></div>
+      <progress data-progress max="1" value="0"></progress>
+      <p class="inline-note" data-progress-note>動画の長さや端末性能によって時間がかかります。</p>
+    </div>
+    <section class="results" data-result hidden>
+      <p><strong data-result-info></strong></p>
+      <button class="button button-primary" type="button" data-download>ダウンロード</button>
+    </section>
+  </section>
+</ToolLayout>
+
+<script>
+  import { downloadBlob } from "../../core/download/download-file";
+
+  const root = document.querySelector<HTMLElement>("[data-video-tool]")!;
+  const mode = root.dataset.mode!;
+  const fileInput = root.querySelector<HTMLInputElement>("[data-file]")!;
+  const run = root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear = root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const cancel = root.querySelector<HTMLButtonElement>("[data-cancel]")!;
+  const download = root.querySelector<HTMLButtonElement>("[data-download]")!;
+  const errorBox = root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox = root.querySelector<HTMLElement>("[data-success-box]")!;
+  const info = root.querySelector<HTMLElement>("[data-file-info]")!;
+  const panel = root.querySelector<HTMLElement>("[data-progress-panel]")!;
+  const progressEl = root.querySelector<HTMLProgressElement>("[data-progress]")!;
+  const progressLabel = root.querySelector<HTMLElement>("[data-progress-label]")!;
+  const progressPercent = root.querySelector<HTMLElement>("[data-progress-percent]")!;
+  const result = root.querySelector<HTMLElement>("[data-result]")!;
+  const resultInfo = root.querySelector<HTMLElement>("[data-result-info]")!;
+
+  let ffmpeg: any = null;
+  let loaded = false;
+  let fetchFileFn: ((file: File) => Promise<Uint8Array>) | null = null;
+  let outputBlob: Blob | null = null;
+  let outputName = "";
+  let cancelled = false;
+
+  const MAX_BYTES = 500 * 1024 * 1024;
+  const VIDEO_EXTS = ["mp4","mov","webm","mkv","avi","m4v"];
+  const setMsg = (el: HTMLElement, msg = "") => { el.textContent = msg; el.hidden = !msg; };
+  const formatBytes = (n: number) => n < 1024 * 1024 ? (n / 1024).toFixed(1) + " KB" : (n / 1024 / 1024).toFixed(1) + " MB";
+  const baseName = (name: string) => name.replace(/\.[^.]+$/, "");
+  const extension = (name: string) => (name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+
+  function setProgress(value: number, label?: string) {
+    const safe = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+    progressEl.value = safe;
+    progressPercent.textContent = Math.round(safe * 100) + "%";
+    if (label) progressLabel.textContent = label;
+  }
+
+  async function loadEngine() {
+    if (loaded && ffmpeg && fetchFileFn) return;
+    setProgress(0, "処理エンジンを読み込み中...");
+    const [{ FFmpeg }, { fetchFile, toBlobURL }] = await Promise.all([
+      import("@ffmpeg/ffmpeg"),
+      import("@ffmpeg/util"),
+    ]);
+    const engine = new FFmpeg();
+    engine.on("progress", ({ progress }: { progress: number }) => setProgress(progress, "動画を処理中..."));
+    const coreBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";
+    await engine.load({
+      coreURL: await toBlobURL(coreBase + "/ffmpeg-core.js", "text/javascript"),
+      wasmURL: await toBlobURL(coreBase + "/ffmpeg-core.wasm", "application/wasm"),
+    });
+    ffmpeg = engine;
+    fetchFileFn = fetchFile;
+    loaded = true;
+  }
+
+  fileInput.addEventListener("change", () => {
+    setMsg(errorBox); setMsg(successBox); result.hidden = true; outputBlob = null;
+    const file = fileInput.files?.[0];
+    if (!file) { run.disabled = true; info.textContent = "最大500MB。端末性能によって処理できるサイズは異なります。"; return; }
+    const ext = extension(file.name);
+    if (!file.type.startsWith("video/") && !VIDEO_EXTS.includes(ext)) {
+      setMsg(errorBox, "動画ファイルを選択してください。"); fileInput.value = ""; run.disabled = true; return;
+    }
+    if (file.size > MAX_BYTES) {
+      setMsg(errorBox, "500MB以下の動画を選択してください。"); fileInput.value = ""; run.disabled = true; return;
+    }
+    info.textContent = file.name + " / " + formatBytes(file.size);
+    run.disabled = false;
+  });
+
+  run.addEventListener("click", async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    cancelled = false; outputBlob = null; result.hidden = true;
+    setMsg(errorBox); setMsg(successBox); panel.hidden = false;
+    run.disabled = true; clear.disabled = true; cancel.hidden = false;
+    setProgress(0, "準備中...");
+    const inputName = "input." + extension(file.name);
+    const outputFile = mode === "compress" ? "output.mp4" : "output.mp3";
+
+    try {
+      await loadEngine();
+      if (cancelled) return;
+      setProgress(0, "動画を読み込み中...");
+      await ffmpeg.writeFile(inputName, await fetchFileFn!(file));
+
+      if (mode === "compress") {
+        const crf = root.querySelector<HTMLSelectElement>("[data-quality]")!.value;
+        await ffmpeg.exec([
+          "-i", inputName,
+          "-map", "0:v:0", "-map", "0:a?",
+          "-c:v", "libx264", "-preset", "veryfast", "-crf", crf,
+          "-c:a", "aac", "-b:a", "128k",
+          "-movflags", "+faststart",
+          outputFile,
+        ]);
+        outputName = baseName(file.name) + "-compressed.mp4";
+      } else {
+        const bitrate = root.querySelector<HTMLSelectElement>("[data-bitrate]")!.value;
+        await ffmpeg.exec(["-i", inputName, "-vn", "-c:a", "libmp3lame", "-b:a", bitrate + "k", outputFile]);
+        outputName = baseName(file.name) + ".mp3";
+      }
+
+      if (cancelled) return;
+      const data = await ffmpeg.readFile(outputFile);
+      if (typeof data === "string") throw new Error("出力ファイルを取得できませんでした。");
+      const buffer = new Uint8Array(data).slice().buffer as ArrayBuffer;
+      outputBlob = new Blob([buffer], { type: mode === "compress" ? "video/mp4" : "audio/mpeg" });
+      const reduction = mode === "compress" ? Math.max(0, 100 - outputBlob.size / file.size * 100) : null;
+      resultInfo.textContent = mode === "compress"
+        ? formatBytes(file.size) + " → " + formatBytes(outputBlob.size) + "（約" + reduction!.toFixed(0) + "%削減）"
+        : "MP3を作成しました（" + formatBytes(outputBlob.size) + "）";
+      result.hidden = false;
+      setProgress(1, "完了");
+      setMsg(successBox, "処理が完了しました。");
+      try { await ffmpeg.deleteFile(inputName); await ffmpeg.deleteFile(outputFile); } catch {}
+    } catch (e) {
+      if (!cancelled) setMsg(errorBox, e instanceof Error ? e.message : String(e || "動画処理に失敗しました。"));
+    } finally {
+      run.disabled = !fileInput.files?.length;
+      clear.disabled = false;
+      cancel.hidden = true;
+    }
+  });
+
+  cancel.addEventListener("click", () => {
+    cancelled = true;
+    try { ffmpeg?.terminate(); } catch {}
+    ffmpeg = null; loaded = false; fetchFileFn = null;
+    setProgress(0, "中止しました");
+    run.disabled = !fileInput.files?.length; clear.disabled = false; cancel.hidden = true;
+    setMsg(successBox, "処理を中止しました。");
+  });
+
+  download.addEventListener("click", () => { if (outputBlob) downloadBlob(outputBlob, outputName); });
+  clear.addEventListener("click", () => {
+    fileInput.value = ""; outputBlob = null; outputName = ""; run.disabled = true;
+    result.hidden = true; panel.hidden = true; cancel.hidden = true;
+    info.textContent = "最大500MB。端末性能によって処理できるサイズは異なります。";
+    setMsg(errorBox); setMsg(successBox); setProgress(0, "準備中...");
+  });
+</script>
+

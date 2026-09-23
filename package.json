@@ -17,6 +17,8 @@
     "deploy": "npm run verify && wrangler deploy"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "astro": "^7.3.4",
     "encoding-japanese": "^2.4.0",
     "jsqr": "^1.4.0",

@@ -5,6 +5,7 @@ import CsvQuickTool from "../components/tools/CsvQuickTool.astro";
 import TextQuickTool from "../components/tools/TextQuickTool.astro";
 import PdfQuickTool from "../components/tools/PdfQuickTool.astro";
 import QrQuickTool from "../components/tools/QrQuickTool.astro";
+import VideoQuickTool from "../components/tools/VideoQuickTool.astro";
 import DeveloperQuickTool from "../components/tools/DeveloperQuickTool.astro";
 
 export function getStaticPaths() {
@@ -22,6 +23,7 @@ const Component =
   meta.family === "text" ? TextQuickTool :
   meta.family === "pdf" ? PdfQuickTool :
   meta.family === "qr" ? QrQuickTool :
+  meta.family === "video" ? VideoQuickTool :
   DeveloperQuickTool;
 ---
 <Component meta={meta} />

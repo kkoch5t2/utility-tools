@@ -3,7 +3,7 @@ import { extraTools } from "./extra-tools";
 export type ToolDefinition = {
   id: string;
   name: string;
-  category: "image" | "csv" | "text" | "pdf" | "qr" | "developer";
+  category: "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer";
   href: string;
   description: string;
   status: "available" | "planned";
