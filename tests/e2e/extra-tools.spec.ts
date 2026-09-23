@@ -76,3 +76,21 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
   expect((await images).suggestedFilename()).toBe("a-images.zip");
 });
 
+
+test("トップページでカテゴリ絞り込みができる", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(24);
+
+  await page.getByRole("button", { name: /PDF/ }).click();
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
+  await expect(page.locator("[data-visible-count]")).toHaveText("3件");
+  await expect(page.getByRole("button", { name: /PDF/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(/\?category=pdf$/);
+
+  await page.getByRole("button", { name: /IMAGE/ }).click();
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(7);
+  await expect(page.locator("[data-visible-count]")).toHaveText("7件");
+
+  await page.getByRole("button", { name: /すべて/ }).click();
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(24);
+});
