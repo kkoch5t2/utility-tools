@@ -8,6 +8,8 @@ import QrQuickTool from "../components/tools/QrQuickTool.astro";
 import VideoQuickTool from "../components/tools/VideoQuickTool.astro";
 import UtilityQuickTool from "../components/tools/UtilityQuickTool.astro";
 import UtilityPlusTool from "../components/tools/UtilityPlusTool.astro";
+import CsvMoreTool from "../components/tools/CsvMoreTool.astro";
+import GeneralMoreTool from "../components/tools/GeneralMoreTool.astro";
 import DeveloperQuickTool from "../components/tools/DeveloperQuickTool.astro";
 
 export function getStaticPaths() {
@@ -28,6 +30,8 @@ const Component =
   meta.family === "video" ? VideoQuickTool :
   meta.family === "utility" ? UtilityQuickTool :
   meta.family === "utilityplus" ? UtilityPlusTool :
+  meta.family === "csvmore" ? CsvMoreTool :
+  meta.family === "generalmore" ? GeneralMoreTool :
   DeveloperQuickTool;
 ---
 <Component meta={meta} />
