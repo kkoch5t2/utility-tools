@@ -350,10 +350,26 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
     .tool-grid { grid-template-columns: 1fr; }
+    .filter-select-wrap { display: none; }
     .tool-filters {
       display: flex;
-      margin-right: -20px;
-      padding-right: 20px;
+      flex-wrap: nowrap;
+      gap: 8px;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 2px 2px 10px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+      overscroll-behavior-x: contain;
+    }
+    .tool-filters::-webkit-scrollbar { display: none; }
+    .filter-button {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
     }
     .pagination { gap: 5px; }
     .page-nav { min-width: 64px; min-height: 34px; padding: 6px 9px; font-size: 12px; }
