@@ -6,7 +6,13 @@ const routes = [
   "/csv/merge/","/csv/columns/","/csv/encoding/","/csv/json-converter/",
   "/text/json-formatter/","/text/character-count/","/text/fullwidth-halfwidth/","/text/newline-converter/",
   "/pdf/merge/","/pdf/split/","/pdf/to-images/",
-  "/qr/generate/","/qr/read/","/video/compress/","/video/to-mp3/","/developer/uuid/","/developer/unix-time/",
+  "/qr/generate/","/qr/read/","/video/compress/","/video/to-mp3/",
+  "/csv/find-duplicates/","/csv/remove-empty-rows/","/csv/tsv-converter/",
+  "/json/jsonl-converter/","/text/invisible-characters/","/text/unicode-normalize/",
+  "/japanese/hiragana-katakana/","/japanese/wareki/",
+  "/developer/base64/","/developer/url-encode/","/developer/html-escape/","/developer/sha/",
+  "/developer/file-hash/","/developer/jwt-decode/","/developer/sql-in/",
+  "/developer/uuid/","/developer/unix-time/",
 ];
 
 test("追加ツールの全ページが表示できる", async ({ page }) => {
@@ -48,6 +54,76 @@ test("CSVとJSONを相互変換できる", async ({ page }) => {
   await expect(page.locator("[data-result]")).toHaveValue(/name,age/);
   await page.getByRole("button",{name:"ダウンロード"}).click();
   expect((await csvDownload).suggestedFilename()).toBe("people.csv");
+});
+
+test("追加したニッチツールの主要処理が動く", async ({ page }) => {
+  await page.goto("/csv/find-duplicates/");
+  await page.locator("[data-source]").fill("name,age\nAlice,30\nBob,25\nAlice,30");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/__duplicate_count/);
+  await expect(page.locator("[data-info]")).toHaveText(/1種類の重複行/);
+
+  await page.goto("/json/jsonl-converter/");
+  await page.locator("[data-source]").fill('{"a":1}\n{"a":2}');
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/"a": 2/);
+
+  await page.goto("/text/invisible-characters/");
+  await page.locator("[data-source]").fill("a\u200bb");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/ZERO WIDTH SPACE/);
+
+  await page.goto("/text/unicode-normalize/");
+  await page.locator("[data-source]").fill("ＡＢＣ１２３");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("ABC123");
+
+  await page.goto("/japanese/hiragana-katakana/");
+  await page.locator("[data-source]").fill("こんにちは");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("コンニチハ");
+
+  await page.goto("/japanese/wareki/");
+  await page.locator("[data-source]").fill("2026-09-23");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("令和8年9月23日");
+});
+
+test("追加した開発者ツールの主要処理が動く", async ({ page }) => {
+  await page.goto("/developer/base64/");
+  await page.locator("[data-source]").fill("abc");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("YWJj");
+
+  await page.goto("/developer/url-encode/");
+  await page.locator("[data-source]").fill("a b");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("a%20b");
+
+  await page.goto("/developer/html-escape/");
+  await page.locator("[data-source]").fill("<b>&");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("&lt;b&gt;&amp;");
+
+  await page.goto("/developer/sha/");
+  await page.locator("[data-source]").fill("abc");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+
+  await page.goto("/developer/file-hash/");
+  await page.locator("[data-file]").setInputFiles({name:"abc.txt",mimeType:"text/plain",buffer:Buffer.from("abc")});
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+
+  await page.goto("/developer/jwt-decode/");
+  await page.locator("[data-source]").fill("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjMiLCJuYW1lIjoiQWxpY2UifQ.");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/Alice/);
+
+  await page.goto("/developer/sql-in/");
+  await page.locator("[data-source]").fill("a\nO'Reilly");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("('a', 'O''Reilly')");
 });
 
 test("文字数カウントとUUID生成が動く", async ({ page }) => {
@@ -97,10 +173,10 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みとページングができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-visible-count]")).toHaveText("26件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("41件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page.locator("[data-pagination]")).toBeVisible();
-  await expect(page.locator("[data-page-numbers] button")).toHaveCount(3);
+  await expect(page.locator("[data-page-numbers] button")).toHaveCount(4);
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=2$/);
@@ -109,7 +185,11 @@ test("トップページでカテゴリ絞り込みとページングができ�
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=3$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(2);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
+
+  await page.getByRole("button", { name: "次へ →" }).click();
+  await expect(page).toHaveURL(/\?page=4$/);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(5);
 
   await page.getByRole("button", { name: /PDF/ }).click();
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
