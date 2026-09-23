@@ -34,6 +34,17 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
         <span class="visible-count" data-visible-count aria-live="polite">{tools.length}件</span>
       </div>
 
+      <div class="filter-select-wrap">
+        <label for="category-filter">カテゴリ</label>
+        <select id="category-filter" data-filter-select aria-label="ツールのカテゴリで絞り込む">
+          {categories.map((category) => (
+            <option value={category.key}>
+              {category.label}（{category.key === "all" ? tools.length : (counts.get(category.key) ?? 0)}）
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div class="tool-filters" aria-label="ツールのカテゴリで絞り込む">
         {categories.map((category) => (
           <button
@@ -79,6 +90,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
 <script>
   const PAGE_SIZE = 12;
   const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-filter]"));
+  const filterSelect = document.querySelector<HTMLSelectElement>("[data-filter-select]");
   const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-tool-card]"));
   const count = document.querySelector<HTMLElement>("[data-visible-count]");
   const empty = document.querySelector<HTMLElement>("[data-no-results]");
@@ -114,6 +126,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     for (const button of filterButtons) {
       button.setAttribute("aria-pressed", String(button.dataset.filter === currentCategory));
     }
+    if (filterSelect) filterSelect.value = currentCategory;
 
     if (count) count.textContent = matched.length + "件";
     if (empty) empty.hidden = matched.length !== 0;
@@ -124,19 +137,40 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
       next.disabled = currentPage >= totalPages;
       pageNumbers.replaceChildren();
 
-      for (let page = 1; page <= totalPages; page++) {
+      const isMobile = window.matchMedia("(max-width: 760px)").matches;
+      const pageItems: Array<number | "ellipsis"> = [];
+      if (!isMobile || totalPages <= 6) {
+        for (let page = 1; page <= totalPages; page++) pageItems.push(page);
+      } else if (currentPage <= 3) {
+        pageItems.push(1, 2, 3, "ellipsis", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageItems.push(1, "ellipsis", totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pageItems.push(1, "ellipsis", currentPage, "ellipsis", totalPages);
+      }
+
+      for (const item of pageItems) {
+        if (item === "ellipsis") {
+          const ellipsis = document.createElement("span");
+          ellipsis.className = "page-ellipsis";
+          ellipsis.textContent = "…";
+          ellipsis.setAttribute("aria-hidden", "true");
+          pageNumbers.append(ellipsis);
+          continue;
+        }
+
         const button = document.createElement("button");
         button.type = "button";
         button.className = "page-button page-number";
-        button.textContent = String(page);
-        button.dataset.page = String(page);
-        button.setAttribute("aria-label", page + "ページ目");
-        if (page === currentPage) {
+        button.textContent = String(item);
+        button.dataset.page = String(item);
+        button.setAttribute("aria-label", item + "ページ目");
+        if (item === currentPage) {
           button.setAttribute("aria-current", "page");
           button.disabled = true;
         }
         button.addEventListener("click", () => {
-          currentPage = page;
+          currentPage = item;
           render(true, true);
         });
         pageNumbers.append(button);
@@ -153,6 +187,12 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
       render(true, true);
     });
   }
+
+  filterSelect?.addEventListener("change", () => {
+    currentCategory = filterSelect.value;
+    currentPage = 1;
+    render(true, true);
+  });
 
   prev?.addEventListener("click", () => {
     if (currentPage <= 1) return;
@@ -177,6 +217,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   }
 
   window.addEventListener("popstate", applyFromUrl);
+  window.matchMedia("(max-width: 760px)").addEventListener("change", () => render(false));
   applyFromUrl();
 </script>
 
@@ -190,12 +231,14 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .tools-heading h2 { margin-bottom: 12px; }
   .visible-count { color: var(--muted); font-size: 14px; font-weight: 700; }
 
+  .filter-select-wrap { display: none; }
+
   .tool-filters {
     display: flex;
     gap: 8px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 2px 20px 10px 2px;
+    padding: 2px 2px 10px;
     margin-bottom: 12px;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -206,7 +249,6 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .tool-filters::-webkit-scrollbar { display: none; }
   .filter-button {
     flex: 0 0 auto;
-    scroll-snap-align: start;
     min-height: 40px;
     display: inline-flex;
     align-items: center;
@@ -304,7 +346,16 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     margin: 30px auto 0;
   }
   .pagination[hidden] { display: none; }
-  .page-numbers { display: flex; align-items: center; gap: 4px; }
+  .page-numbers { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
+  :global(.page-ellipsis) {
+    width: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 34px;
+    flex: 0 0 auto;
+  }
   .page-button {
     min-height: 36px;
     border: 1px solid var(--line);
@@ -350,29 +401,43 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
     .tool-grid { grid-template-columns: 1fr; }
-    .filter-select-wrap { display: none; }
-    .tool-filters {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 8px;
+    .tool-filters { display: none; }
+    .filter-select-wrap {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 18px;
+    }
+    .filter-select-wrap label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .filter-select-wrap select {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      padding: 9px 38px 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .pagination {
       width: 100%;
       max-width: 100%;
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding: 2px 2px 10px;
-      margin-bottom: 14px;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      scroll-snap-type: x proximity;
-      overscroll-behavior-x: contain;
+      gap: 4px;
+      padding-inline: 0;
+      overflow: hidden;
     }
-    .tool-filters::-webkit-scrollbar { display: none; }
-    .filter-button {
-      flex: 0 0 auto;
-      scroll-snap-align: start;
-    }
-    .pagination { gap: 5px; }
-    .page-nav { min-width: 64px; min-height: 34px; padding: 6px 9px; font-size: 12px; }
-    :global(.page-number) { width: 32px; height: 32px; line-height: 32px; }
+    .page-numbers { flex: 0 1 auto; gap: 2px; }
+    .page-nav { min-width: 56px; min-height: 34px; padding: 6px 8px; font-size: 12px; }
+    :global(.page-number) { width: 32px; height: 32px; line-height: 32px; flex: 0 0 32px; }
+    :global(.page-ellipsis) { width: 18px; line-height: 32px; }
   }
 </style>
