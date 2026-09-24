@@ -450,11 +450,11 @@ test("トップページでカテゴリ絞り込みとページングができ�
   await expect(page).toHaveURL(/\?page=10$/);
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(7);
 
-  await page.getByRole("button", { name: /PDF/ }).click();
+  await page.locator('[data-filter="pdf"]').click();
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
   await expect(page.locator("[data-visible-count]")).toHaveText("3件");
   await expect(page.locator("[data-pagination]")).toBeHidden();
-  await expect(page.getByRole("button", { name: /PDF/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-filter="pdf"]')).toHaveAttribute("aria-pressed", "true");
   await expect(page).toHaveURL(/\?category=pdf$/);
 
   await page.getByRole("button", { name: /IMAGE/ }).click();
@@ -517,4 +517,34 @@ test("追加したニッチテキスト・開発者ツールが動く", async ({
   await page.locator("[data-source]").fill("cccc\na\nbb");
   await page.getByRole("button",{name:"処理する"}).click();
   await expect(page.locator("[data-result]")).toHaveValue("a\nbb\ncccc");
+});
+
+
+test("トップページで検索とお気に入りが使える", async ({ page }) => {
+  await page.goto("/");
+
+  const search = page.locator("[data-tool-search]");
+  await search.fill("Base64");
+  await expect(page.locator("[data-visible-count]")).toHaveText("1件");
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(1);
+  await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
+  await expect(page).toHaveURL(/q=Base64/);
+
+  const base64Card = page.locator("[data-tool-card]").filter({ hasText: "Base64エンコード・デコード" });
+  await base64Card.locator("[data-favorite]").click();
+  await page.locator("[data-search-clear]").click();
+  await expect(page.locator("[data-visible-count]")).toHaveText("115件");
+  await expect(base64Card.locator("[data-favorite]")).toHaveAttribute("aria-pressed", "true");
+
+  await page.locator("[data-favorites-only]").click();
+  await expect(page.locator("[data-visible-count]")).toHaveText("1件");
+  await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
+  await expect(page).toHaveURL(/favorites=1/);
+
+  await page.reload();
+  await expect(page.locator("[data-visible-count]")).toHaveText("1件");
+  await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
+
+  await page.locator("[data-favorites-only]").click();
+  await expect(page.locator("[data-visible-count]")).toHaveText("115件");
 });
