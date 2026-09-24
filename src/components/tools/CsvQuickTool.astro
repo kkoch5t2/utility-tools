@@ -49,8 +49,6 @@ const { meta } = Astro.props;
 </ToolLayout>
 
 <script>
-  import Papa from "papaparse";
-  import * as Encoding from "encoding-japanese";
   import { downloadBlob } from "../../core/download/download-file";
   const root=document.querySelector<HTMLElement>("[data-csv-tool]")!;
   const mode=root.dataset.mode!;
@@ -64,7 +62,11 @@ const { meta } = Astro.props;
   const info=root.querySelector<HTMLElement>("[data-info]")!;
   let outBlob:Blob|null=null,outName="";
   const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
-  const parseCsv=(text:string)=>Papa.parse<Record<string,string>>(text.replace(/^\uFEFF/,""),{header:true,skipEmptyLines:false});
+  const getPapa=async()=> (await import("papaparse")).default;
+  const parseCsv=async(text:string)=>{
+    const Papa=await getPapa();
+    return Papa.parse<Record<string,string>>(text.replace(/^\uFEFF/,""),{header:true,skipEmptyLines:false});
+  };
   const base=(name:string)=>name.replace(/\.[^.]+$/,"");
 
   input?.addEventListener("change",async()=>{
@@ -83,7 +85,7 @@ const { meta } = Astro.props;
       return;
     }
     if(mode==="columns"&&files[0]){
-      const parsed=parseCsv(await files[0].text());
+      const parsed=await parseCsv(await files[0].text());
       if(parsed.errors.length){setMsg(errorBox,"CSVを解析できませんでした。");return;}
       const cols=root.querySelector<HTMLInputElement>("[data-columns]")!;
       cols.value=(parsed.meta.fields??[]).join(",");
@@ -101,12 +103,13 @@ const { meta } = Astro.props;
         const selected=input?.files?.[0];
         const nameBase=selected?base(selected.name):"converted";
         if(direction==="csv-json"){
-          const parsed=parseCsv(source);
+          const parsed=await parseCsv(source);
           if(parsed.errors.length) throw new Error(parsed.errors[0].message);
           result.value=JSON.stringify(parsed.data,null,2);
           outBlob=new Blob([result.value],{type:"application/json;charset=utf-8"});
           outName=nameBase+".json";
         }else{
+          const Papa=await getPapa();
           const value=JSON.parse(source);
           if(!Array.isArray(value)) throw new Error("JSONはオブジェクトの配列にしてください。");
           result.value=Papa.unparse(value,{newline:"\r\n"});
@@ -121,9 +124,10 @@ const { meta } = Astro.props;
       if(!files.length) throw new Error("CSVファイルを選択してください。");
 
       if(mode==="merge"){
+        const Papa=await getPapa();
         const rows:Record<string,string>[]=[];const fields:string[]=[];
         for(const file of files){
-          const parsed=parseCsv(await file.text());
+          const parsed=await parseCsv(await file.text());
           if(parsed.errors.length) throw new Error(file.name+" を解析できません。");
           for(const f of parsed.meta.fields??[]) if(!fields.includes(f)) fields.push(f);
           rows.push(...parsed.data);
@@ -132,7 +136,8 @@ const { meta } = Astro.props;
         outBlob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});outName="merged.csv";
         info.textContent=files.length+"ファイル / "+rows.length.toLocaleString()+"行";
       }else if(mode==="columns"){
-        const parsed=parseCsv(await files[0].text());
+        const Papa=await getPapa();
+        const parsed=await parseCsv(await files[0].text());
         if(parsed.errors.length) throw new Error("CSVを解析できませんでした。");
         const wanted=root.querySelector<HTMLInputElement>("[data-columns]")!.value.split(",").map(v=>v.trim()).filter(Boolean);
         const available=parsed.meta.fields??[];
@@ -143,14 +148,16 @@ const { meta } = Astro.props;
         outBlob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});outName=base(files[0].name)+"-columns.csv";
       }else if(mode==="encoding"){
         const bytes=new Uint8Array(await files[0].arrayBuffer());
-        const src=root.querySelector<HTMLSelectElement>("[data-source-encoding]")!.value as Encoding.Encoding;
+        const encodingModule=await import("encoding-japanese");
+        const Encoding:any=(encodingModule as any).default ?? encodingModule;
+        const src=root.querySelector<HTMLSelectElement>("[data-source-encoding]")!.value;
         const dest=root.querySelector<HTMLSelectElement>("[data-dest-encoding]")!.value;
-        const from=src==="AUTO"?(Encoding.detect(bytes)||"UTF8") as Encoding.Encoding:src;
+        const from=src==="AUTO"?(Encoding.detect(bytes)||"UTF8"):src;
         if(dest==="UTF8_BOM"){
           const converted=Encoding.convert(bytes,{to:"UTF8",from,type:"array"});
           outBlob=new Blob([new Uint8Array([0xef,0xbb,0xbf]),new Uint8Array(converted)],{type:"text/csv"});
         }else{
-          const converted=Encoding.convert(bytes,{to:dest as Encoding.Encoding,from,type:"array"});
+          const converted=Encoding.convert(bytes,{to:dest,from,type:"array"});
           outBlob=new Blob([new Uint8Array(converted)],{type:"text/csv"});
         }
         outName=base(files[0].name)+"-"+dest.toLowerCase()+".csv";
