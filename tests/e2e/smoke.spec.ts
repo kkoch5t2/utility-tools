@@ -133,7 +133,9 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   await expect(datlumeLink.locator('img[src="/brand/datlume.svg"]')).toBeVisible();
 
   await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "無料Web便利ツール集");
-  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary");
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://utility-tools-jp.com/og/developer.png");
+  await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", "https://utility-tools-jp.com/og/developer.png");
 
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(jsonLd.some((text) => text.includes('"@type":"WebApplication"'))).toBeTruthy();

@@ -59,7 +59,7 @@ const collectionJson = {
   },
 };
 ---
-<BaseLayout title={category.title} description={category.description}>
+<BaseLayout title={category.title} description={category.description} ogImage={`/og/${category.key}.png`} ogImageAlt={`${category.label}ツール｜${siteConfig.name}`}>
   <div class="shell category-page">
     <nav class="breadcrumbs" aria-label="パンくず">
       <a href="/">ホーム</a><span>/</span><span>{category.label}</span>

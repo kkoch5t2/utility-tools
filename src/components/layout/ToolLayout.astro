@@ -67,7 +67,7 @@ const faqJson = {
   })),
 };
 ---
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} ogImage={`/og/${categoryKey}.png`} ogImageAlt={`${category}ツール｜${siteConfig.name}`}>
   <div class="shell page-shell">
     <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href={`/category/${categoryKey}/`}>{category}</a><span>/</span><span aria-current="page">{name}</span></nav>
     <header class="tool-heading">

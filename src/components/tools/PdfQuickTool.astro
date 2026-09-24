@@ -32,12 +32,8 @@ const { meta } = Astro.props;
 </ToolLayout>
 
 <script>
-  import { PDFDocument } from "pdf-lib";
-  import JSZip from "jszip";
-  import * as pdfjsLib from "pdfjs-dist";
   import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
   import { downloadBlob } from "../../core/download/download-file";
-  pdfjsLib.GlobalWorkerOptions.workerSrc=workerSrc;
 
   const root=document.querySelector<HTMLElement>("[data-pdf-tool]")!;
   const mode=root.dataset.mode!;
@@ -72,6 +68,7 @@ const { meta } = Astro.props;
       if(files.some(f=>f.size>100*1024*1024)) throw new Error("1ファイル100MB以下にしてください。");
 
       if(mode==="merge"){
+        const { PDFDocument } = await import("pdf-lib");
         const out=await PDFDocument.create();
         let pages=0;
         for(const file of files){
@@ -83,6 +80,7 @@ const { meta } = Astro.props;
         downloadBlob(new Blob([bytes.buffer as ArrayBuffer],{type:"application/pdf"}),"merged.pdf");
         setMsg(successBox,files.length+"ファイル・"+pages+"ページを結合しました。");
       }else if(mode==="split"){
+        const [{ PDFDocument }, { default: JSZip }] = await Promise.all([import("pdf-lib"), import("jszip")]);
         const file=files[0];
         const src=await PDFDocument.load(await file.arrayBuffer());
         const groups=parseRanges(root.querySelector<HTMLInputElement>("[data-ranges]")!.value,src.getPageCount());
@@ -96,6 +94,8 @@ const { meta } = Astro.props;
         downloadBlob(await zip.generateAsync({type:"blob"}),base(file.name)+"-split.zip");
         setMsg(successBox,groups.length+"個のPDFに分割しました。");
       }else if(mode==="to-images"){
+        const [pdfjsLib, { default: JSZip }] = await Promise.all([import("pdfjs-dist"), import("jszip")]);
+        pdfjsLib.GlobalWorkerOptions.workerSrc=workerSrc;
         const file=files[0];
         const data=new Uint8Array(await file.arrayBuffer());
         const pdf=await pdfjsLib.getDocument({data}).promise;

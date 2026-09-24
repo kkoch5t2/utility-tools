@@ -32,8 +32,6 @@ const { meta } = Astro.props;
 </ToolLayout>
 
 <script>
-  import QRCode from "qrcode";
-  import jsQR from "jsqr";
   import { downloadBlob } from "../../core/download/download-file";
   const root=document.querySelector<HTMLElement>("[data-qr-tool]")!;
   const mode=root.dataset.mode!;
@@ -51,6 +49,7 @@ const { meta } = Astro.props;
     setMsg(errorBox);setMsg(successBox);
     try{
       if(mode==="generate"){
+        const { default: QRCode } = await import("qrcode");
         const text=root.querySelector<HTMLTextAreaElement>("[data-source]")!.value.trim();
         if(!text) throw new Error("URLまたはテキストを入力してください。");
         const width=Number(root.querySelector<HTMLSelectElement>("[data-size]")!.value);
@@ -58,6 +57,7 @@ const { meta } = Astro.props;
         await QRCode.toCanvas(canvas,text,{width,errorCorrectionLevel:level,margin:2});
         preview.hidden=false;if(download)download.hidden=false;setMsg(successBox,"QRコードを生成しました。");
       }else{
+        const { default: jsQR } = await import("jsqr");
         const file=root.querySelector<HTMLInputElement>("[data-file]")!.files?.[0];
         if(!file) throw new Error("QRコード画像を選択してください。");
         const bmp=await createImageBitmap(file);
