@@ -33,6 +33,8 @@ const pages = new Map();
 const titles = new Map();
 const descriptions = new Map();
 const issues = [];
+let maxInitialJsBytes = 0;
+let maxInitialJsUrl = "";
 
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, "utf8");
@@ -48,6 +50,13 @@ for (const file of htmlFiles) {
   const twitterCard = findTag(html, "meta", (a) => a.name === "twitter:card")?.content ?? "";
   const h1Count = (html.match(/<h1\b/gi) ?? []).length;
   const expectedCanonical = SITE + url;
+  const scriptRefs = new Set([...html.matchAll(/<script\b[^>]*src=["']([^"']+\.js)["'][^>]*>/gi)].map((m) => m[1]).filter((src) => src.startsWith("/_astro/")));
+  const initialJsBytes = [...scriptRefs].reduce((sum, src) => {
+    const asset = path.join(root, src.replace(/^\//, ""));
+    return sum + (fs.existsSync(asset) ? fs.statSync(asset).size : 0);
+  }, 0);
+  if (initialJsBytes > maxInitialJsBytes) { maxInitialJsBytes = initialJsBytes; maxInitialJsUrl = url; }
+  if (initialJsBytes > 50 * 1024) issues.push([url, "initial JS budget exceeded: " + initialJsBytes + " bytes"]);
 
   if (!title) issues.push([url, "missing title"]);
   else if (titles.has(title)) issues.push([url, "duplicate title with " + titles.get(title)]);
@@ -104,5 +113,5 @@ if (issues.length) {
 console.log(
   "Built-site audit OK: " +
   htmlFiles.length + " pages / " +
-  locs.length + " sitemap URLs / unique title+description / canonical+H1+JSON-LD+OG+links OK."
+  locs.length + " sitemap URLs / unique title+description / canonical+H1+JSON-LD+OG+links OK / max initial JS " + maxInitialJsBytes + " bytes at " + maxInitialJsUrl + "."
 );
