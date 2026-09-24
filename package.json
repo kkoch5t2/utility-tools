@@ -15,6 +15,7 @@
     "test:e2e": "playwright test",
     "verify": "npm run check && npm test && npm run build",
     "verify:full": "npm run check && npm test && npm run build && npm run test:e2e",
+    "monitor:prod": "node scripts/check-production.mjs",
     "deploy": "npm run verify && wrangler deploy"
   },
   "dependencies": {
