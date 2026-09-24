@@ -6,7 +6,7 @@ import type { ExtraToolMeta } from "../../config/extra-tools";
 import "../../styles/tool.css";
 interface Props { meta: ExtraToolMeta; }
 const { meta } = Astro.props;
-const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid","semver-compare","month-difference","time-duration","leap-year","day-of-year","quarter","tax-calculator","compound-interest","temperature","length-converter","mass-converter","area-converter","speed-converter","pressure-converter","days-in-month","fiscal-year-jp","gcd-lcm","prime-check","modulo"];
+const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid","semver-compare","month-difference","time-duration","leap-year","day-of-year","quarter","tax-calculator","compound-interest","temperature","length-converter","mass-converter","area-converter","speed-converter","pressure-converter","days-in-month","fiscal-year-jp","gcd-lcm","prime-check","modulo","volume-converter","energy-converter","power-converter","pace-calculator","bill-split"];
 ---
 <ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
   <section class="tool-card" data-general-more data-mode={meta.mode}>
@@ -31,6 +31,9 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       <div class="field"><label for="pad-direction">方向</label><select id="pad-direction" data-action><option value="right">右側を空白で埋める</option><option value="left">左側を空白で埋める</option></select></div>
     </div>}
     {meta.mode === "json-pick-keys" && <div class="field"><label for="json-pick-keys">残すキー（カンマ区切り）</label><input id="json-pick-keys" data-a type="text" placeholder="name,email,status" /></div>}
+    {meta.mode === "json-remove-keys" && <div class="field"><label for="json-remove-keys">削除するキー（カンマ区切り）</label><input id="json-remove-keys" data-a type="text" placeholder="password,token,secret" /></div>}
+    {meta.mode === "text-truncate" && <div class="field"><label for="truncate-length">残す文字数</label><input id="truncate-length" data-a type="number" min="0" max="1000000" step="1" value="100" /></div>}
+    {meta.mode === "color-converter" && <div class="field"><label for="color-action">変換方向</label><select id="color-action" data-action><option value="hex-rgb">HEX → RGB</option><option value="rgb-hex">RGB → HEX</option></select></div>}
     {meta.mode === "punctuation-normalize" && <div class="field"><label for="punctuation-action">変換方向</label><select id="punctuation-action" data-action><option value="ascii">日本語記号 → ASCII寄り</option><option value="japanese">ASCII記号 → 日本語寄り</option></select></div>}
     {meta.mode === "space-normalize" && <div class="field"><label for="space-action">処理</label><select id="space-action" data-action><option value="collapse">連続空白を1つに</option><option value="remove">空白をすべて削除</option><option value="half">全角空白を半角へ</option></select></div>}
     {meta.mode === "querystring" && <div class="field"><label for="query-action">処理</label><select id="query-action" data-action><option value="parse">クエリ文字列 → JSON</option><option value="build">JSON → クエリ文字列</option></select></div>}
@@ -106,6 +109,30 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       <div class="field"><label for="pressure-value">値</label><input id="pressure-value" data-a type="number" step="any" /></div>
       <div class="field"><label for="pressure-from">変換元</label><select id="pressure-from" data-action><option value="Pa" selected>Pa</option><option value="kPa">kPa</option><option value="MPa">MPa</option><option value="bar">bar</option><option value="atm">atm</option></select></div>
       <div class="field"><label for="pressure-to">変換先</label><select id="pressure-to" data-unit><option value="Pa">Pa</option><option value="kPa" selected>kPa</option><option value="MPa">MPa</option><option value="bar">bar</option><option value="atm">atm</option></select></div>
+    </div>}
+    {meta.mode === "volume-converter" && <div class="settings-grid">
+      <div class="field"><label for="volume-value">値</label><input id="volume-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="volume-from">変換元</label><select id="volume-from" data-action><option value="ml">mL</option><option value="l" selected>L</option><option value="m3">㎥</option><option value="tsp">小さじ</option><option value="tbsp">大さじ</option><option value="cup">カップ</option></select></div>
+      <div class="field"><label for="volume-to">変換先</label><select id="volume-to" data-unit><option value="ml" selected>mL</option><option value="l">L</option><option value="m3">㎥</option><option value="tsp">小さじ</option><option value="tbsp">大さじ</option><option value="cup">カップ</option></select></div>
+    </div>}
+    {meta.mode === "energy-converter" && <div class="settings-grid">
+      <div class="field"><label for="energy-value">値</label><input id="energy-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="energy-from">変換元</label><select id="energy-from" data-action><option value="J">J</option><option value="kJ" selected>kJ</option><option value="cal">cal</option><option value="kcal">kcal</option><option value="Wh">Wh</option><option value="kWh">kWh</option></select></div>
+      <div class="field"><label for="energy-to">変換先</label><select id="energy-to" data-unit><option value="J">J</option><option value="kJ">kJ</option><option value="cal">cal</option><option value="kcal" selected>kcal</option><option value="Wh">Wh</option><option value="kWh">kWh</option></select></div>
+    </div>}
+    {meta.mode === "power-converter" && <div class="settings-grid">
+      <div class="field"><label for="power-value">値</label><input id="power-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="power-from">変換元</label><select id="power-from" data-action><option value="W">W</option><option value="kW" selected>kW</option><option value="MW">MW</option><option value="hp">hp</option></select></div>
+      <div class="field"><label for="power-to">変換先</label><select id="power-to" data-unit><option value="W" selected>W</option><option value="kW">kW</option><option value="MW">MW</option><option value="hp">hp</option></select></div>
+    </div>}
+    {meta.mode === "pace-calculator" && <div class="settings-grid">
+      <div class="field"><label for="pace-distance">距離 (km)</label><input id="pace-distance" data-a type="number" min="0" step="any" /></div>
+      <div class="field"><label for="pace-minutes">時間 (分)</label><input id="pace-minutes" data-b type="number" min="0" step="any" /></div>
+    </div>}
+    {meta.mode === "bill-split" && <div class="settings-grid">
+      <div class="field"><label for="bill-total">会計金額</label><input id="bill-total" data-a type="number" min="0" step="any" /></div>
+      <div class="field"><label for="bill-tip">チップ率 (%)</label><input id="bill-tip" data-b type="number" min="0" step="any" value="0" /></div>
+      <div class="field"><label for="bill-people">人数</label><input id="bill-people" data-c type="number" min="1" step="1" value="2" /></div>
     </div>}
     {meta.mode === "gcd-lcm" && <div class="settings-grid">
       <div class="field"><label for="gcd-a">整数A</label><input id="gcd-a" data-a type="number" step="1" /></div>
@@ -234,6 +261,50 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
         const pick=(obj:any)=>Object.fromEntries(keys.filter(key=>Object.prototype.hasOwnProperty.call(obj,key)).map(key=>[key,obj[key]]));
         if(Array.isArray(parsed)){if(parsed.some(item=>!item||typeof item!=="object"||Array.isArray(item)))throw new Error("オブジェクト配列を入力してください。");result.value=JSON.stringify(parsed.map(pick),null,2);}
         else{if(!parsed||typeof parsed!=="object")throw new Error("JSONオブジェクトを入力してください。");result.value=JSON.stringify(pick(parsed),null,2);}
+      }else if(mode==="json-minify"){
+        result.value=JSON.stringify(JSON.parse(value));
+      }else if(mode==="json-validate"){
+        const parsed=JSON.parse(value);
+        const rootType=Array.isArray(parsed)?"配列":parsed===null?"null":typeof parsed==="object"?"オブジェクト":typeof parsed;
+        result.value="有効なJSONです。\nルート要素: "+rootType;
+      }else if(mode==="json-remove-keys"){
+        const parsed=JSON.parse(value),keys=(a?.value??"").split(",").map(k=>k.trim()).filter(Boolean);
+        if(!keys.length)throw new Error("削除するキーを入力してください。");
+        const remove=new Set(keys);
+        const clean=(input:any):any=>Array.isArray(input)?input.map(clean):input&&typeof input==="object"?Object.fromEntries(Object.entries(input).filter(([key])=>!remove.has(key)).map(([key,val])=>[key,clean(val)])):input;
+        result.value=JSON.stringify(clean(parsed),null,2);
+      }else if(mode==="json-element-count"){
+        const parsed=JSON.parse(value);
+        let objects=0,arrays=0,keys=0,values=0;
+        const walk=(input:any)=>{if(Array.isArray(input)){arrays++;for(const item of input)walk(item);}else if(input&&typeof input==="object"){objects++;const entries=Object.entries(input);keys+=entries.length;for(const [,val] of entries)walk(val);}else values++;};
+        walk(parsed);
+        result.value="オブジェクト: "+objects+"\n配列: "+arrays+"\nキー: "+keys+"\n値: "+values;
+      }else if(mode==="extract-ipv4"){
+        const matches=value.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)??[];
+        const valid=[...new Set(matches.filter(ip=>ip.split(".").every(part=>Number(part)>=0&&Number(part)<=255)))];
+        result.value=valid.join("\n");info.textContent=valid.length+"件抽出";
+      }else if(mode==="extract-domains"){
+        const matches=value.match(/(?:https?:\/\/)?(?:www\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}/gi)??[];
+        const domains=[...new Set(matches.map(item=>item.replace(/^https?:\/\//i,"").replace(/^www\./i,"").toLowerCase()))];
+        result.value=domains.join("\n");info.textContent=domains.length+"件抽出";
+      }else if(mode==="remove-duplicate-words"){
+        const words=value.trim().split(/\s+/).filter(Boolean),seen=new Set<string>(),out:string[]=[];
+        for(const word of words){if(!seen.has(word)){seen.add(word);out.push(word);}}
+        result.value=out.join(" ");info.textContent=(words.length-out.length)+"件の重複を削除";
+      }else if(mode==="text-truncate"){
+        const max=Number(a?.value);if(!Number.isInteger(max)||max<0||max>1000000)throw new Error("0〜1000000の文字数を入力してください。");
+        const chars=Array.from(value);result.value=chars.slice(0,max).join("");info.textContent=chars.length>max?(chars.length-max)+"文字を切り詰め":"切り詰め不要";
+      }else if(mode==="rot13"){
+        result.value=value.replace(/[A-Za-z]/g,ch=>String.fromCharCode(ch.charCodeAt(0)+(ch.toLowerCase()<"n"?13:-13)));
+      }else if(mode==="color-converter"){
+        if(action?.value==="rgb-hex"){
+          const parts=value.trim().split(/[\s,]+/).map(Number);if(parts.length!==3||parts.some(n=>!Number.isInteger(n)||n<0||n>255))throw new Error("RGBを 0〜255 の3値で入力してください。例: 51,102,153");
+          result.value="#"+parts.map(n=>n.toString(16).padStart(2,"0")).join("").toUpperCase();
+        }else{
+          let hex=value.trim().replace(/^#/,"");if(/^[0-9a-f]{3}$/i.test(hex))hex=hex.split("").map(ch=>ch+ch).join("");
+          if(!/^[0-9a-f]{6}$/i.test(hex))throw new Error("3桁または6桁のHEXカラーを入力してください。例: #336699");
+          result.value=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)).join(", ");
+        }
       }else if(mode==="trim-each-line"){
         result.value=splitLines(value).map(line=>line.trim()).join("\n");
       }else if(mode==="collapse-blank-lines"){
@@ -375,7 +446,7 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
         const input=Number(a?.value);if(!Number.isFinite(input))throw new Error("温度を入力してください。");const from=action?.value??"C",to=unit?.value??"F";
         const celsius=from==="C"?input:from==="F"?(input-32)*5/9:input-273.15;if(celsius<-273.15-1e-9)throw new Error("絶対零度より低い温度は指定できません。");
         const converted=to==="C"?celsius:to==="F"?celsius*9/5+32:celsius+273.15;const suffix=to==="C"?" ℃":to==="F"?" ℉":" K";result.value=converted.toLocaleString(undefined,{maximumFractionDigits:6})+suffix;
-      }else if(["length-converter","mass-converter","area-converter","speed-converter","pressure-converter"].includes(mode)){
+      }else if(["length-converter","mass-converter","area-converter","speed-converter","pressure-converter","volume-converter","energy-converter","power-converter"].includes(mode)){
         const input=Number(a?.value);if(!Number.isFinite(input))throw new Error("数値を入力してください。");
         const factorSets:Record<string,Record<string,number>>={
           "length-converter":{mm:.001,cm:.01,m:1,km:1000,inch:.0254,ft:.3048,yard:.9144,mile:1609.344},
@@ -383,11 +454,23 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
           "area-converter":{m2:1,km2:1e6,ha:10000,tsubo:3.3057851239669422,acre:4046.8564224},
           "speed-converter":{kmh:1/3.6,ms:1,mph:.44704,knot:.5144444444444445},
           "pressure-converter":{Pa:1,kPa:1000,MPa:1e6,bar:100000,atm:101325},
+          "volume-converter":{ml:.001,l:1,m3:1000,tsp:.005,tbsp:.015,cup:.2},
+          "energy-converter":{J:1,kJ:1000,cal:4.184,kcal:4184,Wh:3600,kWh:3600000},
+          "power-converter":{W:1,kW:1000,MW:1000000,hp:745.699871582},
         };
-        const labels:Record<string,string>={mm:"mm",cm:"cm",m:"m",km:"km",inch:"inch",ft:"ft",yard:"yard",mile:"mile",mg:"mg",g:"g",kg:"kg",t:"t",oz:"oz",lb:"lb",m2:"㎡",km2:"㎢",ha:"ha",tsubo:"坪",acre:"acre",kmh:"km/h",ms:"m/s",mph:"mph",knot:"knot",Pa:"Pa",kPa:"kPa",MPa:"MPa",bar:"bar",atm:"atm"};
+        const labels:Record<string,string>={mm:"mm",cm:"cm",m:"m",km:"km",inch:"inch",ft:"ft",yard:"yard",mile:"mile",mg:"mg",g:"g",kg:"kg",t:"t",oz:"oz",lb:"lb",m2:"㎡",km2:"㎢",ha:"ha",tsubo:"坪",acre:"acre",kmh:"km/h",ms:"m/s",mph:"mph",knot:"knot",Pa:"Pa",kPa:"kPa",MPa:"MPa",bar:"bar",atm:"atm",ml:"mL",l:"L",m3:"㎥",tsp:"小さじ",tbsp:"大さじ",cup:"カップ",J:"J",kJ:"kJ",cal:"cal",kcal:"kcal",Wh:"Wh",kWh:"kWh",W:"W",kW:"kW",MW:"MW",hp:"hp"};
         const factors=factorSets[mode],from=action?.value??"",to=unit?.value??"";
         if(!factors[from]||!factors[to])throw new Error("変換単位を確認してください。");
         result.value=(input*factors[from]/factors[to]).toLocaleString(undefined,{maximumFractionDigits:10})+" "+labels[to];
+      }else if(mode==="pace-calculator"){
+        const distance=Number(a?.value),minutes=Number(b?.value);if(!Number.isFinite(distance)||!Number.isFinite(minutes)||distance<=0||minutes<=0)throw new Error("0より大きい距離と時間を入力してください。");
+        const pace=minutes/distance,paceMin=Math.floor(pace),paceSec=Math.round((pace-paceMin)*60),normalizedMin=paceSec===60?paceMin+1:paceMin,normalizedSec=paceSec===60?0:paceSec;
+        const speed=distance/(minutes/60);result.value="ペース: "+normalizedMin+":"+String(normalizedSec).padStart(2,"0")+" /km\n平均速度: "+speed.toFixed(2)+" km/h";
+      }else if(mode==="bill-split"){
+        const total=Number(a?.value),tipRate=Number(b?.value),people=Number(c?.value);
+        if(!Number.isFinite(total)||!Number.isFinite(tipRate)||!Number.isInteger(people)||total<0||tipRate<0||people<1)throw new Error("会計金額・チップ率・人数を確認してください。");
+        const tip=total*tipRate/100,grand=total+tip,each=grand/people;
+        result.value="チップ額: "+tip.toLocaleString(undefined,{maximumFractionDigits:2})+"\n支払総額: "+grand.toLocaleString(undefined,{maximumFractionDigits:2})+"\n1人あたり: "+each.toLocaleString(undefined,{maximumFractionDigits:2});
       }else if(mode==="gcd-lcm"){
         const x=Number(a?.value),y=Number(b?.value);if(!Number.isInteger(x)||!Number.isInteger(y))throw new Error("2つの整数を入力してください。");
         const g=gcd(x,y),l=x===0||y===0?0:Math.abs((x/g)*y);result.value="最大公約数: "+g+"\n最小公倍数: "+l;
