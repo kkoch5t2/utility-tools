@@ -7,10 +7,45 @@ interface Props {
 
 const { currentHref } = Astro.props;
 const current = tools.find((tool) => tool.href === currentHref);
+
+function grams(value: string) {
+  const normalized = value
+    .normalize("NFKC")
+    .toLocaleLowerCase("ja")
+    .replace(/[\s・｜|/／()（）「」『』【】［］\[\]{}<>:：,，.。!！?？_-]+/g, "");
+  const result = new Set<string>();
+  if (normalized.length < 2) {
+    if (normalized) result.add(normalized);
+    return result;
+  }
+  for (let index = 0; index < normalized.length - 1; index++) {
+    result.add(normalized.slice(index, index + 2));
+  }
+  return result;
+}
+
+function sharedCount(a: Set<string>, b: Set<string>) {
+  let count = 0;
+  for (const item of a) if (b.has(item)) count++;
+  return count;
+}
+
 const related = current
-  ? tools
-      .filter((tool) => tool.status === "available" && tool.href !== currentHref && tool.category === current.category)
-      .slice(0, 6)
+  ? (() => {
+      const currentName = grams(current.name);
+      const currentDescription = grams(current.description);
+
+      return tools
+        .filter((tool) => tool.status === "available" && tool.href !== currentHref && tool.category === current.category)
+        .map((tool) => {
+          const nameScore = sharedCount(currentName, grams(tool.name));
+          const descriptionScore = sharedCount(currentDescription, grams(tool.description));
+          return { tool, score: nameScore * 4 + descriptionScore };
+        })
+        .sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name, "ja"))
+        .slice(0, 6)
+        .map(({ tool }) => tool);
+    })()
   : [];
 ---
 

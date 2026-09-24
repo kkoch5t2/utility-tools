@@ -56,6 +56,11 @@ for (const category of categoryMeta) {
   if (descriptionLength < 30 || descriptionLength > 120) {
     errors.push(`category description length out of range: ${category.key} -> ${descriptionLength}`);
   }
+  if (!Array.isArray(category.useCases) || category.useCases.length < 3) {
+    errors.push(`category use cases missing: ${category.key}`);
+  } else if (category.useCases.some((item) => !item.trim())) {
+    errors.push(`empty category use case: ${category.key}`);
+  }
 }
 for (const tool of extraTools) {
   if (!categoryKeys.has(tool.categoryKey)) errors.push(`missing category landing page: ${tool.id} -> ${tool.categoryKey}`);

@@ -15,6 +15,22 @@ interface Props { category: CategoryMeta; }
 const { category } = Astro.props;
 const categoryTools = tools.filter((tool) => tool.status === "available" && tool.category === category.key);
 const canonical = new URL(`/category/${category.key}/`, siteConfig.url).toString();
+const relatedCategoryKeys: Record<CategoryMeta["key"], CategoryMeta["key"][]> = {
+  image: ["pdf", "qr", "video"],
+  csv: ["json", "developer", "text"],
+  json: ["csv", "developer", "text"],
+  text: ["japanese", "developer", "json"],
+  pdf: ["image", "qr", "text"],
+  qr: ["image", "developer", "text"],
+  video: ["image", "developer", "pdf"],
+  japanese: ["text", "date", "developer"],
+  date: ["calculator", "japanese", "developer"],
+  calculator: ["date", "developer", "csv"],
+  developer: ["json", "text", "csv"],
+};
+const relatedCategories = relatedCategoryKeys[category.key]
+  .map((key) => categoryMeta.find((item) => item.key === key))
+  .filter((item): item is CategoryMeta => Boolean(item));
 
 const breadcrumbJson = {
   "@context": "https://schema.org",
@@ -61,6 +77,13 @@ const collectionJson = {
       </div>
     </header>
 
+    <section class="category-usecases" aria-labelledby="category-usecases-title">
+      <h2 id="category-usecases-title">{category.label}ツールはこんなときに便利</h2>
+      <ul>
+        {category.useCases.map((useCase) => <li>{useCase}</li>)}
+      </ul>
+    </section>
+
     <section aria-labelledby="category-tools-title">
       <h2 id="category-tools-title" class="visually-hidden">{category.label}ツール</h2>
       <div class="category-grid">
@@ -73,6 +96,18 @@ const collectionJson = {
             </div>
             <a href={tool.href} aria-label={`${tool.name}を開く`}>ツールを開く <span aria-hidden="true">→</span></a>
           </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="related-categories" aria-labelledby="related-categories-title">
+      <h2 id="related-categories-title">関連カテゴリ</h2>
+      <div class="related-category-grid">
+        {relatedCategories.map((item) => (
+          <a href={`/category/${item.key}/`}>
+            <strong>{item.label}</strong>
+            <span>{item.description}</span>
+          </a>
         ))}
       </div>
     </section>
@@ -98,6 +133,18 @@ const collectionJson = {
   .category-card p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
   .category-card a { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; font-size: 13px; font-weight: 800; text-decoration: none; }
   .category-card:hover { border-color: #c3d1e4; box-shadow: 0 10px 24px rgba(15,23,42,.06); }
-  @media (max-width: 900px) { .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 640px) { .category-grid { grid-template-columns: 1fr; } .category-card { min-height: 0; } }
+  .category-usecases { margin: 0 0 34px; padding: 20px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-muted); }
+  .category-usecases h2 { margin: 0 0 12px; font-size: 20px; }
+  .category-usecases ul { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .category-usecases li { position: relative; padding-left: 19px; color: var(--muted); font-size: 14px; }
+  .category-usecases li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 900; }
+  .related-categories { margin-top: 48px; }
+  .related-categories h2 { margin-bottom: 14px; font-size: 22px; }
+  .related-category-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+  .related-category-grid a { display: flex; flex-direction: column; gap: 5px; padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--text); text-decoration: none; }
+  .related-category-grid a:hover { border-color: #b8c8dc; box-shadow: 0 8px 20px rgba(15,23,42,.06); }
+  .related-category-grid strong { font-size: 15px; }
+  .related-category-grid span { color: var(--muted); font-size: 12px; line-height: 1.6; }
+  @media (max-width: 900px) { .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .category-usecases ul { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .category-grid, .related-category-grid { grid-template-columns: 1fr; } .category-card { min-height: 0; } }
 </style>
