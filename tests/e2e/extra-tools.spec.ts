@@ -526,55 +526,16 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みとページングができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-visible-count]")).toHaveText("135件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("150件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page.locator("[data-pagination]")).toBeVisible();
-  await expect(page.locator("[data-page-numbers] button")).toHaveCount(12);
+  await expect(page.locator("[data-page-numbers] button")).toHaveCount(13);
 
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=2$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-  await expect(page.getByRole("button", { name: "2ページ目", exact: true })).toHaveAttribute("aria-current", "page");
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=3$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=4$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=5$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=6$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=7$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=8$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=9$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=10$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=11$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-
-  await page.getByRole("button", { name: "次へ →" }).click();
-  await expect(page).toHaveURL(/\?page=12$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
+  for (let pageNumber = 2; pageNumber <= 13; pageNumber++) {
+    await page.getByRole("button", { name: "次へ →" }).click();
+    expect(new URL(page.url()).searchParams.get("page")).toBe(String(pageNumber));
+    await expect(page.locator("[data-tool-card]:visible")).toHaveCount(pageNumber === 13 ? 6 : 12);
+  }
 
   await page.locator("[data-filter-select]").selectOption("pdf");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
@@ -659,7 +620,7 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   const base64Card = page.locator("[data-tool-card]").filter({ hasText: "Base64エンコード・デコード" });
   await base64Card.locator("[data-favorite]").click();
   await page.locator("[data-search-clear]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("135件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("150件");
   await expect(base64Card.locator("[data-favorite]")).toHaveAttribute("aria-pressed", "true");
 
   await page.locator("[data-favorites-only]").click();
@@ -672,5 +633,73 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
 
   await page.locator("[data-favorites-only]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("135件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("150件");
+});
+
+test("150ツール化で追加したJSON・テキスト・計算ツールが動く", async ({ page }) => {
+  const runText = async (path: string, input: string) => {
+    await page.goto(path);
+    await page.locator("[data-source]").fill(input);
+    await page.getByRole("button", { name: "処理する" }).click();
+    return page.locator("[data-result]");
+  };
+
+  await expect(await runText("/json/minify/", '{\n  "a": 1,\n  "b": [2, 3]\n}')).toHaveValue('{"a":1,"b":[2,3]}');
+  await expect(await runText("/json/validate/", '{"ok":true}')).toHaveValue(/有効なJSONです/);
+
+  await page.goto("/json/remove-keys/");
+  await page.locator("#json-remove-keys").fill("password,token");
+  await page.locator("[data-source]").fill('{"name":"a","password":"x","nested":{"token":"y","keep":1}}');
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue('{\n  "name": "a",\n  "nested": {\n    "keep": 1\n  }\n}');
+
+  await expect(await runText("/json/element-count/", '{"a":[1,2],"b":{"c":3}}')).toHaveValue(/キー: 3/);
+  await expect(await runText("/text/extract-ipv4/", "ok 192.168.1.1 bad 999.1.1.1 ok 8.8.8.8")).toHaveValue("192.168.1.1\n8.8.8.8");
+  await expect(await runText("/text/extract-domains/", "https://www.example.com/a and test.jp")).toHaveValue("example.com\ntest.jp");
+  await expect(await runText("/text/remove-duplicate-words/", "a b a c b")).toHaveValue("a b c");
+
+  await page.goto("/text/truncate/");
+  await page.locator("#truncate-length").fill("3");
+  await page.locator("[data-source]").fill("abcdef");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue("abc");
+
+  await expect(await runText("/developer/rot13/", "Hello")).toHaveValue("Uryyb");
+
+  await page.goto("/developer/color-converter/");
+  await page.locator("[data-source]").fill("#336699");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue("51, 102, 153");
+  await page.locator("[data-action]").selectOption("rgb-hex");
+  await page.locator("[data-source]").fill("51,102,153");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue("#336699");
+
+  await page.goto("/calculator/volume/");
+  await page.locator("#volume-value").fill("1");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/1,000 mL/);
+
+  await page.goto("/calculator/energy/");
+  await page.locator("#energy-value").fill("4.184");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue("1 kcal");
+
+  await page.goto("/calculator/power/");
+  await page.locator("#power-value").fill("1");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/1,000 W/);
+
+  await page.goto("/calculator/pace/");
+  await page.locator("#pace-distance").fill("10");
+  await page.locator("#pace-minutes").fill("50");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue("ペース: 5:00 /km\n平均速度: 12.00 km/h");
+
+  await page.goto("/calculator/bill-split/");
+  await page.locator("#bill-total").fill("10000");
+  await page.locator("#bill-tip").fill("10");
+  await page.locator("#bill-people").fill("2");
+  await page.getByRole("button", { name: "処理する" }).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/1人あたり: 5,500/);
 });
