@@ -16,15 +16,16 @@ const ranked = popularData.items
   .filter((item): item is NonNullable<typeof item> => Boolean(item));
 ---
 
-{ranked.length > 0 && (
-  <section class="popular-tools" aria-labelledby="popular-tools-title">
-    <div class="popular-heading">
-      <div>
-        <p class="eyebrow">POPULAR</p>
-        <h2 id="popular-tools-title">人気ツール</h2>
-      </div>
-      <span>過去{popularData.periodDays}日</span>
+<section class="popular-tools" aria-labelledby="popular-tools-title">
+  <div class="popular-heading">
+    <div>
+      <p class="eyebrow">POPULAR</p>
+      <h2 id="popular-tools-title">人気ツール</h2>
     </div>
+    <span>過去{popularData.periodDays}日</span>
+  </div>
+
+  {ranked.length > 0 ? (
     <div class="popular-grid">
       {ranked.map((tool) => (
         <a class="popular-card" href={tool.href}>
@@ -37,8 +38,13 @@ const ranked = popularData.items
         </a>
       ))}
     </div>
-  </section>
-)}
+  ) : (
+    <div class="popular-empty">
+      <strong>ランキング集計中</strong>
+      <span>個別ツールのアクセスデータがたまり次第、自動でランキングを表示します。</span>
+    </div>
+  )}
+</section>
 
 <style>
   .popular-tools { margin: 0 0 40px; }
@@ -47,6 +53,9 @@ const ranked = popularData.items
   .popular-heading > span { color: var(--muted); font-size: 12px; font-weight: 700; }
   .eyebrow { margin: 0 0 3px; color: var(--accent); font-size: 10px; font-weight: 900; letter-spacing: .14em; }
   .popular-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .popular-empty { display: flex; align-items: baseline; gap: 10px; padding: 15px 16px; border: 1px dashed var(--line); border-radius: 13px; background: var(--surface-muted); }
+  .popular-empty strong { flex: 0 0 auto; font-size: 14px; }
+  .popular-empty span { color: var(--muted); font-size: 13px; }
   .popular-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--text); text-decoration: none; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
   .popular-card:hover { transform: translateY(-2px); border-color: #b8c8dc; box-shadow: 0 8px 20px rgba(15, 23, 42, .06); }
   .rank { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px; background: var(--surface-muted); color: var(--accent); font-size: 13px; font-weight: 900; }
@@ -58,6 +67,7 @@ const ranked = popularData.items
   @media (max-width: 760px) {
     .popular-tools { margin-bottom: 32px; }
     .popular-grid { grid-template-columns: 1fr; }
+    .popular-empty { align-items: flex-start; flex-direction: column; gap: 3px; }
     .popular-card { padding: 12px 13px; }
   }
 </style>
