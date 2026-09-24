@@ -1,5 +1,6 @@
 import { extraTools } from "../src/config/extra-tools.ts";
 import { categoryMeta } from "../src/config/categories.ts";
+import { prioritySeoContent } from "../src/config/seo-content.ts";
 
 const errors = [];
 
@@ -66,10 +67,21 @@ for (const tool of extraTools) {
   if (!categoryKeys.has(tool.categoryKey)) errors.push(`missing category landing page: ${tool.id} -> ${tool.categoryKey}`);
 }
 
+const toolHrefs = new Set([...extraTools.map((tool) => tool.href), "/image/batch-converter/", "/csv/split/", "/text/remove-duplicates/"]);
+const priorityEntries = Object.entries(prioritySeoContent);
+if (priorityEntries.length < 20) errors.push(`priority SEO coverage too small: ${priorityEntries.length}`);
+for (const [href, content] of priorityEntries) {
+  if (!toolHrefs.has(href)) errors.push(`priority SEO points to missing tool: ${href}`);
+  if ([...content.lead].length < 45) errors.push(`priority SEO lead too short: ${href}`);
+  if (!Array.isArray(content.useCases) || content.useCases.length < 3 || content.useCases.some((item) => !item.trim())) errors.push(`priority SEO use cases invalid: ${href}`);
+  if (!content.example?.input?.trim() || !content.example?.output?.trim()) errors.push(`priority SEO example invalid: ${href}`);
+  if (!Array.isArray(content.tips) || content.tips.length < 2 || content.tips.some((item) => !item.trim())) errors.push(`priority SEO tips invalid: ${href}`);
+}
+
 if (errors.length) {
   console.error("SEO metadata validation failed:");
   for (const error of errors) console.error("- " + error);
   process.exit(1);
 }
 
-console.log(`SEO metadata OK: ${extraTools.length} tools / ${categoryMeta.length} categories.`);
+console.log(`SEO metadata OK: ${extraTools.length} tools / ${categoryMeta.length} categories / ${priorityEntries.length} priority pages.`);

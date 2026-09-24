@@ -121,6 +121,10 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   await expect(related.first()).toHaveAttribute("href", /\/developer\//);
   await expect(page.getByRole("heading", { name: "Base64エンコード・デコードの使い方" })).toBeVisible();
   await expect(page.locator(".tool-guide li")).toHaveCount(3);
+  await expect(page.getByRole("heading", { name: "Base64エンコード・デコードを使う場面" })).toBeVisible();
+  await expect(page.locator(".seo-usecases > div")).toHaveCount(3);
+  await expect(page.locator(".seo-example")).toContainText("aGVsbG8=");
+  await expect(page.locator(".seo-tips li")).toHaveCount(2);
   await expect(page.locator('.breadcrumbs [aria-current="page"]')).toHaveText("Base64エンコード・デコード");
   await expect(page.locator('.footer-categories a[href="/category/developer/"]')).toHaveText("開発者");
   await expect(page.locator(".footer-categories a")).toHaveCount(11);
