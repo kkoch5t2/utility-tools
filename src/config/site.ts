@@ -1,6 +1,6 @@
 export const siteConfig = {
   name: "無料Web便利ツール集",
-  homeTitle: "無料Web便利ツール集｜画像・CSV・PDF・動画など120種類以上",
+  homeTitle: "無料Web便利ツール集｜画像・CSV・PDF・動画など130種類以上",
   url: "https://utility-tools-jp.com",
-  description: "画像・CSV・JSON・PDF・動画・テキストなど、120種類以上の便利ツールを無料・登録不要で使えます。ファイルは原則として外部サーバーへ送らず、ブラウザ内で処理します。",
+  description: "画像・CSV・JSON・PDF・動画・テキストなど、130種類以上の便利ツールを無料・登録不要で使えます。ファイルは原則として外部サーバーへ送らず、ブラウザ内で処理します。",
 } as const;
