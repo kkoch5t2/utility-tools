@@ -34,6 +34,16 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
         <span class="visible-count" data-visible-count aria-live="polite">{tools.length}件</span>
       </div>
 
+      <div class="tool-search-row">
+        <label class="tool-search" for="tool-search">
+          <span class="visually-hidden">ツールを検索</span>
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="tool-search" data-tool-search type="search" placeholder="ツール名・説明から検索" autocomplete="off" />
+          <button type="button" class="search-clear" data-search-clear aria-label="検索をクリア" hidden>×</button>
+        </label>
+        <button class="favorites-toggle" type="button" data-favorites-only aria-pressed="false">☆ お気に入り</button>
+      </div>
+
       <div class="filter-select-wrap">
         <label for="category-filter">カテゴリ</label>
         <select id="category-filter" data-filter-select aria-label="ツールのカテゴリで絞り込む">
@@ -64,9 +74,14 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
           <article
             class:list={["home-tool", tool.status === "planned" && "is-planned"]}
             data-tool-card
+            data-tool-id={tool.id}
+            data-tool-search-text={(tool.name + " " + tool.description).toLocaleLowerCase("ja")}
             data-category={tool.category}
           >
-            <p class="category">{tool.category.toUpperCase()}</p>
+            <div class="tool-card-top">
+              <p class="category">{tool.category.toUpperCase()}</p>
+              <button class="favorite-button" type="button" data-favorite aria-label={tool.name + "をお気に入りに追加"} aria-pressed="false">☆</button>
+            </div>
             <h3>{tool.name}</h3>
             <p>{tool.description}</p>
             {tool.status === "available"
@@ -92,6 +107,9 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-filter]"));
   const filterSelect = document.querySelector<HTMLSelectElement>("[data-filter-select]");
   const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-tool-card]"));
+  const searchInput = document.querySelector<HTMLInputElement>("[data-tool-search]");
+  const searchClear = document.querySelector<HTMLButtonElement>("[data-search-clear]");
+  const favoritesOnlyButton = document.querySelector<HTMLButtonElement>("[data-favorites-only]");
   const count = document.querySelector<HTMLElement>("[data-visible-count]");
   const empty = document.querySelector<HTMLElement>("[data-no-results]");
   const pagination = document.querySelector<HTMLElement>("[data-pagination]");
@@ -99,17 +117,54 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   const prev = document.querySelector<HTMLButtonElement>("[data-page-prev]");
   const next = document.querySelector<HTMLButtonElement>("[data-page-next]");
 
+  const FAVORITES_KEY = "utility-tools:favorites";
   let currentCategory = "all";
   let currentPage = 1;
+  let currentQuery = "";
+  let favoritesOnly = false;
+  let favorites = new Set<string>();
+
+  try {
+    favorites = new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"));
+  } catch {
+    favorites = new Set();
+  }
+
+  function normalized(value: string) {
+    return value.toLocaleLowerCase("ja").normalize("NFKC").trim();
+  }
 
   function matchingCards(category: string) {
-    return cards.filter((card) => category === "all" || card.dataset.category === category);
+    const query = normalized(currentQuery);
+    return cards.filter((card) => {
+      if (category !== "all" && card.dataset.category !== category) return false;
+      if (favoritesOnly && !favorites.has(card.dataset.toolId ?? "")) return false;
+      if (query && !normalized(card.dataset.toolSearchText ?? "").includes(query)) return false;
+      return true;
+    });
+  }
+
+  function syncFavoriteButtons() {
+    for (const card of cards) {
+      const id = card.dataset.toolId ?? "";
+      const button = card.querySelector<HTMLButtonElement>("[data-favorite]");
+      if (!button) continue;
+      const active = favorites.has(id);
+      button.textContent = active ? "★" : "☆";
+      button.setAttribute("aria-pressed", String(active));
+      const name = card.querySelector("h3")?.textContent ?? "このツール";
+      button.setAttribute("aria-label", name + (active ? "をお気に入りから削除" : "をお気に入りに追加"));
+    }
   }
 
   function updateUrl(push = false) {
     const url = new URL(window.location.href);
     if (currentCategory === "all") url.searchParams.delete("category");
     else url.searchParams.set("category", currentCategory);
+    if (currentQuery) url.searchParams.set("q", currentQuery);
+    else url.searchParams.delete("q");
+    if (favoritesOnly) url.searchParams.set("favorites", "1");
+    else url.searchParams.delete("favorites");
     if (currentPage === 1) url.searchParams.delete("page");
     else url.searchParams.set("page", String(currentPage));
     history[push ? "pushState" : "replaceState"](null, "", url);
@@ -127,6 +182,10 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
       button.setAttribute("aria-pressed", String(button.dataset.filter === currentCategory));
     }
     if (filterSelect) filterSelect.value = currentCategory;
+    if (searchInput && searchInput.value !== currentQuery) searchInput.value = currentQuery;
+    if (searchClear) searchClear.hidden = !currentQuery;
+    if (favoritesOnlyButton) favoritesOnlyButton.setAttribute("aria-pressed", String(favoritesOnly));
+    syncFavoriteButtons();
 
     if (count) count.textContent = matched.length + "件";
     if (empty) empty.hidden = matched.length !== 0;
@@ -194,6 +253,40 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     render(true, true);
   });
 
+  searchInput?.addEventListener("input", () => {
+    currentQuery = searchInput.value;
+    currentPage = 1;
+    render(true);
+  });
+
+  searchClear?.addEventListener("click", () => {
+    currentQuery = "";
+    if (searchInput) {
+      searchInput.value = "";
+      searchInput.focus();
+    }
+    currentPage = 1;
+    render(true, true);
+  });
+
+  favoritesOnlyButton?.addEventListener("click", () => {
+    favoritesOnly = !favoritesOnly;
+    currentPage = 1;
+    render(true, true);
+  });
+
+  for (const card of cards) {
+    const favoriteButton = card.querySelector<HTMLButtonElement>("[data-favorite]");
+    favoriteButton?.addEventListener("click", () => {
+      const id = card.dataset.toolId ?? "";
+      if (!id) return;
+      if (favorites.has(id)) favorites.delete(id);
+      else favorites.add(id);
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
+      render(false);
+    });
+  }
+
   prev?.addEventListener("click", () => {
     if (currentPage <= 1) return;
     currentPage--;
@@ -211,6 +304,8 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     const url = new URL(window.location.href);
     const category = url.searchParams.get("category") ?? "all";
     currentCategory = filterButtons.some((button) => button.dataset.filter === category) ? category : "all";
+    currentQuery = url.searchParams.get("q") ?? "";
+    favoritesOnly = url.searchParams.get("favorites") === "1";
     const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
     currentPage = Number.isFinite(page) && page > 0 ? page : 1;
     render(false);
@@ -230,6 +325,16 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .tools-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
   .tools-heading h2 { margin-bottom: 12px; }
   .visible-count { color: var(--muted); font-size: 14px; font-weight: 700; }
+
+  .tool-search-row { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+  .tool-search { position: relative; display: flex; align-items: center; flex: 1 1 auto; max-width: 620px; }
+  .tool-search input { width: 100%; min-height: 44px; padding: 9px 42px 9px 40px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); }
+  .tool-search input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 14px; color: var(--muted); font-size: 20px; line-height: 1; pointer-events: none; }
+  .search-clear { position: absolute; right: 8px; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; font-size: 20px; }
+  .search-clear:hover { background: var(--surface-muted); color: var(--text); }
+  .favorites-toggle { min-height: 44px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font-weight: 800; cursor: pointer; white-space: nowrap; }
+  .favorites-toggle[aria-pressed="true"] { border-color: #d59b00; background: #fff8dc; color: #8a5d00; }
 
   .filter-select-wrap { display: none; }
 
@@ -306,6 +411,10 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     box-shadow: 0 12px 28px rgba(15, 23, 42, .08);
   }
   .home-tool[hidden] { display: none; }
+  .tool-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .favorite-button { width: 34px; height: 34px; flex: 0 0 34px; border: 0; border-radius: 9px; background: transparent; color: #9a7211; cursor: pointer; font-size: 23px; line-height: 1; }
+  .favorite-button:hover { background: #fff8dc; }
+  .favorite-button[aria-pressed="true"] { color: #c58b00; }
   .home-tool h3 { margin: 8px 0 8px; line-height: 1.4; font-size: 19px; }
   .home-tool > p:not(.category) { color: var(--muted); margin-bottom: 18px; flex: 1; }
   .category {
@@ -406,6 +515,9 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
     .tool-grid { grid-template-columns: 1fr; }
+    .tool-search-row { align-items: stretch; }
+    .tool-search { min-width: 0; }
+    .favorites-toggle { padding-inline: 10px; font-size: 13px; }
     .filter-select-wrap { display: none; }
     .tool-filters {
       display: flex;
