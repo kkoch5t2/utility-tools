@@ -20,6 +20,8 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       <div class="field"><label for="replace-text">置換文字列</label><input id="replace-text" data-b type="text" /></div>
     </div>}
     {meta.mode === "line-ending" && <div class="field"><label for="line-ending-action">変換先</label><select id="line-ending-action" data-action><option value="lf">LF (Unix)</option><option value="crlf">CRLF (Windows)</option><option value="cr">CR</option></select></div>}
+    {meta.mode === "normalize-slashes" && <div class="field"><label for="slash-action">変換方向</label><select id="slash-action" data-action><option value="unix">\ → /</option><option value="windows">/ → \</option></select></div>}
+    {meta.mode === "sort-lines-by-length" && <div class="field"><label for="length-sort-action">並び順</label><select id="length-sort-action" data-action><option value="asc">短い順</option><option value="desc">長い順</option></select></div>}
     {meta.mode === "join-lines" && <div class="field"><label for="join-delimiter">区切り文字</label><input id="join-delimiter" data-a type="text" value=", " /></div>}
     {meta.mode === "split-delimiter" && <div class="field"><label for="split-delimiter">区切り文字</label><input id="split-delimiter" data-a type="text" value="," /></div>}
     {meta.mode === "pad-lines" && <div class="settings-grid">
@@ -168,6 +170,32 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
         const pick=(obj:any)=>Object.fromEntries(keys.filter(key=>Object.prototype.hasOwnProperty.call(obj,key)).map(key=>[key,obj[key]]));
         if(Array.isArray(parsed)){if(parsed.some(item=>!item||typeof item!=="object"||Array.isArray(item)))throw new Error("オブジェクト配列を入力してください。");result.value=JSON.stringify(parsed.map(pick),null,2);}
         else{if(!parsed||typeof parsed!=="object")throw new Error("JSONオブジェクトを入力してください。");result.value=JSON.stringify(pick(parsed),null,2);}
+      }else if(mode==="trim-each-line"){
+        result.value=splitLines(value).map(line=>line.trim()).join("\n");
+      }else if(mode==="collapse-blank-lines"){
+        const lines=splitLines(value),out:string[]=[];let blank=false;
+        for(const line of lines){const isBlank=line.trim()==="";if(isBlank){if(!blank)out.push("");blank=true;}else{out.push(line);blank=false;}}
+        result.value=out.join("\n");
+      }else if(mode==="extract-emails"){
+        const matches=value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)??[];
+        result.value=[...new Set(matches)].join("\n");info.textContent=result.value?matches.length+"件検出":"0件";
+      }else if(mode==="extract-urls"){
+        const matches=value.match(/https?:\/\/[^\s<>"']+/gi)??[];
+        result.value=[...new Set(matches.map(url=>url.replace(/[),.;!?]+$/,"")))].join("\n");info.textContent=result.value?matches.length+"件検出":"0件";
+      }else if(mode==="remove-html-tags"){
+        result.value=value.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,"").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,"").replace(/<[^>]+>/g,"").replace(/&nbsp;/gi," ");
+      }else if(mode==="regex-escape"){
+        result.value=value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+      }else if(mode==="quote-lines"){
+        result.value=splitLines(value).map(line=>"\""+line.replace(/\\/g,"\\\\").replace(/\"/g,"\\\"")+"\"").join("\n");
+      }else if(mode==="unquote-lines"){
+        result.value=splitLines(value).map(line=>line.startsWith("\"")&&line.endsWith("\"")?line.slice(1,-1).replace(/\\\"/g,"\"").replace(/\\\\/g,"\\"):line).join("\n");
+      }else if(mode==="normalize-slashes"){
+        result.value=action?.value==="windows"?value.replace(/\//g,"\\"):value.replace(/\\/g,"/");
+      }else if(mode==="sort-lines-by-length"){
+        const lines=splitLines(value).map((line,index)=>({line,index}));
+        lines.sort((x,y)=>((action?.value==="desc"?y.line.length-x.line.length:x.line.length-y.line.length)||x.index-y.index));
+        result.value=lines.map(item=>item.line).join("\n");
       }else if(mode==="find-replace"){
         const find=a?.value??"";if(!find)throw new Error("検索文字列を入力してください。");
         result.value=value.split(find).join(b?.value??"");

@@ -129,12 +129,15 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   expect(jsonLd.some((text) => text.includes('"@type":"FAQPage"'))).toBeTruthy();
 });
 
-test("サイトマップがツール一覧から自動生成される", async ({ request }) => {
+test("サイトマップがツール一覧から自動生成される", async ({ request, page }) => {
   const response = await request.get("/sitemap.xml");
   expect(response.ok()).toBeTruthy();
   expect(response.headers()["content-type"]).toContain("xml");
   const body = await response.text();
   expect(body).toContain("https://utility-tools-jp.com/developer/base64/");
   expect(body).toContain("https://utility-tools-jp.com/privacy/");
-  expect((body.match(/<url>/g) ?? []).length).toBe(107);
+
+  await page.goto("/");
+  const toolCount = await page.locator("[data-tool-card]").count();
+  expect((body.match(/<url>/g) ?? []).length).toBe(toolCount + 2);
 });
