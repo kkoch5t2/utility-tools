@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { tools } from "../config/tools";
+import { categoryMeta } from "../config/categories";
 import { siteConfig } from "../config/site";
 
 const staticPaths = ["/", "/privacy/"];
@@ -7,6 +8,7 @@ const staticPaths = ["/", "/privacy/"];
 export const GET: APIRoute = () => {
   const urls = [
     ...staticPaths,
+    ...categoryMeta.map((category) => `/category/${category.key}/`),
     ...tools.filter((tool) => tool.status === "available").map((tool) => tool.href),
   ];
 

@@ -21,7 +21,7 @@ const related = current
         <p class="related-eyebrow">RELATED TOOLS</p>
         <h2 id="related-tools-title">関連ツール</h2>
       </div>
-      <a href={"/?category=" + current?.category}>同じカテゴリを見る →</a>
+      <a href={"/category/" + current?.category + "/"}>同じカテゴリを見る →</a>
     </div>
     <div class="related-grid">
       {related.map((tool) => (
