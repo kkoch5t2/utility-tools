@@ -21,6 +21,15 @@ import { categoryMeta } from "../../config/categories";
       </nav>
     </div>
 
+    <div class="footer-related">
+      <span>関連サイト</span>
+      <a href="https://datlume.com/" target="_blank" rel="noopener noreferrer">
+        <strong>Datlume</strong>
+        <span>日本の公開データを見やすく可視化</span>
+        <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+
     <nav class="footer-categories" aria-label="ツールカテゴリ">
       {categoryMeta.map((category) => (
         <a href={`/category/${category.key}/`}>{category.label}</a>
