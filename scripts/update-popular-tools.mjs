@@ -70,14 +70,6 @@ for (const accountId of accountIds) {
   }
 }
 
-console.log("Cloudflare RUM rows:", rows.length);
-console.log("Sample rows:", rows.slice(0, 20).map((row) => ({
-  path: row.dimensions?.requestPath,
-  host: row.dimensions?.requestHost,
-  siteTag: row.dimensions?.siteTag,
-  count: row.count,
-})));
-
 const toolPattern = /^\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator)\/[a-z0-9-]+\/?$/;
 const totals = new Map();
 
