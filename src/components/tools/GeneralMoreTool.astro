@@ -6,7 +6,7 @@ import type { ExtraToolMeta } from "../../config/extra-tools";
 import "../../styles/tool.css";
 interface Props { meta: ExtraToolMeta; }
 const { meta } = Astro.props;
-const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid","semver-compare","month-difference","time-duration","leap-year","day-of-year","quarter","tax-calculator","compound-interest","temperature"];
+const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid","semver-compare","month-difference","time-duration","leap-year","day-of-year","quarter","tax-calculator","compound-interest","temperature","length-converter","mass-converter","area-converter","speed-converter","pressure-converter","days-in-month","fiscal-year-jp","gcd-lcm","prime-check","modulo"];
 ---
 <ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
   <section class="tool-card" data-general-more data-mode={meta.mode}>
@@ -49,6 +49,11 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
     {meta.mode === "leap-year" && <div class="field"><label for="leap-year-value">西暦</label><input id="leap-year-value" data-a type="number" min="1" max="9999" step="1" placeholder="例: 2028" /></div>}
     {meta.mode === "day-of-year" && <div class="field"><label for="day-of-year-date">日付</label><input id="day-of-year-date" data-a type="date" /></div>}
     {meta.mode === "quarter" && <div class="field"><label for="quarter-date">日付</label><input id="quarter-date" data-a type="date" /></div>}
+    {meta.mode === "days-in-month" && <div class="settings-grid">
+      <div class="field"><label for="days-year">西暦</label><input id="days-year" data-a type="number" min="1" max="9999" step="1" /></div>
+      <div class="field"><label for="days-month">月</label><input id="days-month" data-b type="number" min="1" max="12" step="1" /></div>
+    </div>}
+    {meta.mode === "fiscal-year-jp" && <div class="field"><label for="fiscal-date">日付</label><input id="fiscal-date" data-a type="date" /></div>}
     {meta.mode === "iso-week" && <div class="field"><label for="iso-week-date">日付</label><input id="iso-week-date" data-a type="date" /></div>}
     {meta.mode === "month-difference" && <div class="settings-grid">
       <div class="field"><label for="month-start">開始日</label><input id="month-start" data-a type="date" /></div>
@@ -76,6 +81,40 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       <div class="field"><label for="temperature-value">温度</label><input id="temperature-value" data-a type="number" step="any" /></div>
       <div class="field"><label for="temperature-from">変換元</label><select id="temperature-from" data-action><option value="C">摂氏 (℃)</option><option value="F">華氏 (℉)</option><option value="K">ケルビン (K)</option></select></div>
       <div class="field"><label for="temperature-to">変換先</label><select id="temperature-to" data-unit><option value="F">華氏 (℉)</option><option value="C">摂氏 (℃)</option><option value="K">ケルビン (K)</option></select></div>
+    </div>}
+    {meta.mode === "length-converter" && <div class="settings-grid">
+      <div class="field"><label for="length-value">値</label><input id="length-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="length-from">変換元</label><select id="length-from" data-action><option value="mm">mm</option><option value="cm">cm</option><option value="m" selected>m</option><option value="km">km</option><option value="inch">inch</option><option value="ft">ft</option><option value="yard">yard</option><option value="mile">mile</option></select></div>
+      <div class="field"><label for="length-to">変換先</label><select id="length-to" data-unit><option value="mm">mm</option><option value="cm">cm</option><option value="m">m</option><option value="km" selected>km</option><option value="inch">inch</option><option value="ft">ft</option><option value="yard">yard</option><option value="mile">mile</option></select></div>
+    </div>}
+    {meta.mode === "mass-converter" && <div class="settings-grid">
+      <div class="field"><label for="mass-value">値</label><input id="mass-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="mass-from">変換元</label><select id="mass-from" data-action><option value="mg">mg</option><option value="g">g</option><option value="kg" selected>kg</option><option value="t">t</option><option value="oz">oz</option><option value="lb">lb</option></select></div>
+      <div class="field"><label for="mass-to">変換先</label><select id="mass-to" data-unit><option value="mg">mg</option><option value="g" selected>g</option><option value="kg">kg</option><option value="t">t</option><option value="oz">oz</option><option value="lb">lb</option></select></div>
+    </div>}
+    {meta.mode === "area-converter" && <div class="settings-grid">
+      <div class="field"><label for="area-value">値</label><input id="area-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="area-from">変換元</label><select id="area-from" data-action><option value="m2" selected>㎡</option><option value="km2">㎢</option><option value="ha">ha</option><option value="tsubo">坪</option><option value="acre">acre</option></select></div>
+      <div class="field"><label for="area-to">変換先</label><select id="area-to" data-unit><option value="m2">㎡</option><option value="km2">㎢</option><option value="ha">ha</option><option value="tsubo" selected>坪</option><option value="acre">acre</option></select></div>
+    </div>}
+    {meta.mode === "speed-converter" && <div class="settings-grid">
+      <div class="field"><label for="speed-value">値</label><input id="speed-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="speed-from">変換元</label><select id="speed-from" data-action><option value="kmh" selected>km/h</option><option value="ms">m/s</option><option value="mph">mph</option><option value="knot">knot</option></select></div>
+      <div class="field"><label for="speed-to">変換先</label><select id="speed-to" data-unit><option value="kmh">km/h</option><option value="ms" selected>m/s</option><option value="mph">mph</option><option value="knot">knot</option></select></div>
+    </div>}
+    {meta.mode === "pressure-converter" && <div class="settings-grid">
+      <div class="field"><label for="pressure-value">値</label><input id="pressure-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="pressure-from">変換元</label><select id="pressure-from" data-action><option value="Pa" selected>Pa</option><option value="kPa">kPa</option><option value="MPa">MPa</option><option value="bar">bar</option><option value="atm">atm</option></select></div>
+      <div class="field"><label for="pressure-to">変換先</label><select id="pressure-to" data-unit><option value="Pa">Pa</option><option value="kPa" selected>kPa</option><option value="MPa">MPa</option><option value="bar">bar</option><option value="atm">atm</option></select></div>
+    </div>}
+    {meta.mode === "gcd-lcm" && <div class="settings-grid">
+      <div class="field"><label for="gcd-a">整数A</label><input id="gcd-a" data-a type="number" step="1" /></div>
+      <div class="field"><label for="gcd-b">整数B</label><input id="gcd-b" data-b type="number" step="1" /></div>
+    </div>}
+    {meta.mode === "prime-check" && <div class="field"><label for="prime-value">整数</label><input id="prime-value" data-a type="number" min="2" step="1" /></div>}
+    {meta.mode === "modulo" && <div class="settings-grid">
+      <div class="field"><label for="mod-dividend">割られる数</label><input id="mod-dividend" data-a type="number" step="1" /></div>
+      <div class="field"><label for="mod-divisor">割る数</label><input id="mod-divisor" data-b type="number" step="1" /></div>
     </div>}
     {meta.mode === "bytes-converter" && <div class="settings-grid">
       <div class="field"><label for="byte-value">値</label><input id="byte-value" data-a type="number" step="any" min="0" /></div>
@@ -301,6 +340,14 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       }else if(mode==="quarter"){
         const date=parseDate(a?.value??"");const quarter=Math.floor(date.getMonth()/3)+1;const starts=[1,4,7,10],ends=[3,6,9,12];
         result.value="第"+quarter+"四半期 ("+starts[quarter-1]+"月〜"+ends[quarter-1]+"月)";
+      }else if(mode==="days-in-month"){
+        const year=Number(a?.value),month=Number(b?.value);
+        if(!Number.isInteger(year)||year<1||year>9999||!Number.isInteger(month)||month<1||month>12)throw new Error("西暦1〜9999と1〜12の月を入力してください。");
+        const leap=year%400===0||(year%4===0&&year%100!==0);const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31][month-1];
+        result.value=year+"年"+month+"月は"+days+"日まであります。";
+      }else if(mode==="fiscal-year-jp"){
+        const date=parseDate(a?.value??"");const year=date.getFullYear(),fy=date.getMonth()>=3?year:year-1;
+        result.value=fy+"年度 ("+fy+"-04-01〜"+(fy+1)+"-03-31)";
       }else if(mode==="iso-week"){
         const date=parseDate(a?.value??""),iso=getIsoWeek(date);result.value=String(iso.year)+"-W"+String(iso.week).padStart(2,"0");
       }else if(mode==="month-difference"){
@@ -328,6 +375,29 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
         const input=Number(a?.value);if(!Number.isFinite(input))throw new Error("温度を入力してください。");const from=action?.value??"C",to=unit?.value??"F";
         const celsius=from==="C"?input:from==="F"?(input-32)*5/9:input-273.15;if(celsius<-273.15-1e-9)throw new Error("絶対零度より低い温度は指定できません。");
         const converted=to==="C"?celsius:to==="F"?celsius*9/5+32:celsius+273.15;const suffix=to==="C"?" ℃":to==="F"?" ℉":" K";result.value=converted.toLocaleString(undefined,{maximumFractionDigits:6})+suffix;
+      }else if(["length-converter","mass-converter","area-converter","speed-converter","pressure-converter"].includes(mode)){
+        const input=Number(a?.value);if(!Number.isFinite(input))throw new Error("数値を入力してください。");
+        const factorSets:Record<string,Record<string,number>>={
+          "length-converter":{mm:.001,cm:.01,m:1,km:1000,inch:.0254,ft:.3048,yard:.9144,mile:1609.344},
+          "mass-converter":{mg:1e-6,g:.001,kg:1,t:1000,oz:.028349523125,lb:.45359237},
+          "area-converter":{m2:1,km2:1e6,ha:10000,tsubo:3.3057851239669422,acre:4046.8564224},
+          "speed-converter":{kmh:1/3.6,ms:1,mph:.44704,knot:.5144444444444445},
+          "pressure-converter":{Pa:1,kPa:1000,MPa:1e6,bar:100000,atm:101325},
+        };
+        const labels:Record<string,string>={mm:"mm",cm:"cm",m:"m",km:"km",inch:"inch",ft:"ft",yard:"yard",mile:"mile",mg:"mg",g:"g",kg:"kg",t:"t",oz:"oz",lb:"lb",m2:"㎡",km2:"㎢",ha:"ha",tsubo:"坪",acre:"acre",kmh:"km/h",ms:"m/s",mph:"mph",knot:"knot",Pa:"Pa",kPa:"kPa",MPa:"MPa",bar:"bar",atm:"atm"};
+        const factors=factorSets[mode],from=action?.value??"",to=unit?.value??"";
+        if(!factors[from]||!factors[to])throw new Error("変換単位を確認してください。");
+        result.value=(input*factors[from]/factors[to]).toLocaleString(undefined,{maximumFractionDigits:10})+" "+labels[to];
+      }else if(mode==="gcd-lcm"){
+        const x=Number(a?.value),y=Number(b?.value);if(!Number.isInteger(x)||!Number.isInteger(y))throw new Error("2つの整数を入力してください。");
+        const g=gcd(x,y),l=x===0||y===0?0:Math.abs((x/g)*y);result.value="最大公約数: "+g+"\n最小公倍数: "+l;
+      }else if(mode==="prime-check"){
+        const n=Number(a?.value);if(!Number.isInteger(n)||n<2)throw new Error("2以上の整数を入力してください。");
+        let prime=true;if(n===2)prime=true;else if(n%2===0)prime=false;else for(let i=3;i*i<=n;i+=2){if(n%i===0){prime=false;break;}}
+        result.value=n+(prime?" は素数です。":" は素数ではありません。");
+      }else if(mode==="modulo"){
+        const x=Number(a?.value),y=Number(b?.value);if(!Number.isInteger(x)||!Number.isInteger(y)||y===0)throw new Error("2つの整数を入力し、割る数は0以外にしてください。");
+        result.value="商: "+Math.trunc(x/y)+"\n余り: "+(x%y);
       }else if(mode==="stats"){
         const nums=value.split(/[\s,]+/).filter(Boolean).map(Number);if(!nums.length||nums.some(n=>!Number.isFinite(n)))throw new Error("数値を改行・空白・カンマ区切りで入力してください。");
         const sum=nums.reduce((s,n)=>s+n,0),avg=sum/nums.length;result.value="件数: "+nums.length+"\n合計: "+sum+"\n平均: "+avg+"\n中央値: "+median(nums)+"\n最小: "+Math.min(...nums)+"\n最大: "+Math.max(...nums)+"\n標準偏差(母): "+stddev(nums);

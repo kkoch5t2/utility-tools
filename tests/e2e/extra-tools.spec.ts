@@ -32,6 +32,8 @@ const routes = [
   "/developer/uuid/","/developer/unix-time/",
   "/text/extract-numbers/","/text/extract-hashtags/","/developer/unicode-escape/","/developer/base64url/",
   "/date/leap-year/","/date/day-of-year/","/date/quarter/","/calculator/tax/","/calculator/compound-interest/","/calculator/temperature/",
+  "/calculator/length/","/calculator/mass/","/calculator/area/","/calculator/speed/","/calculator/pressure/",
+  "/date/days-in-month/","/date/fiscal-year/","/calculator/gcd-lcm/","/calculator/prime-check/","/calculator/modulo/",
 ];
 
 test("追加ツールの全ページが表示できる", async ({ page }) => {
@@ -422,6 +424,61 @@ test("新しい抽出・変換・日付・計算ツールが動く", async ({ pa
   await expect(page.locator("[data-result]")).toHaveValue("32 ℉");
 });
 
+test("単位換算・年度・整数計算ツールが動く", async ({ page }) => {
+  await page.goto("/calculator/length/");
+  await page.locator("[data-a]").fill("1000");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("1 km");
+
+  await page.goto("/calculator/mass/");
+  await page.locator("[data-a]").fill("2");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("2,000 g");
+
+  await page.goto("/calculator/area/");
+  await page.locator("[data-a]").fill("3.3057851239669422");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("1 坪");
+
+  await page.goto("/calculator/speed/");
+  await page.locator("[data-a]").fill("36");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("10 m/s");
+
+  await page.goto("/calculator/pressure/");
+  await page.locator("[data-a]").fill("1000");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("1 kPa");
+
+  await page.goto("/date/days-in-month/");
+  await page.locator("[data-a]").fill("2028");
+  await page.locator("[data-b]").fill("2");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/29日まで/);
+
+  await page.goto("/date/fiscal-year/");
+  await page.locator("[data-a]").fill("2027-02-01");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/2026年度/);
+
+  await page.goto("/calculator/gcd-lcm/");
+  await page.locator("[data-a]").fill("12");
+  await page.locator("[data-b]").fill("18");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("最大公約数: 6\n最小公倍数: 36");
+
+  await page.goto("/calculator/prime-check/");
+  await page.locator("[data-a]").fill("97");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("97 は素数です。");
+
+  await page.goto("/calculator/modulo/");
+  await page.locator("[data-a]").fill("17");
+  await page.locator("[data-b]").fill("5");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("商: 3\n余り: 2");
+});
+
 test("文字数カウントとUUID生成が動く", async ({ page }) => {
   await page.goto("/text/character-count/");
   await page.locator("[data-source]").fill("abc\nあいう");
@@ -469,15 +526,15 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みとページングができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-visible-count]")).toHaveText("125件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("135件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page.locator("[data-pagination]")).toBeVisible();
-  await expect(page.locator("[data-page-numbers] button")).toHaveCount(11);
+  await expect(page.locator("[data-page-numbers] button")).toHaveCount(12);
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=2$/);
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
-  await expect(page.getByRole("button", { name: "2ページ目" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: "2ページ目", exact: true })).toHaveAttribute("aria-current", "page");
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=3$/);
@@ -513,7 +570,11 @@ test("トップページでカテゴリ絞り込みとページングができ�
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=11$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(5);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
+
+  await page.getByRole("button", { name: "次へ →" }).click();
+  await expect(page).toHaveURL(/\?page=12$/);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
 
   await page.locator("[data-filter-select]").selectOption("pdf");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
@@ -598,7 +659,7 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   const base64Card = page.locator("[data-tool-card]").filter({ hasText: "Base64エンコード・デコード" });
   await base64Card.locator("[data-favorite]").click();
   await page.locator("[data-search-clear]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("125件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("135件");
   await expect(base64Card.locator("[data-favorite]")).toHaveAttribute("aria-pressed", "true");
 
   await page.locator("[data-favorites-only]").click();
@@ -611,5 +672,5 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
 
   await page.locator("[data-favorites-only]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("125件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("135件");
 });
