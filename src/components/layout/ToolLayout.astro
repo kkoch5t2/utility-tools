@@ -17,6 +17,24 @@ const { title, description, name, category, faqs } = Astro.props;
 const currentHref = Astro.url.pathname;
 const currentTool = tools.find((tool) => tool.href === currentHref);
 const categoryKey = currentTool?.category ?? "developer";
+const inputGuide: Record<string, string> = {
+  image: "画像ファイルを選び、必要なサイズや形式を設定します。",
+  csv: "CSVファイルを選ぶか、対象データを入力して条件を設定します。",
+  json: "JSONを貼り付け、必要に応じて変換・抽出条件を設定します。",
+  text: "処理したいテキストを入力し、必要なオプションを設定します。",
+  pdf: "PDFファイルを選び、対象ページや処理条件を設定します。",
+  qr: "URL・テキスト・画像など、処理対象を入力または選択します。",
+  video: "動画ファイルを選び、出力形式や処理条件を設定します。",
+  japanese: "変換したい日本語テキストや値を入力します。",
+  developer: "変換・解析したい文字列や値を入力し、必要な形式を選びます。",
+  date: "日付や期間など、計算に必要な値を入力します。",
+  calculator: "計算に必要な数値と条件を入力します。",
+};
+const guideSteps = [
+  inputGuide[categoryKey] ?? "処理したい内容を入力または選択します。",
+  "「処理する」「変換」「生成」などの実行ボタンを押します。",
+  "結果欄やプレビューを確認し、対応している場合はコピーまたはダウンロードします。",
+];
 const toolJson = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
@@ -49,13 +67,19 @@ const faqJson = {
 ---
 <BaseLayout title={title} description={description}>
   <div class="shell page-shell">
-    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href={`/category/${categoryKey}/`}>{category}</a></nav>
+    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href={`/category/${categoryKey}/`}>{category}</a><span>/</span><span aria-current="page">{name}</span></nav>
     <header class="tool-heading">
       <p class="eyebrow">{category}ツール</p>
       <h1>{name}</h1>
       <p>{description}</p>
     </header>
     <slot />
+    <section class="content-section tool-guide" aria-labelledby="tool-guide-title">
+      <h2 id="tool-guide-title">{name}の使い方</h2>
+      <ol>
+        {guideSteps.map((step, index) => <li><span>{index + 1}</span><p>{step}</p></li>)}
+      </ol>
+    </section>
     <section class="content-section">
       <h2>入力内容が送信されない仕組み</h2>
       <p>選択したファイルや入力したテキストはブラウザ内で処理します。このツールから内容を外部APIへ送信する処理はありません。</p>

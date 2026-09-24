@@ -119,6 +119,11 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   await expect(page.getByRole("heading", { name: "関連ツール" })).toBeVisible();
   await expect(related).toHaveCount(6);
   await expect(related.first()).toHaveAttribute("href", /\/developer\//);
+  await expect(page.getByRole("heading", { name: "Base64エンコード・デコードの使い方" })).toBeVisible();
+  await expect(page.locator(".tool-guide li")).toHaveCount(3);
+  await expect(page.locator('.breadcrumbs [aria-current="page"]')).toHaveText("Base64エンコード・デコード");
+  await expect(page.locator('.footer-categories a[href="/category/developer/"]')).toHaveText("開発者");
+  await expect(page.locator(".footer-categories a")).toHaveCount(11);
 
   await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "無料Web便利ツール集");
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary");
@@ -134,6 +139,9 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
 test("カテゴリページからツールへ移動できる", async ({ page }) => {
   await page.goto("/category/developer/");
   await expect(page.getByRole("heading", { name: "開発者ツール一覧" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "開発者ツールはこんなときに便利" })).toBeVisible();
+  await expect(page.locator(".category-usecases li")).toHaveCount(3);
+  await expect(page.locator(".related-category-grid a")).toHaveCount(3);
   await expect(page.getByRole("link", { name: /Base64エンコード・デコード/ })).toHaveAttribute("href", "/developer/base64/");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://utility-tools-jp.com/category/developer/");
 
