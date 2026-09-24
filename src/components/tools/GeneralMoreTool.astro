@@ -6,7 +6,7 @@ import type { ExtraToolMeta } from "../../config/extra-tools";
 import "../../styles/tool.css";
 interface Props { meta: ExtraToolMeta; }
 const { meta } = Astro.props;
-const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid","semver-compare","month-difference","time-duration"];
+const noTextModes = ["weekday","iso-week","percentage","discount","bytes-converter","aspect-ratio","ulid","semver-compare","month-difference","time-duration","leap-year","day-of-year","quarter","tax-calculator","compound-interest","temperature"];
 ---
 <ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
   <section class="tool-card" data-general-more data-mode={meta.mode}>
@@ -15,6 +15,8 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
     {meta.mode === "json-array-sort" && <div class="field"><label for="array-sort">並び順</label><select id="array-sort" data-action><option value="asc">昇順</option><option value="desc">降順</option></select></div>}
     {meta.mode === "json-path" && <div class="field"><label for="json-path">取得パス</label><input id="json-path" data-a type="text" placeholder="例: user.profile.name または items.0.id" /></div>}
     {meta.mode === "json-string-codec" && <div class="field"><label for="json-string-action">処理</label><select id="json-string-action" data-action><option value="escape">JSON文字列へエスケープ</option><option value="unescape">JSON文字列を復元</option></select></div>}
+    {meta.mode === "unicode-escape" && <div class="field"><label for="unicode-action">処理</label><select id="unicode-action" data-action><option value="encode">文字列 → Unicodeエスケープ</option><option value="decode">Unicodeエスケープ → 文字列</option></select></div>}
+    {meta.mode === "base64url" && <div class="field"><label for="base64url-action">処理</label><select id="base64url-action" data-action><option value="encode">エンコード</option><option value="decode">デコード</option></select></div>}
     {meta.mode === "find-replace" && <div class="settings-grid">
       <div class="field"><label for="find-text">検索文字列</label><input id="find-text" data-a type="text" /></div>
       <div class="field"><label for="replace-text">置換文字列</label><input id="replace-text" data-b type="text" /></div>
@@ -44,6 +46,9 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       <div class="field"><label for="semver-b">Version B</label><input id="semver-b" data-b type="text" placeholder="2.0.0" /></div>
     </div>}
     {meta.mode === "weekday" && <div class="field"><label for="weekday-date">日付</label><input id="weekday-date" data-a type="date" /></div>}
+    {meta.mode === "leap-year" && <div class="field"><label for="leap-year-value">西暦</label><input id="leap-year-value" data-a type="number" min="1" max="9999" step="1" placeholder="例: 2028" /></div>}
+    {meta.mode === "day-of-year" && <div class="field"><label for="day-of-year-date">日付</label><input id="day-of-year-date" data-a type="date" /></div>}
+    {meta.mode === "quarter" && <div class="field"><label for="quarter-date">日付</label><input id="quarter-date" data-a type="date" /></div>}
     {meta.mode === "iso-week" && <div class="field"><label for="iso-week-date">日付</label><input id="iso-week-date" data-a type="date" /></div>}
     {meta.mode === "month-difference" && <div class="settings-grid">
       <div class="field"><label for="month-start">開始日</label><input id="month-start" data-a type="date" /></div>
@@ -56,6 +61,21 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
     {meta.mode === "discount" && <div class="settings-grid">
       <div class="field"><label for="original-price">元の価格</label><input id="original-price" data-a type="number" step="any" min="0" /></div>
       <div class="field"><label for="discount-rate">割引率 (%)</label><input id="discount-rate" data-b type="number" step="any" min="0" max="100" /></div>
+    </div>}
+    {meta.mode === "tax-calculator" && <div class="settings-grid">
+      <div class="field"><label for="tax-mode">計算方向</label><select id="tax-mode" data-action><option value="exclusive">税抜 → 税込</option><option value="inclusive">税込 → 税抜</option></select></div>
+      <div class="field"><label for="tax-price">金額</label><input id="tax-price" data-a type="number" step="any" min="0" /></div>
+      <div class="field"><label for="tax-rate">税率 (%)</label><input id="tax-rate" data-b type="number" step="any" min="0" value="10" /></div>
+    </div>}
+    {meta.mode === "compound-interest" && <div class="settings-grid">
+      <div class="field"><label for="compound-principal">元本</label><input id="compound-principal" data-a type="number" step="any" min="0" /></div>
+      <div class="field"><label for="compound-rate">年利 (%)</label><input id="compound-rate" data-b type="number" step="any" /></div>
+      <div class="field"><label for="compound-years">運用年数</label><input id="compound-years" data-c type="number" step="any" min="0" /></div>
+    </div>}
+    {meta.mode === "temperature" && <div class="settings-grid">
+      <div class="field"><label for="temperature-value">温度</label><input id="temperature-value" data-a type="number" step="any" /></div>
+      <div class="field"><label for="temperature-from">変換元</label><select id="temperature-from" data-action><option value="C">摂氏 (℃)</option><option value="F">華氏 (℉)</option><option value="K">ケルビン (K)</option></select></div>
+      <div class="field"><label for="temperature-to">変換先</label><select id="temperature-to" data-unit><option value="F">華氏 (℉)</option><option value="C">摂氏 (℃)</option><option value="K">ケルビン (K)</option></select></div>
     </div>}
     {meta.mode === "bytes-converter" && <div class="settings-grid">
       <div class="field"><label for="byte-value">値</label><input id="byte-value" data-a type="number" step="any" min="0" /></div>
@@ -90,6 +110,7 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
   const action=root.querySelector<HTMLSelectElement>("[data-action]");
   const a=root.querySelector<HTMLInputElement>("[data-a]");
   const b=root.querySelector<HTMLInputElement>("[data-b]");
+  const c=root.querySelector<HTMLInputElement>("[data-c]");
   const unit=root.querySelector<HTMLSelectElement>("[data-unit]");
   const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
   const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
@@ -120,6 +141,10 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
   }
   function median(nums:number[]){const s=[...nums].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
   function stddev(nums:number[]){const avg=nums.reduce((s,n)=>s+n,0)/nums.length;return Math.sqrt(nums.reduce((s,n)=>s+(n-avg)**2,0)/nums.length);}
+  function unicodeEscapeEncode(value:string){return Array.from(value).map(ch=>{const code=ch.codePointAt(0)!;if(code>=0x20&&code<=0x7e)return ch;if(code<=0xffff)return "\\u"+code.toString(16).toUpperCase().padStart(4,"0");const n=code-0x10000,hi=0xd800+(n>>10),lo=0xdc00+(n&0x3ff);return "\\u"+hi.toString(16).toUpperCase()+"\\u"+lo.toString(16).toUpperCase();}).join("");}
+  function unicodeEscapeDecode(value:string){return value.replace(/\\u([0-9a-fA-F]{4})/g,(_,hex)=>String.fromCharCode(parseInt(hex,16)));}
+  function base64UrlEncode(value:string){const bytes=new TextEncoder().encode(value);let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+  function base64UrlDecode(value:string){const normalized=value.trim().replace(/-/g,"+").replace(/_/g,"/");const padded=normalized+"=".repeat((4-normalized.length%4)%4);const binary=atob(padded);return new TextDecoder().decode(Uint8Array.from(binary,ch=>ch.charCodeAt(0)));}
   function textToHex(value:string){return Array.from(new TextEncoder().encode(value)).map(b=>b.toString(16).padStart(2,"0")).join(" ");}
   function hexToText(value:string){
     const clean=value.replace(/0x/gi,"").replace(/[^0-9a-f]/gi,"");
@@ -216,6 +241,10 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       }else if(mode==="split-delimiter"){
         const delimiter=a?.value??",";if(delimiter==="")throw new Error("区切り文字を入力してください。");
         result.value=value.split(delimiter).map(v=>v.trim()).join("\n");
+      }else if(mode==="extract-numbers"){
+        const matches=value.match(/-?(?:\d+(?:\.\d+)?|\.\d+)/g)??[];result.value=matches.join("\n");info.textContent=matches.length+"件抽出";
+      }else if(mode==="extract-hashtags"){
+        const matches=value.match(/#[\p{L}\p{N}_ー]+/gu)??[];const unique=[...new Set(matches)];result.value=unique.join("\n");info.textContent=unique.length+"件抽出";
       }else if(mode==="pad-lines"){
         const width=Math.max(1,Math.min(10000,Number(a?.value)||20));
         result.value=splitLines(value).map(line=>action?.value==="left"?line.padStart(width):line.padEnd(width)).join("\n");
@@ -231,6 +260,10 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
         let hira=0,kata=0,kanji=0,latin=0,digit=0,space=0,other=0;
         for(const ch of value){if(/[\u3040-\u309f]/.test(ch))hira++;else if(/[\u30a0-\u30ff\uff66-\uff9f]/.test(ch))kata++;else if(/[\u3400-\u4dbf\u4e00-\u9fff]/.test(ch))kanji++;else if(/[A-Za-z]/.test(ch))latin++;else if(/[0-9]/.test(ch))digit++;else if(/\s|\u3000/.test(ch))space++;else other++;}
         result.value="ひらがな: "+hira+"\nカタカナ: "+kata+"\n漢字: "+kanji+"\n英字: "+latin+"\n数字: "+digit+"\n空白: "+space+"\nその他: "+other;
+      }else if(mode==="unicode-escape"){
+        result.value=action?.value==="decode"?unicodeEscapeDecode(value):unicodeEscapeEncode(value);
+      }else if(mode==="base64url"){
+        result.value=action?.value==="decode"?base64UrlDecode(value):base64UrlEncode(value);
       }else if(mode==="querystring"){
         if(action?.value==="parse"){const q=value.trim().replace(/^\?/,"");result.value=JSON.stringify(Object.fromEntries(new URLSearchParams(q).entries()),null,2);}
         else{const obj=JSON.parse(value);if(!obj||Array.isArray(obj)||typeof obj!=="object")throw new Error("JSONオブジェクトを入力してください。");result.value=new URLSearchParams(Object.entries(obj).map(([k,v])=>[k,String(v)])).toString();}
@@ -259,6 +292,15 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       }else if(mode==="weekday"){
         const date=parseDate(a?.value??"");const ja=["日曜日","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日"],en=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
         result.value=ja[date.getDay()]+" ("+en[date.getDay()]+")";
+      }else if(mode==="leap-year"){
+        const year=Number(a?.value);if(!Number.isInteger(year)||year<1||year>9999)throw new Error("1〜9999の西暦を入力してください。");
+        const leap=year%400===0||(year%4===0&&year%100!==0);result.value=year+"年は"+(leap?"うるう年です。":"平年です。");
+      }else if(mode==="day-of-year"){
+        const date=parseDate(a?.value??"");const start=new Date(date.getFullYear(),0,1);const day=Math.floor((date.getTime()-start.getTime())/86400000)+1;
+        result.value=date.getFullYear()+"年の"+day+"日目です。";
+      }else if(mode==="quarter"){
+        const date=parseDate(a?.value??"");const quarter=Math.floor(date.getMonth()/3)+1;const starts=[1,4,7,10],ends=[3,6,9,12];
+        result.value="第"+quarter+"四半期 ("+starts[quarter-1]+"月〜"+ends[quarter-1]+"月)";
       }else if(mode==="iso-week"){
         const date=parseDate(a?.value??""),iso=getIsoWeek(date);result.value=String(iso.year)+"-W"+String(iso.week).padStart(2,"0");
       }else if(mode==="month-difference"){
@@ -275,6 +317,17 @@ const noTextModes = ["weekday","iso-week","percentage","discount","bytes-convert
       }else if(mode==="discount"){
         const price=Number(a?.value),rate=Number(b?.value);if(!Number.isFinite(price)||!Number.isFinite(rate)||price<0||rate<0||rate>100)throw new Error("価格と0〜100%の割引率を入力してください。");
         const off=price*rate/100,after=price-off;result.value="割引後: "+after.toLocaleString(undefined,{maximumFractionDigits:2})+"\n値引額: "+off.toLocaleString(undefined,{maximumFractionDigits:2});
+      }else if(mode==="tax-calculator"){
+        const price=Number(a?.value),rate=Number(b?.value);if(!Number.isFinite(price)||!Number.isFinite(rate)||price<0||rate<0)throw new Error("0以上の金額と税率を入力してください。");
+        if(action?.value==="inclusive"){const base=price/(1+rate/100),tax=price-base;result.value="税抜価格: "+base.toLocaleString(undefined,{maximumFractionDigits:2})+"\n税額: "+tax.toLocaleString(undefined,{maximumFractionDigits:2})+"\n税込価格: "+price.toLocaleString(undefined,{maximumFractionDigits:2});}
+        else{const tax=price*rate/100,total=price+tax;result.value="税抜価格: "+price.toLocaleString(undefined,{maximumFractionDigits:2})+"\n税額: "+tax.toLocaleString(undefined,{maximumFractionDigits:2})+"\n税込価格: "+total.toLocaleString(undefined,{maximumFractionDigits:2});}
+      }else if(mode==="compound-interest"){
+        const principal=Number(a?.value),rate=Number(b?.value),years=Number(c?.value);if(!Number.isFinite(principal)||!Number.isFinite(rate)||!Number.isFinite(years)||principal<0||years<0)throw new Error("元本・年利・運用年数を確認してください。");
+        const future=principal*(1+rate/100)**years,gain=future-principal;result.value="将来金額: "+future.toLocaleString(undefined,{maximumFractionDigits:2})+"\n増加額: "+gain.toLocaleString(undefined,{maximumFractionDigits:2});info.textContent="年1回複利で計算";
+      }else if(mode==="temperature"){
+        const input=Number(a?.value);if(!Number.isFinite(input))throw new Error("温度を入力してください。");const from=action?.value??"C",to=unit?.value??"F";
+        const celsius=from==="C"?input:from==="F"?(input-32)*5/9:input-273.15;if(celsius<-273.15-1e-9)throw new Error("絶対零度より低い温度は指定できません。");
+        const converted=to==="C"?celsius:to==="F"?celsius*9/5+32:celsius+273.15;const suffix=to==="C"?" ℃":to==="F"?" ℉":" K";result.value=converted.toLocaleString(undefined,{maximumFractionDigits:6})+suffix;
       }else if(mode==="stats"){
         const nums=value.split(/[\s,]+/).filter(Boolean).map(Number);if(!nums.length||nums.some(n=>!Number.isFinite(n)))throw new Error("数値を改行・空白・カンマ区切りで入力してください。");
         const sum=nums.reduce((s,n)=>s+n,0),avg=sum/nums.length;result.value="件数: "+nums.length+"\n合計: "+sum+"\n平均: "+avg+"\n中央値: "+median(nums)+"\n最小: "+Math.min(...nums)+"\n最大: "+Math.max(...nums)+"\n標準偏差(母): "+stddev(nums);
