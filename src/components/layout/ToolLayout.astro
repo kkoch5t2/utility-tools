@@ -33,7 +33,7 @@ const breadcrumbJson = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "ホーム", item: siteConfig.url + "/" },
-    { "@type": "ListItem", position: 2, name: category, item: `${siteConfig.url}/?category=${categoryKey}` },
+    { "@type": "ListItem", position: 2, name: category, item: `${siteConfig.url}/category/${categoryKey}/` },
     { "@type": "ListItem", position: 3, name, item: new URL(currentHref, siteConfig.url).toString() },
   ],
 };
@@ -49,7 +49,7 @@ const faqJson = {
 ---
 <BaseLayout title={title} description={description}>
   <div class="shell page-shell">
-    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><span>{category}</span></nav>
+    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href={`/category/${categoryKey}/`}>{category}</a></nav>
     <header class="tool-heading">
       <p class="eyebrow">{category}ツール</p>
       <h1>{name}</h1>

@@ -129,6 +129,19 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   expect(jsonLd.some((text) => text.includes('"@type":"FAQPage"'))).toBeTruthy();
 });
 
+
+
+test("カテゴリページからツールへ移動できる", async ({ page }) => {
+  await page.goto("/category/developer/");
+  await expect(page.getByRole("heading", { name: "開発者ツール一覧" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Base64エンコード・デコード/ })).toHaveAttribute("href", "/developer/base64/");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://utility-tools-jp.com/category/developer/");
+
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(jsonLd.some((text) => text.includes('"@type":"CollectionPage"'))).toBeTruthy();
+  expect(jsonLd.some((text) => text.includes('"@type":"ItemList"'))).toBeTruthy();
+});
+
 test("サイトマップがツール一覧から自動生成される", async ({ request, page }) => {
   const response = await request.get("/sitemap.xml");
   expect(response.ok()).toBeTruthy();
@@ -136,8 +149,9 @@ test("サイトマップがツール一覧から自動生成される", async ({
   const body = await response.text();
   expect(body).toContain("https://utility-tools-jp.com/developer/base64/");
   expect(body).toContain("https://utility-tools-jp.com/privacy/");
+  expect(body).toContain("https://utility-tools-jp.com/category/developer/");
 
   await page.goto("/");
   const toolCount = await page.locator("[data-tool-card]").count();
-  expect((body.match(/<url>/g) ?? []).length).toBe(toolCount + 2);
+  expect((body.match(/<url>/g) ?? []).length).toBe(toolCount + 13);
 });
