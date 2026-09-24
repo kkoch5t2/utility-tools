@@ -96,7 +96,8 @@ const items = [...totals.entries()]
   .map(([path]) => ({ path }));
 
 if (!items.length) {
-  throw new Error("No tool page views were returned. Existing popularity data was left unchanged.");
+  console.log("No tool page views yet; keeping the existing popularity ranking unchanged.");
+  process.exit(0);
 }
 
 const output = {
