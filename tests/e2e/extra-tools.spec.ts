@@ -30,6 +30,8 @@ const routes = [
   "/developer/hex-text/","/developer/crc32/","/developer/identifier-case/","/developer/semver-compare/",
   "/date/month-difference/","/calculator/time-duration/",
   "/developer/uuid/","/developer/unix-time/",
+  "/text/extract-numbers/","/text/extract-hashtags/","/developer/unicode-escape/","/developer/base64url/",
+  "/date/leap-year/","/date/day-of-year/","/date/quarter/","/calculator/tax/","/calculator/compound-interest/","/calculator/temperature/",
 ];
 
 test("追加ツールの全ページが表示できる", async ({ page }) => {
@@ -361,6 +363,65 @@ test("100ツール突破分の追加機能が動く", async ({ page }) => {
   await expect(page.locator("[data-info]")).toHaveText(/翌日/);
 });
 
+test("新しい抽出・変換・日付・計算ツールが動く", async ({ page }) => {
+  await page.goto("/text/extract-numbers/");
+  await page.locator("[data-source]").fill("abc -12.5 xyz 30");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("-12.5\n30");
+
+  await page.goto("/text/extract-hashtags/");
+  await page.locator("[data-source]").fill("#東京 #AI #東京");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("#東京\n#AI");
+
+  await page.goto("/developer/unicode-escape/");
+  await page.locator("[data-source]").fill("あA");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("\\u3042A");
+  await page.locator("[data-action]").selectOption("decode");
+  await page.locator("[data-source]").fill("\\u3042");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("あ");
+
+  await page.goto("/developer/base64url/");
+  await page.locator("[data-source]").fill("abc?");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("YWJjPw");
+
+  await page.goto("/date/leap-year/");
+  await page.locator("[data-a]").fill("2028");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/うるう年/);
+
+  await page.goto("/date/day-of-year/");
+  await page.locator("[data-a]").fill("2026-01-31");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/31日目/);
+
+  await page.goto("/date/quarter/");
+  await page.locator("[data-a]").fill("2026-09-24");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/第3四半期/);
+
+  await page.goto("/calculator/tax/");
+  await page.locator("[data-a]").fill("1000");
+  await page.locator("[data-b]").fill("10");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/税込価格: 1,100/);
+
+  await page.goto("/calculator/compound-interest/");
+  await page.locator("[data-a]").fill("1000");
+  await page.locator("[data-b]").fill("10");
+  await page.locator("[data-c]").fill("2");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue(/将来金額: 1,210/);
+
+  await page.goto("/calculator/temperature/");
+  await page.locator("[data-a]").fill("0");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("32 ℉");
+});
+
 test("文字数カウントとUUID生成が動く", async ({ page }) => {
   await page.goto("/text/character-count/");
   await page.locator("[data-source]").fill("abc\nあいう");
@@ -408,10 +469,10 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みとページングができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-visible-count]")).toHaveText("115件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("125件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page.locator("[data-pagination]")).toBeVisible();
-  await expect(page.locator("[data-page-numbers] button")).toHaveCount(10);
+  await expect(page.locator("[data-page-numbers] button")).toHaveCount(11);
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=2$/);
@@ -448,7 +509,11 @@ test("トップページでカテゴリ絞り込みとページングができ�
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=10$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(7);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
+
+  await page.getByRole("button", { name: "次へ →" }).click();
+  await expect(page).toHaveURL(/\?page=11$/);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(5);
 
   await page.locator("[data-filter-select]").selectOption("pdf");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
@@ -524,7 +589,7 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   await page.goto("/");
 
   const search = page.locator("[data-tool-search]");
-  await search.fill("Base64");
+  await search.fill("Base64エンコード・デコード");
   await expect(page.locator("[data-visible-count]")).toHaveText("1件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(1);
   await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
@@ -533,7 +598,7 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   const base64Card = page.locator("[data-tool-card]").filter({ hasText: "Base64エンコード・デコード" });
   await base64Card.locator("[data-favorite]").click();
   await page.locator("[data-search-clear]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("115件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("125件");
   await expect(base64Card.locator("[data-favorite]")).toHaveAttribute("aria-pressed", "true");
 
   await page.locator("[data-favorites-only]").click();
@@ -546,5 +611,5 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
 
   await page.locator("[data-favorites-only]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("115件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("125件");
 });
