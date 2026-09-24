@@ -3,8 +3,8 @@ name: Update popular tools
 on:
   workflow_dispatch:
   schedule:
-    # 04:15 JST every day
-    - cron: "15 19 * * *"
+    # Every hour at :15
+    - cron: "15 * * * *"
   push:
     branches:
       - main
