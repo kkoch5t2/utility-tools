@@ -1,7 +1,16 @@
 name: CI
+
 on:
   push:
   pull_request:
+  workflow_dispatch:
+  schedule:
+    # 03:00 JST every day
+    - cron: "0 18 * * *"
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   test:
@@ -18,3 +27,93 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Create or update E2E failure issue
+        if: failure() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "[自動監視] E2Eテスト失敗";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              "定期E2Eテストが失敗しました。",
+              "",
+              `- 実行: ${runUrl}`,
+              `- commit: ${context.sha}`,
+              `- 発生時刻(UTC): ${new Date().toISOString()}`,
+              "",
+              "自動修復処理でこのIssueを確認し、再現・修正・再テストしてください。"
+            ].join("\n");
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "automated-e2e-failure"
+            });
+            const existing = issues.find(issue => issue.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body
+              });
+            } else {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: "automated-e2e-failure",
+                  description: "Scheduled E2E failure awaiting automated repair"
+                });
+              } catch (error) {
+                if (error.status !== 422) throw error;
+              }
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["automated-e2e-failure"]
+              });
+            }
+
+      - name: Close E2E failure issue after recovery
+        if: success() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "[自動監視] E2Eテスト失敗";
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "automated-e2e-failure"
+            });
+            const issue = issues.find(item => item.title === title);
+            if (issue) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: "E2Eテストが再び成功したため、自動でクローズします。"
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: "closed"
+              });
+            }
