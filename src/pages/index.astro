@@ -55,20 +55,6 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
         </select>
       </div>
 
-      <div class="tool-filters" aria-label="ツールのカテゴリで絞り込む">
-        {categories.map((category) => (
-          <button
-            class="filter-button"
-            type="button"
-            data-filter={category.key}
-            aria-pressed={category.key === "all" ? "true" : "false"}
-          >
-            <span>{category.label}</span>
-            <small>{category.key === "all" ? tools.length : (counts.get(category.key) ?? 0)}</small>
-          </button>
-        ))}
-      </div>
-
       <div class="tool-grid" data-tool-grid>
         {tools.map((tool) => (
           <article
@@ -104,7 +90,6 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
 
 <script>
   const PAGE_SIZE = 12;
-  const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-filter]"));
   const filterSelect = document.querySelector<HTMLSelectElement>("[data-filter-select]");
   const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-tool-card]"));
   const searchInput = document.querySelector<HTMLInputElement>("[data-tool-search]");
@@ -178,9 +163,6 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     const visibleCards = new Set(matched.slice(start, start + PAGE_SIZE));
 
     for (const card of cards) card.hidden = !visibleCards.has(card);
-    for (const button of filterButtons) {
-      button.setAttribute("aria-pressed", String(button.dataset.filter === currentCategory));
-    }
     if (filterSelect) filterSelect.value = currentCategory;
     if (searchInput && searchInput.value !== currentQuery) searchInput.value = currentQuery;
     if (searchClear) searchClear.hidden = !currentQuery;
@@ -239,14 +221,6 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     if (updateHistory) updateUrl(push);
   }
 
-  for (const button of filterButtons) {
-    button.addEventListener("click", () => {
-      currentCategory = button.dataset.filter ?? "all";
-      currentPage = 1;
-      render(true, true);
-    });
-  }
-
   filterSelect?.addEventListener("change", () => {
     currentCategory = filterSelect.value;
     currentPage = 1;
@@ -303,7 +277,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   function applyFromUrl() {
     const url = new URL(window.location.href);
     const category = url.searchParams.get("category") ?? "all";
-    currentCategory = filterButtons.some((button) => button.dataset.filter === category) ? category : "all";
+    currentCategory = Array.from(filterSelect?.options ?? []).some((option) => option.value === category) ? category : "all";
     currentQuery = url.searchParams.get("q") ?? "";
     favoritesOnly = url.searchParams.get("favorites") === "1";
     const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -336,61 +310,31 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .favorites-toggle { min-height: 44px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font-weight: 800; cursor: pointer; white-space: nowrap; }
   .favorites-toggle[aria-pressed="true"] { border-color: #d59b00; background: #fff8dc; color: #8a5d00; }
 
-  .filter-select-wrap { display: none; }
-
-  .tool-filters {
+  .filter-select-wrap {
     display: flex;
-    flex-wrap: nowrap;
-    gap: 8px;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 2px 18px 10px 2px;
-    margin-bottom: 12px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-    scroll-padding-inline: 2px 18px;
-    overscroll-behavior-x: contain;
-  }
-  .tool-filters::-webkit-scrollbar { display: none; }
-  .filter-button {
-    flex: 0 0 auto;
-    scroll-snap-align: start;
-    min-height: 40px;
-    display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 7px 12px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
+    gap: 10px;
+    margin: 0 0 18px;
+  }
+  .filter-select-wrap label {
+    flex: 0 0 auto;
+    color: var(--muted);
     font-size: 13px;
     font-weight: 800;
+  }
+  .filter-select-wrap select {
+    width: min(100%, 320px);
+    min-height: 42px;
+    padding: 8px 38px 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 700;
     cursor: pointer;
   }
-  .filter-button small {
-    min-width: 22px;
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: var(--surface-muted);
-    color: var(--muted);
-    font-size: 11px;
-    text-align: center;
-  }
-  .filter-button:hover { border-color: #9fb0c7; }
-  .filter-button[aria-pressed="true"] {
+  .filter-select-wrap select:focus {
     border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
-  }
-  .filter-button[aria-pressed="true"] small {
-    background: rgba(255,255,255,.18);
-    color: #fff;
   }
 
   .tool-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
@@ -518,15 +462,13 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     .tool-search-row { align-items: stretch; }
     .tool-search { min-width: 0; }
     .favorites-toggle { padding-inline: 10px; font-size: 13px; }
-    .filter-select-wrap { display: none; }
-    .tool-filters {
-      display: flex;
-      width: calc(100% + 16px);
-      max-width: calc(100% + 16px);
-      margin-right: -16px;
-      padding: 2px 24px 10px 0;
-      scroll-padding-inline: 0 24px;
+    .filter-select-wrap {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
     }
+    .filter-select-wrap select { width: 100%; min-width: 0; }
     .pagination {
       width: 100%;
       max-width: 100%;

@@ -450,18 +450,18 @@ test("トップページでカテゴリ絞り込みとページングができ�
   await expect(page).toHaveURL(/\?page=10$/);
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(7);
 
-  await page.locator('[data-filter="pdf"]').click();
+  await page.locator("[data-filter-select]").selectOption("pdf");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
   await expect(page.locator("[data-visible-count]")).toHaveText("3件");
   await expect(page.locator("[data-pagination]")).toBeHidden();
-  await expect(page.locator('[data-filter="pdf"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("[data-filter-select]")).toHaveValue("pdf");
   await expect(page).toHaveURL(/\?category=pdf$/);
 
-  await page.getByRole("button", { name: /IMAGE/ }).click();
+  await page.locator("[data-filter-select]").selectOption("image");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(7);
   await expect(page.locator("[data-visible-count]")).toHaveText("7件");
 
-  await page.getByRole("button", { name: /すべて/ }).click();
+  await page.locator("[data-filter-select]").selectOption("all");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page).toHaveURL(/\/$/);
 });
