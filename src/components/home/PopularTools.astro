@@ -1,0 +1,63 @@
+---
+import { tools } from "../../config/tools";
+import popularDataRaw from "../../data/popular-tools.json";
+
+const popularData = popularDataRaw as {
+  generatedAt: string | null;
+  periodDays: number;
+  items: Array<{ path: string }>;
+};
+
+const ranked = popularData.items
+  .map((item, index) => {
+    const tool = tools.find((candidate) => candidate.href === item.path);
+    return tool ? { ...tool, rank: index + 1 } : null;
+  })
+  .filter((item): item is NonNullable<typeof item> => Boolean(item));
+---
+
+{ranked.length > 0 && (
+  <section class="popular-tools" aria-labelledby="popular-tools-title">
+    <div class="popular-heading">
+      <div>
+        <p class="eyebrow">POPULAR</p>
+        <h2 id="popular-tools-title">人気ツール</h2>
+      </div>
+      <span>過去{popularData.periodDays}日</span>
+    </div>
+    <div class="popular-grid">
+      {ranked.map((tool) => (
+        <a class="popular-card" href={tool.href}>
+          <span class="rank">{tool.rank}</span>
+          <span class="popular-copy">
+            <strong>{tool.name}</strong>
+            <small>{tool.category.toUpperCase()}</small>
+          </span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .popular-tools { margin: 0 0 40px; }
+  .popular-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+  .popular-heading h2 { margin: 0; font-size: 24px; }
+  .popular-heading > span { color: var(--muted); font-size: 12px; font-weight: 700; }
+  .eyebrow { margin: 0 0 3px; color: var(--accent); font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+  .popular-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .popular-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--text); text-decoration: none; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+  .popular-card:hover { transform: translateY(-2px); border-color: #b8c8dc; box-shadow: 0 8px 20px rgba(15, 23, 42, .06); }
+  .rank { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px; background: var(--surface-muted); color: var(--accent); font-size: 13px; font-weight: 900; }
+  .popular-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+  .popular-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .popular-copy small { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+  .arrow { flex: 0 0 auto; color: var(--muted); font-weight: 800; }
+
+  @media (max-width: 760px) {
+    .popular-tools { margin-bottom: 32px; }
+    .popular-grid { grid-template-columns: 1fr; }
+    .popular-card { padding: 12px 13px; }
+  }
+</style>

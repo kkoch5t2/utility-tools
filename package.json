@@ -18,6 +18,7 @@
     "verify": "npm run test:tools && npm run check && npm test && npm run build",
     "verify:full": "npm run test:tools && npm run check && npm test && npm run build && npm run test:e2e",
     "monitor:prod": "node scripts/check-production.mjs",
+    "update:popular": "node scripts/update-popular-tools.mjs",
     "deploy": "npm run verify && wrangler deploy"
   },
   "dependencies": {

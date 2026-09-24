@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import PopularTools from "../components/home/PopularTools.astro";
 import { tools, type ToolDefinition } from "../config/tools";
 import { siteConfig } from "../config/site";
 
@@ -27,6 +28,8 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
       <h1>必要な処理を、ブラウザですぐに。</h1>
       <p>無料・登録不要。ファイルは外部サーバーへ送らず、あなたの端末内で処理します。</p>
     </header>
+
+    <PopularTools />
 
     <section aria-labelledby="tools-title">
       <div class="tools-heading">
