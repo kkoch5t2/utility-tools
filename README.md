@@ -75,11 +75,33 @@ npx playwright install chromium
 
 ## 新しいツールの追加方法
 
-1. `src/tools/<tool>/config.ts` に個別設定を作る
-2. 必要なら `src/engines/<category>/` に再利用可能な処理を追加する
-3. `src/config/tools.ts` にツールを登録する
-4. `src/pages/` に薄いページを作り、共通レイアウトを利用する
-5. Unit Test と主要E2Eを追加する
+追加ツールは `src/config/extra-tools.ts` を直接編集せず、基本的にCLIから登録します。
+
+```bash
+npm run add:tool -- \
+  --id=text-example \
+  --mode=text-example \
+  --family=generalmore \
+  --category=テキスト \
+  --categoryKey=text \
+  --href=/text/example/ \
+  --name=サンプルツール \
+  --title="サンプルツール｜無料" \
+  --description="サンプルの説明です。" \
+  --faqQuestion="何ができますか？" \
+  --faqAnswer="ブラウザ内で処理できます。"
+```
+
+登録すると、トップページ一覧・関連ツール・SEO構造化データ・サイトマップへ自動で反映されます。新しい `mode` の場合だけ、該当するfamilyコンポーネントのUI/処理を実装します。
+
+登録前の確認だけしたい場合は末尾に `--dryRun=true` を付けます。
+
+```bash
+npm run test:tools
+npm run verify:full
+```
+
+`test:tools` はID重複、URL重複、カテゴリ/family、URL形式を検査します。E2Eでは全ツールURLの表示確認も行います。
 
 ## 現時点の制限
 
