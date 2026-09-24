@@ -408,10 +408,10 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みとページングができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-visible-count]")).toHaveText("105件");
+  await expect(page.locator("[data-visible-count]")).toHaveText("115件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page.locator("[data-pagination]")).toBeVisible();
-  await expect(page.locator("[data-page-numbers] button")).toHaveCount(9);
+  await expect(page.locator("[data-page-numbers] button")).toHaveCount(10);
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=2$/);
@@ -444,7 +444,11 @@ test("トップページでカテゴリ絞り込みとページングができ�
 
   await page.getByRole("button", { name: "次へ →" }).click();
   await expect(page).toHaveURL(/\?page=9$/);
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(9);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
+
+  await page.getByRole("button", { name: "次へ →" }).click();
+  await expect(page).toHaveURL(/\?page=10$/);
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(7);
 
   await page.getByRole("button", { name: /PDF/ }).click();
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(3);
@@ -460,4 +464,57 @@ test("トップページでカテゴリ絞り込みとページングができ�
   await page.getByRole("button", { name: /すべて/ }).click();
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page).toHaveURL(/\/$/);
+});
+
+
+test("追加したニッチテキスト・開発者ツールが動く", async ({ page }) => {
+  await page.goto("/text/trim-each-line/");
+  await page.locator("[data-source]").fill("  alpha  \n\tbeta\t");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("alpha\nbeta");
+
+  await page.goto("/text/collapse-blank-lines/");
+  await page.locator("[data-source]").fill("a\n\n   \n\nb");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("a\n\nb");
+
+  await page.goto("/text/extract-emails/");
+  await page.locator("[data-source]").fill("a@example.com x a@example.com y b@test.jp");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("a@example.com\nb@test.jp");
+
+  await page.goto("/text/extract-urls/");
+  await page.locator("[data-source]").fill("see https://example.com/test and http://example.org/a.");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("https://example.com/test\nhttp://example.org/a");
+
+  await page.goto("/text/remove-html-tags/");
+  await page.locator("[data-source]").fill("<p>Hello <strong>world</strong></p>");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("Hello world");
+
+  await page.goto("/developer/regex-escape/");
+  await page.locator("[data-source]").fill("a+b.c?");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("a\\+b\\.c\\?");
+
+  await page.goto("/text/quote-lines/");
+  await page.locator("[data-source]").fill("a\nb");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue('"a"\n"b"');
+
+  await page.goto("/text/unquote-lines/");
+  await page.locator("[data-source]").fill('"a"\n"b"');
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("a\nb");
+
+  await page.goto("/developer/normalize-slashes/");
+  await page.locator("[data-source]").fill("C:\\Users\\kota\\file.txt");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("C:/Users/kota/file.txt");
+
+  await page.goto("/text/sort-lines-by-length/");
+  await page.locator("[data-source]").fill("cccc\na\nbb");
+  await page.getByRole("button",{name:"処理する"}).click();
+  await expect(page.locator("[data-result]")).toHaveValue("a\nbb\ncccc");
 });
