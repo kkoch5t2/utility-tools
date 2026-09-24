@@ -13,8 +13,10 @@
     "check": "astro check",
     "test": "vitest run tests/unit",
     "test:e2e": "playwright test",
-    "verify": "npm run check && npm test && npm run build",
-    "verify:full": "npm run check && npm test && npm run build && npm run test:e2e",
+    "test:tools": "node scripts/validate-tools.mjs",
+    "add:tool": "node scripts/add-tool.mjs",
+    "verify": "npm run test:tools && npm run check && npm test && npm run build",
+    "verify:full": "npm run test:tools && npm run check && npm test && npm run build && npm run test:e2e",
     "monitor:prod": "node scripts/check-production.mjs",
     "deploy": "npm run verify && wrangler deploy"
   },
