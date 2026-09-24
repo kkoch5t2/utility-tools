@@ -110,3 +110,31 @@ test("不具合報告にツール情報を付けて送信できる", async ({ pa
   expect(payload.url).toContain("/developer/base64/");
   expect(payload.browser).toBeTruthy();
 });
+
+
+test("関連ツールとSEO構造化データが表示される", async ({ page }) => {
+  await page.goto("/developer/base64/");
+
+  const related = page.locator(".related-card");
+  await expect(page.getByRole("heading", { name: "関連ツール" })).toBeVisible();
+  await expect(related).toHaveCount(6);
+  await expect(related.first()).toHaveAttribute("href", /\/developer\//);
+
+  await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "無料Web便利ツール集");
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary");
+
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(jsonLd.some((text) => text.includes('"@type":"WebApplication"'))).toBeTruthy();
+  expect(jsonLd.some((text) => text.includes('"@type":"BreadcrumbList"'))).toBeTruthy();
+  expect(jsonLd.some((text) => text.includes('"@type":"FAQPage"'))).toBeTruthy();
+});
+
+test("サイトマップがツール一覧から自動生成される", async ({ request }) => {
+  const response = await request.get("/sitemap.xml");
+  expect(response.ok()).toBeTruthy();
+  expect(response.headers()["content-type"]).toContain("xml");
+  const body = await response.text();
+  expect(body).toContain("https://utility-tools-jp.com/developer/base64/");
+  expect(body).toContain("https://utility-tools-jp.com/privacy/");
+  expect((body.match(/<url>/g) ?? []).length).toBe(107);
+});

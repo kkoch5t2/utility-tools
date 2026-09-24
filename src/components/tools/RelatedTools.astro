@@ -1,0 +1,53 @@
+---
+import { tools } from "../../config/tools";
+
+interface Props {
+  currentHref: string;
+}
+
+const { currentHref } = Astro.props;
+const current = tools.find((tool) => tool.href === currentHref);
+const related = current
+  ? tools
+      .filter((tool) => tool.status === "available" && tool.href !== currentHref && tool.category === current.category)
+      .slice(0, 6)
+  : [];
+---
+
+{related.length > 0 && (
+  <section class="content-section related-tools" aria-labelledby="related-tools-title">
+    <div class="related-heading">
+      <div>
+        <p class="related-eyebrow">RELATED TOOLS</p>
+        <h2 id="related-tools-title">関連ツール</h2>
+      </div>
+      <a href={"/?category=" + current?.category}>同じカテゴリを見る →</a>
+    </div>
+    <div class="related-grid">
+      {related.map((tool) => (
+        <a class="related-card" href={tool.href}>
+          <span class="related-category">{tool.category.toUpperCase()}</span>
+          <strong>{tool.name}</strong>
+          <p>{tool.description}</p>
+          <span class="related-open">ツールを開く →</span>
+        </a>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .related-heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:16px}
+  .related-heading h2{margin:2px 0 0}
+  .related-heading>a{font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap}
+  .related-eyebrow{margin:0;color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.08em}
+  .related-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .related-card{display:flex;flex-direction:column;min-height:170px;padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--text);text-decoration:none;transition:.16s ease}
+  .related-card:hover{transform:translateY(-2px);border-color:#b8c8dc;box-shadow:0 9px 22px rgba(15,23,42,.07)}
+  .related-category{width:fit-content;padding:2px 7px;border-radius:999px;background:#eef5ff;color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.04em}
+  .related-card strong{margin-top:9px;font-size:16px;line-height:1.45}
+  .related-card p{margin:6px 0 12px;color:var(--muted);font-size:13px;line-height:1.6;flex:1}
+  .related-open{color:var(--accent);font-size:12px;font-weight:800}
+  @media(max-width:760px){.related-grid{grid-template-columns:1fr 1fr}.related-heading{align-items:flex-start}.related-card{min-height:155px}}
+  @media(max-width:520px){.related-grid{grid-template-columns:1fr}.related-card{min-height:0}}
+</style>
