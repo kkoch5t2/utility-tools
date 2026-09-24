@@ -4,6 +4,7 @@ import IssueReport from "../feedback/IssueReport.astro";
 import RelatedTools from "../tools/RelatedTools.astro";
 import { tools } from "../../config/tools";
 import { siteConfig } from "../../config/site";
+import { prioritySeoContent } from "../../config/seo-content";
 
 interface Props {
   title: string;
@@ -17,6 +18,7 @@ const { title, description, name, category, faqs } = Astro.props;
 const currentHref = Astro.url.pathname;
 const currentTool = tools.find((tool) => tool.href === currentHref);
 const categoryKey = currentTool?.category ?? "developer";
+const seoContent = prioritySeoContent[currentHref];
 const inputGuide: Record<string, string> = {
   image: "画像ファイルを選び、必要なサイズや形式を設定します。",
   csv: "CSVファイルを選ぶか、対象データを入力して条件を設定します。",
@@ -80,6 +82,28 @@ const faqJson = {
         {guideSteps.map((step, index) => <li><span>{index + 1}</span><p>{step}</p></li>)}
       </ol>
     </section>
+
+    {seoContent && (
+      <section class="content-section seo-detail" aria-labelledby="seo-detail-title">
+        <h2 id="seo-detail-title">{name}を使う場面</h2>
+        <p class="seo-lead">{seoContent.lead}</p>
+        <div class="seo-usecases">
+          {seoContent.useCases.map((item) => <div><span aria-hidden="true">✓</span><p>{item}</p></div>)}
+        </div>
+
+        <h3>入力・出力例</h3>
+        <div class="seo-example">
+          <div><span>入力例</span><code>{seoContent.example.input}</code></div>
+          <div><span>出力例</span><code>{seoContent.example.output}</code></div>
+        </div>
+
+        <h3>使うときのポイント</h3>
+        <ul class="seo-tips">
+          {seoContent.tips.map((tip) => <li>{tip}</li>)}
+        </ul>
+      </section>
+    )}
+
     <section class="content-section">
       <h2>入力内容が送信されない仕組み</h2>
       <p>選択したファイルや入力したテキストはブラウザ内で処理します。このツールから内容を外部APIへ送信する処理はありません。</p>
