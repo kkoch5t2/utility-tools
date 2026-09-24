@@ -128,7 +128,12 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   await expect(page.locator('.breadcrumbs [aria-current="page"]')).toHaveText("Base64エンコード・デコード");
   await expect(page.locator('.footer-categories a[href="/category/developer/"]')).toHaveText("開発者");
   await expect(page.locator(".footer-categories a")).toHaveCount(11);
-  await expect(page.locator('.footer-related a[href="https://datlume.com/"]')).toContainText("Datlume");
+  const datlumeLink = page.locator('.footer-related a[href="https://datlume.com/"]');
+  await expect(datlumeLink).toContainText("Datlume");
+  await expect(datlumeLink.locator('img[src="/brand/datlume.svg"]')).toBeVisible();
+  const zennLink = page.locator('.footer-related a[href="https://zenn.dev/kkoch5t2"]');
+  await expect(zennLink).toContainText("Zenn");
+  await expect(zennLink.locator('img[src="/brand/zenn.png"]')).toBeVisible();
 
   await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "無料Web便利ツール集");
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary");
