@@ -1,0 +1,201 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card japan-tool" data-japan-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🇯🇵</span><div><strong>日本向け・ブラウザ内処理</strong><br />入力内容は外部サーバーへ送信しません。</div></div>
+
+    {meta.mode === "postal-code" && <div class="field">
+      <label for="jp-postal">郵便番号</label>
+      <input id="jp-postal" data-input type="text" inputmode="numeric" placeholder="1000001 / １００－０００１" />
+    </div>}
+
+    {meta.mode === "phone-number" && <>
+      <div class="field"><label for="jp-phone">電話番号</label><input id="jp-phone" data-input type="text" inputmode="tel" placeholder="09012345678 / +81 90 1234 5678" /></div>
+      <p class="inline-note">携帯・050・0120・0570・0800・03・06は代表的な区切りへ整形します。それ以外の市外局番は誤分割を避け、数字のみで表示します。</p>
+    </>}
+
+    {meta.mode === "address-normalize" && <div class="field">
+      <label for="jp-address">住所</label>
+      <textarea id="jp-address" class="textarea" data-input placeholder="東京都 千代田区 １−２−３"></textarea>
+    </div>}
+
+    {meta.mode === "prefecture-code" && <div class="field">
+      <label for="jp-prefecture">都道府県名 または 2桁コード</label>
+      <input id="jp-prefecture" data-input type="text" placeholder="東京都 / 東京 / 13" />
+    </div>}
+
+    {meta.mode === "corporate-number" && <>
+      <div class="field"><label for="jp-corporate">法人番号 または 12桁の基礎番号</label><input id="jp-corporate" data-input type="text" inputmode="numeric" placeholder="13桁の法人番号 / 12桁の会社法人等番号" /></div>
+      <p class="inline-note">13桁ならチェックデジットを検証、12桁なら国税庁の算式で先頭のチェックデジットを計算します。</p>
+    </>}
+
+    {meta.mode === "school-year" && <>
+      <div class="field"><label for="jp-birthdate">生年月日</label><input id="jp-birthdate" data-birthdate type="date" /></div>
+      <p class="inline-note">4月2日〜翌年4月1日を同じ学年として、留年・浪人・休学なしの標準進行で計算します。</p>
+    </>}
+
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>{meta.mode === "school-year" ? "年度を計算" : "整形・確認"}</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-copy>結果をコピー</button>
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <div class="field result-field"><label for="jp-result">結果</label><textarea id="jp-result" class="textarea tall" data-result readonly></textarea></div>
+  </section>
+</ToolLayout>
+<script>
+  const root=document.querySelector<HTMLElement>("[data-japan-tool]")!;
+  const mode=root.dataset.mode!;
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]")!;
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const normalizeDigits=(value:string)=>value.normalize("NFKC").replace(/\D/g,"");
+  const prefectures=[
+    ["01","北海道"],["02","青森県"],["03","岩手県"],["04","宮城県"],["05","秋田県"],["06","山形県"],["07","福島県"],
+    ["08","茨城県"],["09","栃木県"],["10","群馬県"],["11","埼玉県"],["12","千葉県"],["13","東京都"],["14","神奈川県"],
+    ["15","新潟県"],["16","富山県"],["17","石川県"],["18","福井県"],["19","山梨県"],["20","長野県"],["21","岐阜県"],
+    ["22","静岡県"],["23","愛知県"],["24","三重県"],["25","滋賀県"],["26","京都府"],["27","大阪府"],["28","兵庫県"],
+    ["29","奈良県"],["30","和歌山県"],["31","鳥取県"],["32","島根県"],["33","岡山県"],["34","広島県"],["35","山口県"],
+    ["36","徳島県"],["37","香川県"],["38","愛媛県"],["39","高知県"],["40","福岡県"],["41","佐賀県"],["42","長崎県"],
+    ["43","熊本県"],["44","大分県"],["45","宮崎県"],["46","鹿児島県"],["47","沖縄県"],
+  ] as const;
+
+  function postalCode(){
+    const raw=root.querySelector<HTMLInputElement>("[data-input]")!.value;
+    const digits=normalizeDigits(raw);
+    if(digits.length!==7)throw new Error("郵便番号は7桁で入力してください。");
+    result.value=["ハイフンあり: "+digits.slice(0,3)+"-"+digits.slice(3),"数字のみ: "+digits].join("\n");
+  }
+
+  function phoneNumber(){
+    const raw=root.querySelector<HTMLInputElement>("[data-input]")!.value.normalize("NFKC").trim();
+    let compact=raw.replace(/[()（）\s\-‐‑‒–—―−－.]/g,"");
+    if(compact.startsWith("+81"))compact="0"+compact.slice(3);
+    if(!/^0\d{9,10}$/.test(compact))throw new Error("日本の電話番号を市外局番・携帯番号の0から入力してください。");
+    let formatted=compact,note="";
+    if(/^(070|080|090|050)\d{8}$/.test(compact))formatted=compact.replace(/^(\d{3})(\d{4})(\d{4})$/,"$1-$2-$3");
+    else if(/^0800\d{7}$/.test(compact))formatted=compact.replace(/^(\d{4})(\d{3})(\d{4})$/,"$1-$2-$3");
+    else if(/^(0120|0570)\d{6}$/.test(compact))formatted=compact.replace(/^(\d{4})(\d{3})(\d{3})$/,"$1-$2-$3");
+    else if(/^(03|06)\d{8}$/.test(compact))formatted=compact.replace(/^(\d{2})(\d{4})(\d{4})$/,"$1-$2-$3");
+    else note="※市外局番の長さを誤推定しないため、自動ハイフン分割はしていません。";
+    const intl="+81"+compact.slice(1);
+    result.value=["国内表記: "+formatted,"数字のみ: "+compact,"国際表記(E.164): "+intl,note].filter(Boolean).join("\n");
+  }
+
+  function addressNormalize(){
+    const source=root.querySelector<HTMLTextAreaElement>("[data-input]")!.value;
+    if(!source.trim())throw new Error("住所を入力してください。");
+    const normalized=source.normalize("NFKC")
+      .replace(/[‐‑‒–—―−－﹣]/g,"-")
+      .replace(/[ 　\t]+/g," ")
+      .replace(/\s*([,-])\s*/g,"$1")
+      .trim();
+    result.value=normalized;
+  }
+
+  function prefectureCode(){
+    const raw=root.querySelector<HTMLInputElement>("[data-input]")!.value.normalize("NFKC").trim();
+    if(!raw)throw new Error("都道府県名またはコードを入力してください。");
+    const codeMatch=raw.match(/^\d{1,2}$/);
+    let hit:readonly [string,string]|undefined;
+    if(codeMatch)hit=prefectures.find(([code])=>code===raw.padStart(2,"0"));
+    else {
+      const stripped=raw.replace(/[都道府県]$/,"");
+      hit=prefectures.find(([,name])=>name===raw||name.replace(/[都道府県]$/,"")===stripped);
+    }
+    if(!hit)throw new Error("01〜47の都道府県コード、または都道府県名を入力してください。");
+    result.value=["都道府県コード: "+hit[0],"都道府県名: "+hit[1]].join("\n");
+  }
+  function corporateCheckDigit(base:string){
+    let sum=0;
+    for(let n=1;n<=12;n++){
+      const digit=Number(base[12-n]);
+      const weight=n%2===1?1:2;
+      sum+=digit*weight;
+    }
+    return String(9-(sum%9));
+  }
+
+  function corporateNumber(){
+    const raw=root.querySelector<HTMLInputElement>("[data-input]")!.value;
+    const digits=normalizeDigits(raw);
+    if(digits.length===12){
+      const check=corporateCheckDigit(digits);
+      result.value=["基礎番号: "+digits,"チェックデジット: "+check,"法人番号: "+check+digits].join("\n");
+      return;
+    }
+    if(digits.length===13){
+      const expected=corporateCheckDigit(digits.slice(1));
+      const valid=digits[0]===expected;
+      result.value=["法人番号: "+digits,"判定: "+(valid?"チェックデジット一致":"チェックデジット不一致"),"入力チェックデジット: "+digits[0],"計算結果: "+expected].join("\n");
+      return;
+    }
+    throw new Error("13桁の法人番号、または12桁の基礎番号を入力してください。");
+  }
+
+  function wareki(year:number,month:number,day:number){
+    const value=year*10000+month*100+day;
+    const eras=[
+      {name:"令和",start:20190501,year:2019},
+      {name:"平成",start:19890108,year:1989},
+      {name:"昭和",start:19261225,year:1926},
+      {name:"大正",start:19120730,year:1912},
+      {name:"明治",start:18680125,year:1868},
+    ];
+    const era=eras.find(e=>value>=e.start);
+    if(!era)return String(year)+"年";
+    const y=year-era.year+1;
+    return era.name+(y===1?"元":y)+"年";
+  }
+  const dateLabel=(year:number,month:number)=>year+"年"+month+"月（"+wareki(year,month,month===3?31:1)+"）";
+
+  function schoolYear(){
+    const value=root.querySelector<HTMLInputElement>("[data-birthdate]")!.value;
+    if(!value)throw new Error("生年月日を入力してください。");
+    const [year,month,day]=value.split("-").map(Number);
+    const start=year+((month>4||(month===4&&day>=2))?7:6);
+    const rows=[
+      ["小学校 入学",start,4],["小学校 卒業",start+6,3],
+      ["中学校 入学",start+6,4],["中学校 卒業",start+9,3],
+      ["高校 入学",start+9,4],["高校 卒業",start+12,3],
+      ["4年制大学 入学",start+12,4],["4年制大学 卒業",start+16,3],
+    ] as const;
+    result.value=[
+      "生年月日: "+year+"年"+month+"月"+day+"日",
+      "学年区分: "+(month>4||(month===4&&day>=2)?year+"年4月2日〜"+(year+1)+"年4月1日":(year-1)+"年4月2日〜"+year+"年4月1日"),
+      "",
+      ...rows.map(([label,y,m])=>label+": "+dateLabel(y,m)),
+      "",
+      "※留年・浪人・休学なし、高校3年・4年制大学の標準進行で計算。"
+    ].join("\n");
+  }
+
+  run.addEventListener("click",()=>{
+    setMsg(errorBox);setMsg(successBox);
+    try{
+      if(mode==="postal-code")postalCode();
+      else if(mode==="phone-number")phoneNumber();
+      else if(mode==="address-normalize")addressNormalize();
+      else if(mode==="prefecture-code")prefectureCode();
+      else if(mode==="corporate-number")corporateNumber();
+      else if(mode==="school-year")schoolYear();
+      setMsg(successBox,"処理しました。");
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}
+  });
+  copy.addEventListener("click",async()=>{if(!result.value)return;try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"結果をコピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}});
+  clear.addEventListener("click",()=>{root.querySelectorAll<HTMLInputElement>("input").forEach(el=>el.value="");root.querySelectorAll<HTMLTextAreaElement>("textarea").forEach(el=>el.value="");result.value="";setMsg(errorBox);setMsg(successBox);});
+</script>
+<style>
+  .japan-tool{display:grid;gap:18px}.tall{min-height:220px}.result-field{margin-top:2px}
+</style>
