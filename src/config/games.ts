@@ -111,7 +111,7 @@ export const gameMeta: GameMeta[] = [
     genre: "資産運用ゲーム",
     playTime: "5〜10分",
     control: "タップ / クリック",
-    tagline: "架空市場を読み、100万円を36か月運用。",
+    tagline: "ニュースと配分を読み、100万円を36か月運用。",
     thumbnail: "/game-art/investment-simulator.svg",
   },
 ];

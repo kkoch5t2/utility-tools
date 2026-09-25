@@ -1,0 +1,128 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+<section class="sim-shell store-sim" data-sim-game data-mode="convenience-store-sim" data-state="ready">
+  <header class="sim-top"><div><p class="sim-kicker">30 DAYS / STORE MANAGEMENT</p><h2>LOCAL 24</h2><p class="sim-sub">商品、価格、人員、販促、設備を動かしながら30日間の店舗経営。売上だけでなく廃棄・欠品・評判・固定費まで管理します。</p></div><div class="sim-best"><span>BEST STORE VALUE</span><strong data-best>---</strong></div></header>
+  <div class="sim-kpis">
+    <div class="sim-kpi"><span>DAY</span><strong data-day>1 / 30</strong><small data-weekday>MON</small></div>
+    <div class="sim-kpi"><span>CASH</span><strong data-cash>¥1,000,000</strong><small data-daily-profit>本日 ±¥0</small></div>
+    <div class="sim-kpi"><span>REPUTATION</span><strong data-rep>50</strong><small>価格・欠品で変動</small></div>
+    <div class="sim-kpi"><span>CUSTOMERS</span><strong data-customers>0</strong><small data-lost>機会損失 0人</small></div>
+    <div class="sim-kpi"><span>STORE VALUE</span><strong data-value>¥1,000,000</strong><small data-profit>開始時比 ±¥0</small></div>
+  </div>
+
+  <div class="sim-intro" data-intro>
+    <div><h3>駅前の小型店を30日で立て直せ</h3><p>毎朝、天候と街のイベントが分かります。在庫・価格・人員・販促を調整して営業開始。売れ残り、欠品、家賃、人件費まで含めて利益を残してください。</p><div class="sim-actions"><button class="button button-primary" type="button" data-start>新規経営を始める</button><button class="button button-secondary" type="button" data-continue hidden>保存データから続ける</button></div></div>
+    <ul><li>6商品。設備投資でコーヒー・ホットスナック解禁</li><li>スタッフ数で来客処理能力が変化</li><li>販促は費用がかかるが集客を押し上げる</li><li>弁当・ホットスナックは毎日廃棄が発生</li></ul>
+  </div>
+
+  <div class="sim-play" data-play hidden>
+    <div class="store-scene" aria-label="店舗の簡易ビジュアル">
+      <div class="store-sign">LOCAL 24</div><div class="store-shelf s1"></div><div class="store-shelf s2"></div><div class="store-shelf s3"></div>
+      <div class="store-people" data-store-people>🧍 🧍</div>
+      <div class="store-status-strip"><span data-weather>☀ 晴れ</span><span data-scene-note>スタッフ 2名 / 清潔度 80</span></div>
+    </div>
+
+    <div class="sim-grid">
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>今日の商圏情報</h3><span data-day-type>平日</span></div>
+        <div class="sim-event" data-event>天気とイベントを確認中…</div>
+        <div class="weekly-goal"><span data-goal>DAY 7までに評判55を目指そう</span><strong data-goal-status>進行中</strong></div>
+        <div class="management-row" style="margin-top:9px">
+          <div class="management-tile"><span>STAFF</span><strong data-staff>2名</strong></div>
+          <div class="management-tile"><span>CLEAN</span><strong data-clean>80</strong></div>
+          <div class="management-tile"><span>PROMO</span><strong data-promo-label>なし</strong></div>
+        </div>
+        <div class="button-stack">
+          <button class="sim-secondary" type="button" data-hire>スタッフ採用 +1<br><small>採用費 ¥35,000</small></button>
+          <button class="sim-secondary" type="button" data-fire>スタッフ削減 -1</button>
+          <button class="sim-secondary" type="button" data-clean-action>店内清掃<br><small>¥8,000</small></button>
+          <label style="display:grid;gap:4px;color:#91a6bd;font-size:10px">本日の販促<select data-promo><option value="none">なし ¥0</option><option value="flyer">チラシ ¥12,000</option><option value="sns">SNS広告 ¥25,000</option><option value="coupon">10%クーポン ¥18,000</option></select></label>
+        </div>
+        <button class="sim-primary" type="button" data-open>営業開始 → 1日進める</button>
+        <div class="sim-result" data-result>準備を整えて営業を始めよう。</div>
+      </section>
+
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>店舗設備</h3><span data-upgrade-count>0 / 4</span></div>
+        <div class="upgrade-grid">
+          <div class="upgrade-card"><strong>大型冷蔵ケース</strong><small>飲料・弁当の需要 +10%、評判 +2</small><button type="button" data-upgrade="fridge">¥90,000</button></div>
+          <div class="upgrade-card"><strong>コーヒーマシン</strong><small>コーヒー販売を解禁。高粗利商品</small><button type="button" data-upgrade="coffee">¥130,000</button></div>
+          <div class="upgrade-card"><strong>ホットスナック什器</strong><small>ホットスナック販売を解禁</small><button type="button" data-upgrade="hot">¥150,000</button></div>
+          <div class="upgrade-card"><strong>セルフレジ</strong><small>来客処理能力 +35%、人件費を抑えやすい</small><button type="button" data-upgrade="self">¥220,000</button></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="sim-card">
+      <div class="sim-card-head"><h3>商品・在庫・価格</h3><label>一括仕入数 <select data-order-qty><option value="10">10個</option><option value="25" selected>25個</option><option value="50">50個</option><option value="100">100個</option></select></label></div>
+      <div class="product-grid">
+        <article class="product-card" data-product-card="bento"><div><strong>🍱 弁当</strong><small>仕入 ¥360 / 基準 ¥580 / 廃棄あり</small></div><div class="stock"><b data-stock="bento">0</b><small>在庫</small></div><div class="product-controls"><select data-price="bento"><option value=".85">安売 85%</option><option value="1" selected>標準 100%</option><option value="1.15">強気 115%</option><option value="1.3">高値 130%</option></select><button type="button" data-order="bento">仕入</button><span class="sim-pill" data-demand="bento">需要 →</span></div></article>
+        <article class="product-card" data-product-card="drink"><div><strong>🥤 飲料</strong><small>仕入 ¥95 / 基準 ¥160</small></div><div class="stock"><b data-stock="drink">0</b><small>在庫</small></div><div class="product-controls"><select data-price="drink"><option value=".85">安売 85%</option><option value="1" selected>標準 100%</option><option value="1.15">強気 115%</option><option value="1.3">高値 130%</option></select><button type="button" data-order="drink">仕入</button><span class="sim-pill" data-demand="drink">需要 →</span></div></article>
+        <article class="product-card" data-product-card="snack"><div><strong>🍪 お菓子</strong><small>仕入 ¥120 / 基準 ¥220</small></div><div class="stock"><b data-stock="snack">0</b><small>在庫</small></div><div class="product-controls"><select data-price="snack"><option value=".85">安売 85%</option><option value="1" selected>標準 100%</option><option value="1.15">強気 115%</option><option value="1.3">高値 130%</option></select><button type="button" data-order="snack">仕入</button><span class="sim-pill" data-demand="snack">需要 →</span></div></article>
+        <article class="product-card" data-product-card="umbrella"><div><strong>☂️ 傘</strong><small>仕入 ¥420 / 基準 ¥780</small></div><div class="stock"><b data-stock="umbrella">0</b><small>在庫</small></div><div class="product-controls"><select data-price="umbrella"><option value=".85">安売 85%</option><option value="1" selected>標準 100%</option><option value="1.15">強気 115%</option><option value="1.3">高値 130%</option></select><button type="button" data-order="umbrella">仕入</button><span class="sim-pill" data-demand="umbrella">需要 →</span></div></article>
+        <article class="product-card locked" data-product-card="coffee"><div><strong>☕ コーヒー</strong><small>マシン導入で解禁 / 仕入 ¥55 / 基準 ¥180</small></div><div class="stock"><b data-stock="coffee">0</b><small>在庫</small></div><div class="product-controls"><select data-price="coffee"><option value=".85">安売 85%</option><option value="1" selected>標準 100%</option><option value="1.15">強気 115%</option><option value="1.3">高値 130%</option></select><button type="button" data-order="coffee">未解禁</button><span class="sim-pill" data-demand="coffee">LOCK</span></div></article>
+        <article class="product-card locked" data-product-card="hot"><div><strong>🍗 ホットスナック</strong><small>什器導入で解禁 / 仕入 ¥110 / 基準 ¥260 / 廃棄あり</small></div><div class="stock"><b data-stock="hot">0</b><small>在庫</small></div><div class="product-controls"><select data-price="hot"><option value=".85">安売 85%</option><option value="1" selected>標準 100%</option><option value="1.15">強気 115%</option><option value="1.3">高値 130%</option></select><button type="button" data-order="hot">未解禁</button><span class="sim-pill" data-demand="hot">LOCK</span></div></article>
+      </div>
+    </section>
+
+    <div class="sim-grid equal">
+      <section class="sim-card"><div class="sim-card-head"><h3>直近7日の売上</h3><span data-seven-total>¥0</span></div><div class="history-bars" data-history-bars></div><ul class="sim-log" data-log></ul></section>
+      <section class="sim-card"><div class="sim-card-head"><h3>昨日の営業レポート</h3><span data-report-grade>---</span></div><div class="sim-pills"><span class="sim-pill" data-report-sales>売上 ¥0</span><span class="sim-pill" data-report-cost>経費 ¥0</span><span class="sim-pill" data-report-waste>廃棄 0</span><span class="sim-pill" data-report-stockout>欠品 0</span></div><p class="sim-event" data-report-note>営業後に詳しいレポートが表示されます。</p></section>
+    </div>
+    <div class="game-over" data-game-over hidden><span>30 DAYS COMPLETE</span><strong data-final-value>---</strong><p data-final-comment></p></div>
+    <div class="sim-bottom"><button type="button" data-restart>最初からやり直す</button></div>
+  </div>
+</section>
+</ToolLayout>
+
+<script>
+const root=document.querySelector<HTMLElement>('[data-mode="convenience-store-sim"]')!;
+const intro=root.querySelector<HTMLElement>("[data-intro]")!,play=root.querySelector<HTMLElement>("[data-play]")!;
+const KEY="utility-tools:sim:convenience-store-sim",BEST=KEY+":best";
+const yen=(n:number)=>"¥"+Math.round(n).toLocaleString("ja-JP"),clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n)),ri=(a:number,b:number)=>Math.floor(a+Math.random()*(b-a+1));
+const products:any={bento:{cost:360,price:580,base:28,waste:.14},drink:{cost:95,price:160,base:43,waste:0},snack:{cost:120,price:220,base:29,waste:0},umbrella:{cost:420,price:780,base:7,waste:0},coffee:{cost:55,price:180,base:28,waste:0,unlock:"coffee"},hot:{cost:110,price:260,base:24,waste:.18,unlock:"hot"}};
+const events:any[]=[
+ {icon:"☀",weather:"晴れ",text:"気温高め。飲料が強く、夕方も人通り多め。",m:{drink:1.45,coffee:.9}},
+ {icon:"☔",weather:"雨",text:"終日雨。傘が大チャンス、客足は少し鈍い。",m:{umbrella:3.5,all:.86}},
+ {icon:"🏫",weather:"晴れ",text:"近所で学校行事。弁当・お菓子・飲料が伸びそう。",m:{bento:1.35,snack:1.45,drink:1.2}},
+ {icon:"🏟️",weather:"くもり",text:"駅前ホールでイベント。夕方の客数が大幅増。",m:{all:1.32,hot:1.4}},
+ {icon:"📱",weather:"晴れ",text:"店舗がSNSで紹介された。新規客が増えそう。",m:{all:1.28}},
+ {icon:"🥶",weather:"寒い",text:"冷え込み。コーヒーとホットスナックに追い風。",m:{coffee:1.6,hot:1.45,drink:.78}},
+ {icon:"😴",weather:"くもり",text:"静かな平日。大きな需要変化はなさそう。",m:{all:.92}}
+];
+const weekdays=["MON","TUE","WED","THU","FRI","SAT","SUN"];
+const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch{return null}},save=(x:any)=>{try{localStorage.setItem(KEY,JSON.stringify(x))}catch{}},clear=()=>{try{localStorage.removeItem(KEY)}catch{}};
+const readBest=()=>{try{return Number(localStorage.getItem(BEST)||0)||0}catch{return 0}},saveBest=(n:number)=>{if(n>readBest())try{localStorage.setItem(BEST,String(Math.round(n)))}catch{}};
+const fresh=()=>({day:1,cash:1000000,rep:50,clean:80,staff:2,inventory:{bento:35,drink:50,snack:35,umbrella:10,coffee:0,hot:0},prices:{bento:1,drink:1,snack:1,umbrella:1,coffee:1,hot:1},upgrades:{fridge:false,coffee:false,hot:false,self:false},promo:"none",eventIndex:ri(0,events.length-1),history:[],log:[],customers:0,lost:0,lastProfit:0,lastReport:null,initial:1000000});
+let s:any=fresh();
+const q=(x:string)=>root.querySelector<HTMLElement>(x)!,qb=(x:string)=>root.querySelector<HTMLButtonElement>(x)!,qs=(x:string)=>root.querySelector<HTMLSelectElement>(x)!;
+const storeValue=()=>s.cash+Object.keys(products).reduce((a,k)=>a+s.inventory[k]*products[k].cost,0)+s.rep*2200+s.clean*500+Object.entries(s.upgrades).filter(([,v])=>v).length*70000;
+const unlocked=(k:string)=>!products[k].unlock||s.upgrades[products[k].unlock];
+function demandHint(k:string){if(!unlocked(k))return["LOCK",""];const ev=events[s.eventIndex],m=ev.m[k]??ev.m.all??1;return m>=1.3?["需要 ↑","good"]:m<=.85?["需要 ↓","bad"]:["需要 →",""];}
+function render(){
+ q("[data-best]").textContent=readBest()?yen(readBest()):"---";q("[data-day]").textContent=Math.min(s.day,30)+" / 30";q("[data-weekday]").textContent=weekdays[(s.day-1)%7];q("[data-cash]").textContent=yen(s.cash);q("[data-daily-profit]").textContent="本日 "+(s.lastProfit>=0?"+":"")+yen(s.lastProfit);q("[data-rep]").textContent=Math.round(s.rep)+"";q("[data-customers]").textContent=s.customers+"";q("[data-lost]").textContent="機会損失 "+s.lost+"人";q("[data-value]").textContent=yen(storeValue());q("[data-profit]").textContent="開始時比 "+(storeValue()-s.initial>=0?"+":"")+yen(storeValue()-s.initial);
+ const ev=events[s.eventIndex];q("[data-weather]").textContent=ev.icon+" "+ev.weather;q("[data-event]").textContent=ev.text;q("[data-day-type]").textContent=((s.day-1)%7>=5?"週末":"平日");q("[data-staff]").textContent=s.staff+"名";q("[data-clean]").textContent=Math.round(s.clean)+"";q("[data-scene-note]").textContent="スタッフ "+s.staff+"名 / 清潔度 "+Math.round(s.clean);q("[data-store-people]").textContent="🧍 ".repeat(Math.max(1,Math.min(6,Math.round((s.customers||20)/18)))).trim();
+ const promoLabels:any={none:"なし",flyer:"チラシ",sns:"SNS広告",coupon:"10%クーポン"};q("[data-promo-label]").textContent=promoLabels[s.promo];qs("[data-promo]").value=s.promo;
+ const goalDay=s.day<=7?7:s.day<=14?14:s.day<=21?21:30,goal=goalDay===7?["評判55",s.rep>=55]:goalDay===14?["店舗価値120万円",storeValue()>=1200000]:goalDay===21?["評判70",s.rep>=70]:["店舗価値160万円",storeValue()>=1600000];q("[data-goal]").textContent="DAY "+goalDay+"までに"+goal[0]+"を目指そう";q("[data-goal-status]").textContent=goal[1]?"達成":"進行中";
+ Object.keys(products).forEach(k=>{q(`[data-stock="${k}"]`).textContent=s.inventory[k]+"個";qs(`[data-price="${k}"]`).value=String(s.prices[k]);const card=q(`[data-product-card="${k}"]`),btn=qb(`[data-order="${k}"]`),hint=q(`[data-demand="${k}"]`),[txt,cls]=demandHint(k);card.classList.toggle("locked",!unlocked(k));btn.disabled=!unlocked(k);btn.textContent=unlocked(k)?"仕入":"未解禁";hint.textContent=txt;hint.className="sim-pill "+cls;});
+ const ups:any={fridge:90000,coffee:130000,hot:150000,self:220000};let uc=0;Object.keys(ups).forEach(k=>{const b=qb(`[data-upgrade="${k}"]`);if(s.upgrades[k]){uc++;b.disabled=true;b.textContent="導入済み"}else{b.disabled=s.cash<ups[k];b.textContent=yen(ups[k])}});q("[data-upgrade-count]").textContent=uc+" / 4";
+ qb("[data-fire]").disabled=s.staff<=1;qb("[data-hire]").disabled=s.staff>=5||s.cash<35000;
+ const hist=s.history.slice(-7),max=Math.max(1,...hist.map((x:any)=>x.sales));q("[data-history-bars]").innerHTML=hist.length?hist.map((x:any)=>`<span title="DAY ${x.day}: ${yen(x.sales)}" style="height:${Math.max(8,x.sales/max*100)}%"></span>`).join(""):"<span style='height:8%'></span>";q("[data-seven-total]").textContent=yen(hist.reduce((a:number,x:any)=>a+x.sales,0));q("[data-log]").innerHTML=s.log.slice(-6).reverse().map((x:string)=>"<li>"+x+"</li>").join("");
+ if(s.lastReport){const r=s.lastReport;q("[data-report-grade]").textContent=r.grade;q("[data-report-sales]").textContent="売上 "+yen(r.sales);q("[data-report-cost]").textContent="経費 "+yen(r.costs);q("[data-report-waste]").textContent="廃棄 "+r.waste+"個";q("[data-report-stockout]").textContent="欠品 "+r.stockouts+"品";q("[data-report-note]").textContent=r.note;}
+}
+function start(load=false){s=load&&read()?read():fresh();intro.hidden=true;play.hidden=false;root.dataset.state="running";save(s);render();}
+qb("[data-start]").addEventListener("click",()=>start(false));const cont=qb("[data-continue]");cont.hidden=!read();cont.addEventListener("click",()=>start(true));qb("[data-restart]").addEventListener("click",()=>{clear();start(false)});
+root.querySelectorAll<HTMLSelectElement>("[data-price]").forEach(el=>el.addEventListener("change",()=>{s.prices[el.dataset.price!]=Number(el.value);save(s);render()}));
+qs("[data-promo]").addEventListener("change",()=>{s.promo=qs("[data-promo]").value;save(s);render()});
+root.querySelectorAll<HTMLButtonElement>("[data-order]").forEach(btn=>btn.addEventListener("click",()=>{const k=btn.dataset.order!;if(!unlocked(k))return;const n=Number(qs("[data-order-qty]").value),cost=products[k].cost*n;if(s.cash<cost){q("[data-result]").textContent="仕入資金が不足しています。";return}s.cash-=cost;s.inventory[k]+=n;s.log.push("DAY "+s.day+" "+k+"を"+n+"個仕入れ");save(s);render()}));
+qb("[data-hire]").addEventListener("click",()=>{if(s.staff>=5||s.cash<35000)return;s.cash-=35000;s.staff++;s.rep=clamp(s.rep+1,0,100);s.log.push("スタッフを1名採用");save(s);render()});qb("[data-fire]").addEventListener("click",()=>{if(s.staff<=1)return;s.staff--;s.rep=clamp(s.rep-1,0,100);s.log.push("スタッフを1名削減");save(s);render()});qb("[data-clean-action]").addEventListener("click",()=>{if(s.cash<8000){q("[data-result]").textContent="清掃費用が不足しています。";return}s.cash-=8000;s.clean=clamp(s.clean+22,0,100);s.log.push("店内清掃を実施");save(s);render()});
+const upgradeCost:any={fridge:90000,coffee:130000,hot:150000,self:220000};root.querySelectorAll<HTMLButtonElement>("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{const k=btn.dataset.upgrade!;if(s.upgrades[k]||s.cash<upgradeCost[k])return;s.cash-=upgradeCost[k];s.upgrades[k]=true;s.rep=clamp(s.rep+2,0,100);if(k==="coffee")s.inventory.coffee=20;if(k==="hot")s.inventory.hot=20;s.log.push("設備導入："+k);save(s);render()}));
+qb("[data-open]").addEventListener("click",()=>{if(s.day>30)return;const promoCost:any={none:0,flyer:12000,sns:25000,coupon:18000},promoMult:any={none:1,flyer:1.12,sns:1.23,coupon:1.17};const pc=promoCost[s.promo];if(s.cash<pc){q("[data-result]").textContent="販促費を払える現金がありません。";return}const ev=events[s.eventIndex],weekend=(s.day-1)%7>=5?1.18:1,capacity=(s.staff*38)*(s.upgrades.self?1.35:1),cleanFactor=.72+s.clean/280,repFactor=.76+s.rep/205;let sales=0,cogs=0,waste=0,stockouts=0,rawCustomers=0;for(const k of Object.keys(products)){if(!unlocked(k))continue;const p=products[k],pm=s.prices[k],elastic=clamp(1.34-(pm-1)*1.5,.52,1.48),coupon=s.promo==="coupon"?.9:1,ef=ev.m[k]??ev.m.all??1,upgrade=(s.upgrades.fridge&&["bento","drink"].includes(k))?1.1:1;const demand=Math.max(0,Math.round(p.base*elastic*ef*weekend*promoMult[s.promo]*cleanFactor*repFactor*upgrade*(.86+Math.random()*.28)));rawCustomers+=demand;const capShare=Math.min(1,capacity/Math.max(1,rawCustomers));const qty=Math.min(s.inventory[k],Math.round(demand*capShare));if(qty<Math.round(demand*capShare))stockouts++;s.inventory[k]-=qty;sales+=qty*p.price*pm*coupon;cogs+=qty*p.cost;}const served=Math.min(Math.round(rawCustomers*.58),Math.round(capacity)),lost=Math.max(0,Math.round(rawCustomers*.58)-served);for(const k of ["bento","hot"]){if(!unlocked(k))continue;const w=Math.floor(s.inventory[k]*products[k].waste);s.inventory[k]-=w;waste+=w}const wages=s.staff*9000,rent=12000,utilities=5500+(Object.values(s.upgrades).filter(Boolean).length*1000),costs=wages+rent+utilities+pc,profit=sales-costs;s.cash+=sales-costs;s.customers=served;s.lost=lost;s.lastProfit=profit;s.clean=clamp(s.clean-5-served/70,15,100);s.rep=clamp(s.rep+(stockouts?-stockouts*.8:.8)+(lost>12?-1.2:0)+(s.clean>75?.5:s.clean<40?-1.4:0),0,100);const grade=profit>80000?"S":profit>40000?"A":profit>10000?"B":profit>=0?"C":"D";s.lastReport={sales,costs,waste,stockouts,grade,note:`来店 ${served}人 / 機会損失 ${lost}人。粗利 ${yen(sales-cogs)}、固定費・販促を引いた営業利益 ${yen(profit)}。`};s.history.push({day:s.day,sales,profit});s.log.push(`DAY ${s.day} 売上 ${yen(sales)} / 利益 ${yen(profit)} / 評判 ${Math.round(s.rep)}`);s.day++;s.eventIndex=ri(0,events.length-1);s.promo="none";if(s.day>30){const v=storeValue();saveBest(v);root.dataset.state="complete";q("[data-game-over]").hidden=false;q("[data-final-value]").textContent=yen(v);q("[data-final-comment]").textContent=v>=1800000?"地域の人気店に成長。経営判断が噛み合いました。":v>=1300000?"堅実な黒字店。次は設備と集客の両立を狙おう。":"30日完走。価格・在庫・固定費のバランスを変えて再挑戦できます。";q("[data-result]").textContent="30日終了！ 最終店舗価値 "+yen(v);clear()}else save(s);render()});
+render();
+</script>
