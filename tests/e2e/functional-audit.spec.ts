@@ -234,6 +234,7 @@ test("PDF分割とQR読み取りを実ファイルで監査する", async ({ pag
   await page.goto("/qr/generate/");
   await page.locator("[data-source]").fill("https://example.com/qr-test");
   await page.getByRole("button",{name:"QRコードを生成"}).click();
+  await expect(page.locator("[data-success-box]")).toContainText("QRコードを生成しました");
   const qrPng=await page.locator("[data-canvas]").evaluate((canvas:HTMLCanvasElement)=>canvas.toDataURL("image/png").split(",")[1]);
 
   await page.goto("/qr/read/");
