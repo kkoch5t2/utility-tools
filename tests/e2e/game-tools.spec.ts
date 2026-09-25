@@ -88,6 +88,13 @@ test("Lumo's Sky Runのスマホ操作とベストタイム表示が動く", asy
   await expect(page.locator('[data-control="left"]')).toBeVisible();
   await expect(page.locator('[data-control="right"]')).toBeVisible();
   await expect(page.locator('[data-control="jump"]')).toBeVisible();
+  await expect(page.locator('[data-control="left"] svg')).toBeVisible();
+  await expect(page.locator('[data-control="right"] svg')).toBeVisible();
+
+  const canvasBox = await page.locator("[data-canvas]").boundingBox();
+  expect(canvasBox?.height ?? 0).toBeGreaterThan(300);
+  const controlSelect = await page.locator('[data-control="left"]').evaluate((el) => getComputedStyle(el).userSelect);
+  expect(controlSelect).toBe("none");
 
   await page.goto("/category/game/");
   await expect(page.locator(".category-card")).toHaveCount(2);

@@ -40,8 +40,12 @@ const { meta } = Astro.props;
 
     <div class="mobile-controls" aria-label="スマホ操作">
       <div class="move-controls">
-        <button type="button" data-control="left" aria-label="左へ移動">◀</button>
-        <button type="button" data-control="right" aria-label="右へ移動">▶</button>
+        <button type="button" data-control="left" aria-label="左へ移動">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 5 8.5 12l7 7" /></svg>
+        </button>
+        <button type="button" data-control="right" aria-label="右へ移動">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.5 5 7 7-7 7" /></svg>
+        </button>
       </div>
       <button class="jump-control" type="button" data-control="jump" aria-label="ジャンプ">JUMP</button>
     </div>
@@ -86,7 +90,8 @@ const { meta } = Astro.props;
     platforms:Platform[]; enemies:Enemy[]; stars:Star[]; spikes:Spike[]; sky:[string,string]; accent:string;
   };
 
-  const W=960, H=540, GRAVITY=2100, MOVE=390, JUMP=760, PLAYER_W=34, PLAYER_H=44;
+  let VIEW_W=960;
+  const H=540, GRAVITY=2100, MOVE=390, JUMP=760, PLAYER_W=34, PLAYER_H=44;
   const BEST_KEY="utility-tools:lumo-sky-run:best";
   const keys={left:false,right:false,jump:false};
   let muted=false, audioCtx:AudioContext|null=null;
@@ -315,7 +320,7 @@ const { meta } = Astro.props;
     if(player.y>H+160)respawn("足場から落ちた！");
     activateCheckpoint();
     if(overlap(player,current.goal))completeStage();
-    cameraX+=((player.x-W*.38)-cameraX)*Math.min(1,dt*6);cameraX=Math.max(0,Math.min(current.width-W,cameraX));
+    cameraX+=((player.x-VIEW_W*.38)-cameraX)*Math.min(1,dt*6);cameraX=Math.max(0,Math.min(current.width-VIEW_W,cameraX));
     updateHud();
   }
 
@@ -328,7 +333,7 @@ const { meta } = Astro.props;
     ctx.closePath();ctx.fill();ctx.restore();
   }
   function drawBackground(){
-    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,current.sky[0]);g.addColorStop(1,current.sky[1]);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,current.sky[0]);g.addColorStop(1,current.sky[1]);ctx.fillStyle=g;ctx.fillRect(0,0,VIEW_W,H);
     ctx.globalAlpha=.22;for(let i=0;i<8;i++){const x=((i*190-cameraX*.16)%1200+1200)%1200-100,y=80+(i%3)*72;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,42,0,Math.PI*2);ctx.arc(x+42,y+8,34,0,Math.PI*2);ctx.arc(x-38,y+10,28,0,Math.PI*2);ctx.fill();}
     ctx.globalAlpha=1;ctx.fillStyle="rgba(15,23,42,.12)";for(let i=0;i<12;i++){const x=((i*310-cameraX*.32)%3900+3900)%3900-120;ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(x+140,H-120-(i%4)*25);ctx.lineTo(x+280,H);ctx.fill();}
   }
@@ -351,6 +356,15 @@ const { meta } = Astro.props;
     ctx.fillStyle="#fde68a";ctx.beginPath();ctx.arc(player.w/2,14,13,0,Math.PI*2);ctx.fill();roundRect(5,23,24,18,8,"#22c55e");ctx.fillStyle="#0f172a";ctx.fillRect(player.face>0?21:10,11,4,4);ctx.fillStyle="#38bdf8";ctx.beginPath();ctx.moveTo(player.face>0?8:26,26);ctx.lineTo(player.face>0?-8:42,33);ctx.lineTo(player.face>0?8:24,38);ctx.fill();ctx.restore();
     ctx.restore();
   }
+  function configureViewport(){
+    const next=window.innerWidth<=520?540:window.innerWidth<=760?760:960;
+    if(VIEW_W===next&&canvas.width===next)return;
+    VIEW_W=next;
+    canvas.width=VIEW_W;
+    canvas.height=H;
+    cameraX=Math.max(0,Math.min(current?.width?current.width-VIEW_W:0,cameraX));
+    if(current)render();
+  }
   function render(){drawBackground();drawWorld();}
   function loop(now:number){
     const dt=Math.min(.033,(now-lastFrame)/1000||0);lastFrame=now;update(dt);render();if(running)raf=requestAnimationFrame(loop);
@@ -362,26 +376,27 @@ const { meta } = Astro.props;
     if(["ArrowUp","KeyW","Space"].includes(code))keys.jump=value;
   }
   window.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyW"].includes(e.code))e.preventDefault();setKey(e.code,true);});
+  window.addEventListener("resize",configureViewport,{passive:true});
   window.addEventListener("keyup",e=>setKey(e.code,false));
   root.querySelectorAll<HTMLButtonElement>("[data-control]").forEach(btn=>{
     const type=btn.dataset.control!;
     const down=(e:PointerEvent)=>{e.preventDefault();btn.setPointerCapture(e.pointerId);if(type==="left")keys.left=true;if(type==="right")keys.right=true;if(type==="jump")keys.jump=true;};
     const up=()=>{if(type==="left")keys.left=false;if(type==="right")keys.right=false;if(type==="jump")keys.jump=false;};
-    btn.addEventListener("pointerdown",down);btn.addEventListener("pointerup",up);btn.addEventListener("pointercancel",up);btn.addEventListener("pointerleave",up);
+    btn.addEventListener("pointerdown",down);btn.addEventListener("pointerup",up);btn.addEventListener("pointercancel",up);btn.addEventListener("pointerleave",up);btn.addEventListener("contextmenu",e=>e.preventDefault());
   });
   startButton.addEventListener("click",startGame);restartButton.addEventListener("click",restartStage);
   muteButton.addEventListener("click",()=>{muted=!muted;muteButton.textContent="効果音: "+(muted?"OFF":"ON");});
-  readBest();current=cloneLevel(levelTemplates[0]);platforms=current.platforms;enemies=current.enemies;stars=current.stars;spikes=current.spikes;render();updateHud();
+  readBest();current=cloneLevel(levelTemplates[0]);platforms=current.platforms;enemies=current.enemies;stars=current.stars;spikes=current.spikes;configureViewport();render();updateHud();
 </script>
 <style>
   .platformer-shell{display:grid;gap:14px;padding:20px;border:1px solid #dbe5f0;border-radius:22px;background:linear-gradient(180deg,#081526,#0b1220);box-shadow:0 20px 55px rgba(15,23,42,.18);color:#f8fafc}
   .platformer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.platformer-head h2{margin:0;color:white;font-size:clamp(28px,4.5vw,44px);line-height:1}.platformer-head p:not(.eyebrow){max-width:680px;margin:9px 0 0;color:#a8bdd2;font-size:14px;line-height:1.7}.eyebrow{margin:0 0 5px;color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.16em}
   .best-box{flex:0 0 120px;padding:12px;border:1px solid rgba(103,232,249,.25);border-radius:14px;background:rgba(15,23,42,.65);text-align:center}.best-box span{display:block;color:#7dd3fc;font-size:9px;font-weight:900;letter-spacing:.1em}.best-box strong{display:block;margin-top:3px;font-size:21px}
   .hud{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.hud>div{padding:9px 11px;border:1px solid rgba(148,163,184,.14);border-radius:11px;background:rgba(15,23,42,.62)}.hud span{display:block;color:#7f95ad;font-size:9px;font-weight:900;letter-spacing:.1em}.hud strong{font-size:18px;font-variant-numeric:tabular-nums}
-  .canvas-wrap{position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.2);border-radius:18px;background:#0f172a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;touch-action:none}
+  .canvas-wrap{position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.2);border-radius:18px;background:#0f172a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}canvas{display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   .start-overlay{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:linear-gradient(180deg,rgba(2,8,23,.24),rgba(2,8,23,.78));transition:opacity .2s}.start-overlay.is-hidden{opacity:0;pointer-events:none}.overlay-card{max-width:430px;padding:24px;border:1px solid rgba(148,163,184,.25);border-radius:18px;background:rgba(8,21,38,.9);box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center;backdrop-filter:blur(10px)}.overlay-card .mini{margin:0;color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.14em}.overlay-card h3{margin:5px 0 8px;color:#fff;font-size:28px}.overlay-card p{margin:0 0 16px;color:#b5c8dc;line-height:1.7}.key-guide{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:12px;color:#91a8bf;font-size:11px}
   .toast{position:absolute;top:18px;left:50%;z-index:4;padding:8px 14px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(15,23,42,.78);color:#fff;font-size:12px;font-weight:900;opacity:0;transform:translate(-50%,-10px);pointer-events:none}.toast.show{animation:toast-pop 1.5s ease}
-  .mobile-controls{display:none;justify-content:space-between;gap:16px}.move-controls{display:flex;gap:10px}.mobile-controls button{display:grid;place-items:center;width:68px;height:58px;border:1px solid rgba(148,163,184,.25);border-radius:16px;background:#172033;color:#fff;font-size:21px;font-weight:900;touch-action:none}.mobile-controls .jump-control{width:92px;border-color:rgba(34,211,238,.35);background:linear-gradient(145deg,#0891b2,#2563eb);font-size:13px}
+  .mobile-controls{display:none;justify-content:space-between;gap:16px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.move-controls{display:flex;gap:10px}.mobile-controls button{display:grid;place-items:center;width:68px;height:58px;border:1px solid rgba(148,163,184,.25);border-radius:16px;background:#172033;color:#fff;font-size:21px;font-weight:900;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.mobile-controls button svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}.mobile-controls .jump-control{width:92px;border-color:rgba(34,211,238,.35);background:linear-gradient(145deg,#0891b2,#2563eb);font-size:13px}
   .platformer-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.feature-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.feature-strip>div{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px;border:1px solid rgba(148,163,184,.12);border-radius:10px;background:rgba(15,23,42,.4)}.feature-strip strong{color:#67e8f9}.feature-strip span{color:#8ea5bd;font-size:10px;font-weight:900;letter-spacing:.08em}
   @keyframes toast-pop{0%{opacity:0;transform:translate(-50%,-10px)}15%,70%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}
   @media(max-width:760px){.platformer-shell{padding:12px;border-radius:16px}.platformer-head p:not(.eyebrow){font-size:12px}.best-box{flex-basis:96px}.hud{grid-template-columns:repeat(5,1fr);gap:4px}.hud>div{padding:7px 5px}.hud strong{font-size:14px}.hud span{font-size:7px}.mobile-controls{display:flex}.feature-strip{grid-template-columns:repeat(2,1fr)}.overlay-card{padding:18px}.overlay-card h3{font-size:24px}}
