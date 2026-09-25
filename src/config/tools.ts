@@ -3,7 +3,7 @@ import { extraTools } from "./extra-tools";
 export type ToolDefinition = {
   id: string;
   name: string;
-  category: "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator";
+  category: "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share";
   href: string;
   description: string;
   status: "available" | "planned";
@@ -32,6 +32,14 @@ const baseTools: ToolDefinition[] = [
     category: "text",
     href: "/text/remove-duplicates/",
     description: "重複行を条件指定で削除し、コピーやTXT保存ができます。",
+    status: "available",
+  },
+  {
+    id: "schedule-coordination",
+    name: "日程調整",
+    category: "share",
+    href: "/schedule/",
+    description: "候補日を共有し、参加者が○△×で回答。結果を自動集計します。",
     status: "available",
   },
 ];

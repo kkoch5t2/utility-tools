@@ -127,7 +127,7 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   await expect(page.locator(".seo-tips li")).toHaveCount(2);
   await expect(page.locator('.breadcrumbs [aria-current="page"]')).toHaveText("Base64エンコード・デコード");
   await expect(page.locator('.footer-categories a[href="/category/developer/"]')).toHaveText("開発者");
-  await expect(page.locator(".footer-categories a")).toHaveCount(11);
+  await expect(page.locator(".footer-categories a")).toHaveCount(12);
   const datlumeLink = page.locator('.footer-related a[href="https://datlume.com/"]');
   await expect(datlumeLink).toContainText("Datlume");
   await expect(datlumeLink.locator('img[src="/brand/datlume.svg"]')).toBeVisible();
@@ -224,5 +224,5 @@ test("サイトマップがツール一覧から自動生成される", async ({
   await page.goto("/");
   const toolCount = await page.locator("[data-tool-card]").count();
   const purposeCount = await page.locator(".purpose-links-grid > a").count();
-  expect((body.match(/<url>/g) ?? []).length).toBe(toolCount + purposeCount + 14);
+  expect((body.match(/<url>/g) ?? []).length).toBe(toolCount + purposeCount + 15);
 });

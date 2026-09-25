@@ -88,6 +88,13 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Base64、UUID、URLエンコード、ハッシュ、JWT、正規表現、基数変換など、開発時に使える無料Webツール一覧です。",
     useCases: ["エンコード・デコード結果をすぐ確認したい", "UUID・ハッシュ・ランダム文字列を生成したい", "JSON・URL・正規表現などのデバッグを効率化したい"],
   },
+  {
+    key: "share",
+    label: "共有・調整",
+    title: "共有・調整ツール一覧｜日程調整・出欠確認を無料で",
+    description: "候補日を共有して○△×で回答を集める日程調整など、複数人で使える無料の共有・調整ツール一覧です。",
+    useCases: ["複数人の予定をまとめて調整したい", "共有URLだけで出欠を集めたい", "登録なしで回答結果を自動集計したい"],
+  },
 ];
 
 export const categoryMetaByKey = new Map(categoryMeta.map((category) => [category.key, category]));

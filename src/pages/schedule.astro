@@ -1,0 +1,233 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+
+const title = "日程調整ツール｜候補日を共有して○△×で出欠確認";
+const description = "候補日を作ってURLを共有し、参加者が○△×で回答できる無料の日程調整ツールです。登録不要で結果を自動集計します。";
+const appJson = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "日程調整ツール",
+  url: siteConfig.url + "/schedule/",
+  applicationCategory: "ProductivityApplication",
+  operatingSystem: "Web",
+  isAccessibleForFree: true,
+  description,
+};
+const faqJson = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "登録は必要ですか？", acceptedAnswer: { "@type": "Answer", text: "いいえ。アカウント登録なしで日程調整を作成・回答できます。" } },
+    { "@type": "Question", name: "回答内容は誰に見えますか？", acceptedAnswer: { "@type": "Answer", text: "共有URLを知っている人は、予定名、候補、回答者名、回答内容、コメントを閲覧できます。" } },
+    { "@type": "Question", name: "データはいつまで保存されますか？", acceptedAnswer: { "@type": "Answer", text: "日程調整データは作成から最大90日を目安に保存し、期限切れデータは定期的に削除します。" } },
+  ],
+};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="日程調整ツール｜無料Web便利ツール集">
+  <div class="shell schedule-page">
+    <nav class="breadcrumbs" aria-label="パンくず">
+      <a href="/">ホーム</a><span>/</span><span aria-current="page">日程調整</span>
+    </nav>
+
+    <div class="schedule-loading" data-loading>
+      <span class="loader" aria-hidden="true"></span>
+      <p>読み込み中...</p>
+    </div>
+
+    <section class="schedule-create" data-create-view hidden>
+      <header class="schedule-heading">
+        <p class="eyebrow">SCHEDULE</p>
+        <h1>日程調整</h1>
+        <p>候補日を作ってURLを共有。参加者は○△×で回答でき、結果は自動でまとまります。</p>
+      </header>
+
+      <div class="schedule-card">
+        <form data-create-form>
+          <div class="field">
+            <label for="schedule-title">予定・イベント名 <span>必須</span></label>
+            <input id="schedule-title" name="title" type="text" maxlength="100" placeholder="例：10月チーム飲み会" required />
+          </div>
+          <div class="field">
+            <label for="schedule-organizer">主催者名</label>
+            <input id="schedule-organizer" name="organizer" type="text" maxlength="50" placeholder="例：田中" />
+          </div>
+          <div class="field">
+            <label for="schedule-description">メモ</label>
+            <textarea id="schedule-description" name="description" rows="3" maxlength="800" placeholder="場所や補足など。空欄でもOK"></textarea>
+          </div>
+          <div class="field">
+            <label for="schedule-options">候補日・候補時間 <span>2件以上</span></label>
+            <textarea id="schedule-options" name="options" rows="7" required placeholder="1行に1候補ずつ入力&#10;例：&#10;10/3(金) 19:00〜&#10;10/4(土) 13:00〜&#10;10/5(日) 終日"></textarea>
+            <small>最大20候補。自由な書き方で入力できます。</small>
+          </div>
+          <div class="storage-note">
+            <strong>共有機能のためサーバーに保存します</strong>
+            <p>予定名・候補・回答名・回答内容を最大90日間保存します。ファイルアップロードはありません。</p>
+          </div>
+          <p class="form-error" data-create-error hidden></p>
+          <button class="button button-primary schedule-submit" type="submit" data-create-button>日程調整を作成</button>
+        </form>
+      </div>
+
+      <section class="schedule-benefits">
+        <div><strong>登録不要</strong><span>アカウント作成なし</span></div>
+        <div><strong>○△×で回答</strong><span>参加可否が一目で分かる</span></div>
+        <div><strong>自動集計</strong><span>候補ごとの回答数を比較</span></div>
+      </section>
+    </section>
+    <section class="schedule-event" data-event-view hidden>
+      <div class="created-banner" data-created-banner hidden>
+        <strong>日程調整を作成しました</strong>
+        <span>下のURLを参加者に送ってください。削除権限はこの端末に保存されています。</span>
+      </div>
+
+      <header class="event-heading">
+        <p class="eyebrow">SCHEDULE</p>
+        <h2 class="event-title" data-event-title></h2>
+        <p class="event-description" data-event-description hidden></p>
+        <div class="event-meta">
+          <span data-event-organizer hidden></span>
+          <span data-event-expiry></span>
+        </div>
+      </header>
+
+      <div class="share-box">
+        <div>
+          <strong>共有URL</strong>
+          <span>このURLを参加者へ送るだけ</span>
+        </div>
+        <div class="share-row">
+          <input data-share-url readonly aria-label="共有URL" />
+          <button class="button button-primary" type="button" data-copy-url>URLをコピー</button>
+        </div>
+        <p class="share-privacy">共有URLを知っている人は、予定名・候補・回答者名・回答内容・コメントを閲覧できます。</p>
+        <p class="copy-message" data-copy-message hidden>コピーしました。</p>
+      </div>
+
+      <section class="best-option" data-best-option hidden>
+        <span>いまの有力候補</span>
+        <strong data-best-label></strong>
+        <small data-best-count></small>
+      </section>
+
+      <div class="event-layout">
+        <section class="schedule-card response-card">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">ANSWER</p>
+              <h2 data-response-heading>回答する</h2>
+            </div>
+            <button type="button" class="text-button" data-cancel-edit hidden>編集をやめる</button>
+          </div>
+          <form data-response-form>
+            <div class="field">
+              <label for="response-name">名前 <span>必須</span></label>
+              <input id="response-name" data-response-name type="text" maxlength="50" placeholder="例：山田" required />
+            </div>
+            <div class="answer-list" data-answer-list></div>
+            <div class="field">
+              <label for="response-comment">コメント</label>
+              <textarea id="response-comment" data-response-comment rows="2" maxlength="500" placeholder="遅れて参加、20時以降ならOK など"></textarea>
+            </div>
+            <p class="form-error" data-response-error hidden></p>
+            <div class="response-actions">
+              <button class="button button-primary" type="submit" data-response-submit>回答を送信</button>
+              <button class="button button-secondary" type="button" data-delete-response hidden>自分の回答を削除</button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="response-summary schedule-card">
+          <p class="eyebrow">SUMMARY</p>
+          <h2>集計</h2>
+          <div class="summary-list" data-summary-list></div>
+          <p class="empty-copy" data-summary-empty>まだ回答はありません。</p>
+        </aside>
+      </div>
+
+      <section class="schedule-card participant-section">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">RESPONSES</p>
+            <h2>みんなの回答 <span data-response-count>0</span></h2>
+          </div>
+          <button class="text-button" type="button" data-refresh>最新の状態に更新</button>
+        </div>
+        <div class="participant-wrap" data-participant-wrap>
+          <p class="empty-copy" data-participant-empty>まだ回答はありません。</p>
+        </div>
+      </section>
+
+      <div class="event-footer-actions">
+        <a class="button button-secondary" href="/schedule/">新しい日程調整を作る</a>
+        <button class="danger-link" type="button" data-delete-schedule hidden>この日程調整を削除</button>
+      </div>
+    </section>
+
+    <section class="schedule-error" data-error-view hidden>
+      <h2>日程調整が見つかりません</h2>
+      <p>URLが間違っているか、保存期限（90日）を過ぎた可能性があります。</p>
+      <a class="button button-primary" href="/schedule/">新しく作成する</a>
+    </section>
+
+    <section class="schedule-info">
+      <div class="info-block">
+        <p class="eyebrow">HOW TO USE</p>
+        <h2>日程調整の使い方</h2>
+        <div class="howto-grid">
+          <div><strong>1. 候補を作る</strong><span>予定名と候補日・時間を1行ずつ入力します。</span></div>
+          <div><strong>2. URLを共有</strong><span>作成後に表示されるURLを参加者へ送ります。</span></div>
+          <div><strong>3. ○△×で回答</strong><span>回答が集まると候補ごとの○△×を自動集計します。</span></div>
+        </div>
+      </div>
+      <div class="info-block faq-block">
+        <p class="eyebrow">FAQ</p>
+        <h2>よくある質問</h2>
+        <details><summary>登録は必要ですか？</summary><p>不要です。アカウントを作らずに日程調整を作成・回答できます。</p></details>
+        <details><summary>回答内容は誰に見えますか？</summary><p>共有URLを知っている人は、予定名・候補・回答者名・回答内容・コメントを閲覧できます。</p></details>
+        <details><summary>データはいつまで保存されますか？</summary><p>作成から最大90日を目安に保存し、期限切れデータは定期的に削除します。</p></details>
+      </div>
+    </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(appJson)} />
+  <script type="application/ld+json" set:html={JSON.stringify(faqJson)} />
+  <script src="../scripts/schedule.ts"></script>
+</BaseLayout>
+<style>
+  .schedule-page{padding-top:32px;max-width:1040px}
+  .schedule-heading,.event-heading{max-width:820px;margin:26px 0 28px}
+  .schedule-heading h1,.event-heading .event-title{margin:5px 0 10px;font-size:clamp(32px,5vw,48px);font-weight:800;letter-spacing:-.035em;line-height:1.15}
+  .schedule-heading>p:not(.eyebrow),.event-description{margin:0;color:var(--muted);font-size:16px;line-height:1.75}
+  .schedule-card{padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 4px 14px rgba(15,23,42,.04)}
+  .field{display:grid;gap:7px;margin-bottom:18px}.field label{font-size:13px;font-weight:800}.field label span{color:var(--accent);font-size:11px}
+  .field input,.field textarea,.share-row input{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit}
+  .field input{height:44px;padding:0 12px}.field textarea{padding:11px 12px;resize:vertical;line-height:1.65}
+  .field input:focus,.field textarea:focus,.share-row input:focus{outline:2px solid color-mix(in srgb,var(--accent) 28%,transparent);border-color:var(--accent)}
+  .field small{color:var(--muted);font-size:11px}.storage-note{margin:4px 0 18px;padding:13px 15px;border:1px solid #cbdcf4;border-radius:11px;background:#f2f7ff}
+  .storage-note strong{font-size:12px;color:#234b80}.storage-note p{margin:4px 0 0;color:#58708f;font-size:11px;line-height:1.6}
+  .schedule-submit{width:100%;min-height:46px}.form-error{margin:0 0 12px;padding:10px 12px;border-radius:9px;background:#fff0f0;color:#b42318;font-size:12px}
+  .schedule-benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+  .schedule-benefits>div{display:grid;gap:2px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:var(--surface-muted)}
+  .schedule-benefits strong{font-size:13px}.schedule-benefits span{color:var(--muted);font-size:11px}
+  .schedule-loading{display:grid;place-items:center;min-height:360px;color:var(--muted);font-size:13px}.loader{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .created-banner{display:flex;align-items:center;gap:10px;margin:24px 0 12px;padding:12px 15px;border:1px solid #b8dfc2;border-radius:12px;background:#effbf2;color:#236b35;font-size:12px}.created-banner strong{font-size:13px}
+  .event-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.event-meta span{padding:5px 9px;border-radius:999px;background:var(--surface-muted);color:var(--muted);font-size:11px;font-weight:700}
+  .share-box{margin-bottom:16px;padding:16px;border:1px solid #c9dcf7;border-radius:14px;background:#f5f9ff}.share-box>div:first-child{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}.share-box strong{font-size:13px}.share-box span{color:var(--muted);font-size:11px}
+  .share-row{display:flex;gap:8px}.share-row input{height:42px;padding:0 11px;font-size:12px}.share-row button{flex:0 0 auto}.share-privacy{margin:8px 0 0;color:#687a91;font-size:10px;line-height:1.55}.copy-message{margin:7px 0 0;color:#237a3b;font-size:11px;font-weight:800}
+  .best-option{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:14px 16px;border-radius:13px;background:linear-gradient(120deg,#0b5bd3,#357bdd);color:white}.best-option>span{font-size:11px;font-weight:800;opacity:.8}.best-option strong{font-size:15px}.best-option small{margin-left:auto;font-size:11px;opacity:.85}
+  .event-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(270px,.8fr);gap:16px;align-items:start}.response-card,.response-summary{min-width:0}
+  .section-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}.section-title-row h2,.response-summary h2{margin:2px 0 0;font-size:21px}.section-title-row h2 span{color:var(--muted);font-size:13px}
+  .text-button,.danger-link{border:0;background:transparent;cursor:pointer;font:inherit}.text-button{padding:4px;color:var(--accent);font-size:11px;font-weight:800}.danger-link{color:#b42318;font-size:11px;font-weight:800}
+  .answer-list{display:grid;gap:9px;margin-bottom:18px}.answer-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 11px;border:1px solid var(--line);border-radius:11px}.answer-label{font-size:13px;font-weight:700;line-height:1.5}
+  .mark-group{display:flex;gap:5px}.mark-option{position:relative}.mark-option input{position:absolute;opacity:0;pointer-events:none}.mark-option span{display:grid;place-items:center;width:35px;height:35px;border:1px solid var(--line);border-radius:9px;background:var(--surface);cursor:pointer;font-size:16px;font-weight:900}
+  .mark-option input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}.mark-option.yes input:checked+span{border-color:#35a85b;background:#ecf9f0;color:#218543}.mark-option.maybe input:checked+span{border-color:#e9a23b;background:#fff7e8;color:#ad6b08}.mark-option.no input:checked+span{border-color:#df5c5c;background:#fff0f0;color:#b42318}
+  .response-actions{display:flex;gap:8px;flex-wrap:wrap}.response-actions .button-primary{flex:1;min-width:160px}
+  .summary-list{display:grid;gap:9px;margin-top:14px}.summary-item{padding:10px 11px;border:1px solid var(--line);border-radius:10px}.summary-item>strong{display:block;margin-bottom:7px;font-size:12px;line-height:1.45}.summary-counts{display:flex;gap:8px;font-size:11px;font-weight:800}.summary-counts .yes{color:#218543}.summary-counts .maybe{color:#ad6b08}.summary-counts .no{color:#b42318}
+  .participant-section{margin-top:16px}.participant-wrap{overflow-x:auto}.participant-table{width:100%;border-collapse:separate;border-spacing:0;min-width:620px;font-size:12px}.participant-table th,.participant-table td{padding:10px;border-bottom:1px solid var(--line);text-align:center}.participant-table th:first-child,.participant-table td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}.participant-table thead th{color:var(--muted);font-size:10px;line-height:1.4}.participant-name{font-weight:800}.participant-comment{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:400}.mark-cell{font-size:17px;font-weight:900}.mark-cell.yes{color:#218543}.mark-cell.maybe{color:#ad6b08}.mark-cell.no{color:#b42318}
+  .empty-copy{margin:12px 0 0;color:var(--muted);font-size:12px}.event-footer-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px 0 10px}.schedule-error{text-align:center;padding:90px 20px}.schedule-error h2{font-size:28px}.schedule-error p{color:var(--muted);margin-bottom:20px}.schedule-info{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin:52px 0 18px}.info-block{padding:20px;border:1px solid var(--line);border-radius:15px;background:var(--surface)}.info-block h2{margin:3px 0 14px;font-size:21px}.howto-grid{display:grid;gap:10px}.howto-grid>div{display:grid;gap:3px;padding:12px;border-radius:11px;background:var(--surface-muted)}.howto-grid strong{font-size:13px}.howto-grid span{color:var(--muted);font-size:11px;line-height:1.6}.faq-block details{border-top:1px solid var(--line)}.faq-block details:last-child{border-bottom:1px solid var(--line)}.faq-block summary{padding:11px 0;cursor:pointer;font-size:12px;font-weight:800}.faq-block details p{margin:0 0 12px;color:var(--muted);font-size:11px;line-height:1.7}
+  @media(max-width:800px){.event-layout,.schedule-info{grid-template-columns:1fr}.schedule-benefits{grid-template-columns:1fr}.share-row{flex-direction:column}.share-row button{width:100%}.best-option{align-items:flex-start;flex-direction:column;gap:3px}.best-option small{margin-left:0}.answer-row{grid-template-columns:1fr}.mark-group{justify-content:flex-start}}
+  @media(max-width:520px){.schedule-page{padding-top:22px}.schedule-card{padding:16px}.created-banner{align-items:flex-start;flex-direction:column;gap:2px}.event-footer-actions{align-items:flex-start;flex-direction:column}.event-footer-actions .button{width:100%;text-align:center}}
+</style>

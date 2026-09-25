@@ -36,6 +36,16 @@ for (let i = 0; i < urls.length; i += concurrency) {
 
 console.log(`Checked ${urls.length} production URLs.`);
 
+try {
+  const healthResponse = await fetchWithTimeout(base + "/api/health");
+  const health = await healthResponse.json().catch(() => null);
+  if (!healthResponse.ok || health?.ok !== true || health?.service !== "schedule") {
+    failures.push(`${base}/api/health - invalid schedule API health response`);
+  }
+} catch (error) {
+  failures.push(`${base}/api/health - ${error instanceof Error ? error.message : String(error)}`);
+}
+
 if (failures.length > 0) {
   console.error("Production URL failures:");
   for (const failure of failures) console.error("- " + failure);

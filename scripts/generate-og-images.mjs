@@ -8,7 +8,7 @@ const logo = fs.readFileSync(path.resolve("public/utility-tools-logo-header-v2.p
 const logoSrc = "data:image/png;base64," + logo;
 
 const cards = [
-  ["default", "無料Web便利ツール集", "画像・CSV・JSON・PDF・動画など150種類", "必要なときに、すぐ使える。"],
+  ["default", "無料Web便利ツール集", "画像・CSV・JSON・PDF・動画など150種類以上", "必要なときに、すぐ使える。"],
   ["image", "画像ツール", "圧縮・リサイズ・形式変換", "画像をブラウザ内で手軽に処理"],
   ["csv", "CSVツール", "分割・結合・変換・整形", "CSV作業をもっと手軽に"],
   ["json", "JSONツール", "整形・変換・抽出", "開発・データ処理を素早く"],
@@ -20,6 +20,7 @@ const cards = [
   ["date", "日付ツール", "曜日・期間・週番号", "日付計算をすばやく確認"],
   ["calculator", "計算ツール", "割合・割引・単位換算", "日常の計算をシンプルに"],
   ["developer", "開発者向けツール", "Base64・UUID・URL変換など", "開発中のちょっとした作業をすぐ処理"],
+  ["share", "共有・調整ツール", "日程調整・出欠確認", "URLを共有してみんなで回答"],
 ];
 
 const browser = await chromium.launch({
@@ -50,7 +51,7 @@ for (const [key, heading, subheading, tagline] of cards) {
     <div class="badge">${heading}</div>
     <h1>${subheading}</h1>
     <p class="sub">${tagline}</p>
-    <div class="chips"><span class="chip">無料</span><span class="chip">登録不要</span><span class="chip">ブラウザ内処理</span></div>
+    <div class="chips"><span class="chip">無料</span><span class="chip">登録不要</span><span class="chip">${key === "share" ? "共有URL" : "ブラウザ内処理"}</span></div>
     <div class="mark"></div>
   </div></body></html>`);
   await page.screenshot({ path: path.join(outputDir, key + ".png"), type: "png" });
