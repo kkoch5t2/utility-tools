@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 
 const API = "https://api.cloudflare.com/client/v4";
 const HOST = "utility-tools-jp.com";
-const DAYS = 30;
+const DAYS = 7;
 const LIMIT = 6;
 const token = process.env.CLOUDFLARE_API_TOKEN;
 
@@ -40,7 +40,7 @@ function graphqlFor(accountId) {
   return `query {
     viewer {
       accounts(filter: { accountTag: "${accountId}" }) {
-        topPaths: rumPageloadEventsAdaptiveGroups(
+        topPaths: rumPerformanceEventsAdaptiveGroups(
           limit: 500
           orderBy: [count_DESC]
           filter: {
