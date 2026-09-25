@@ -49,7 +49,7 @@ export const gameMeta: GameMeta[] = [
     href: "/game/number-chain-10/",
     name: "10をつくれ！ナンバーチェイン",
     genre: "パズル",
-    playTime: "60秒",
+    playTime: "70秒",
     control: "ドラッグ",
     tagline: "数字をつないで合計10。コンボで一気に稼げ。",
     thumbnail: "/game-art/number-chain-10.jpg",

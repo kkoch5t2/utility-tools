@@ -7,12 +7,12 @@ const { gameId, gameName } = Astro.props;
 ---
 
 <div class="game-common-ui" data-game-common data-game-id={gameId} data-game-name={gameName}>
-  <a class="game-common-link" href="/category/game/">
-    <span aria-hidden="true">←</span>
-    <span>GAME一覧</span>
-  </a>
+  <a class="game-common-link" href="/category/game/"><span aria-hidden="true">←</span><span>GAME一覧</span></a>
+  <span class="game-common-status" data-game-status aria-live="polite">準備OK</span>
   <div class="game-common-actions">
     <a class="game-common-button" href="#tool-guide-title">遊び方</a>
+    <button class="game-common-button" type="button" data-game-mute hidden>音: ON</button>
+    <button class="game-common-button" type="button" data-game-retry>リトライ</button>
     <button class="game-common-button" type="button" data-game-fullscreen>全画面</button>
   </div>
 </div>
@@ -25,36 +25,59 @@ const { gameId, gameName } = Astro.props;
       "[data-number-chain], [data-platformer], [data-arcade], [data-quick-game]"
     );
     const fullscreenButton = common.querySelector<HTMLButtonElement>("[data-game-fullscreen]");
+    const retryButton = common.querySelector<HTMLButtonElement>("[data-game-retry]");
+    const muteButton = common.querySelector<HTMLButtonElement>("[data-game-mute]");
+    const statusEl = common.querySelector<HTMLElement>("[data-game-status]");
 
     const sendGameEvent = (event: "start" | "end" | "replay" | "next") => {
       if (!gameId) return;
-      const body = JSON.stringify({ game: gameId, event });
       void fetch("/api/game-events", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body,
+        body: JSON.stringify({ game: gameId, event }),
         keepalive: true,
       }).catch(() => undefined);
     };
 
     if (gameRoot) {
       let previousState = gameRoot.dataset.state ?? "ready";
+      const activeStates = new Set(["running", "waiting", "go", "hit", "false-start"]);
+      const labels: Record<string, string> = {
+        ready: "準備OK", running: "プレイ中", waiting: "待機中", go: "GO!",
+        hit: "計測中", "false-start": "フライング", stageclear: "ステージクリア",
+        complete: "クリア", gameover: "ゲーム終了",
+      };
       const handleState = () => {
-        const state = gameRoot.dataset.state ?? "";
-        if (!state || state === previousState) return;
-
-        if (state === "running") {
-          if (previousState === "complete" || previousState === "gameover") sendGameEvent("replay");
-          else if (previousState === "ready" || !previousState) sendGameEvent("start");
+        const state = gameRoot.dataset.state ?? "ready";
+        if (statusEl) statusEl.textContent = labels[state] ?? "プレイ中";
+        if (state === previousState) return;
+        if (activeStates.has(state) && (previousState === "ready" || previousState === "complete" || previousState === "gameover")) {
+          sendGameEvent(previousState === "ready" ? "start" : "replay");
         }
         if (state === "complete" || state === "gameover") sendGameEvent("end");
         previousState = state;
       };
+      handleState();
+      new MutationObserver(handleState).observe(gameRoot, { attributes: true, attributeFilter: ["data-state"] });
 
-      new MutationObserver(handleState).observe(gameRoot, {
-        attributes: true,
-        attributeFilter: ["data-state"],
+      retryButton?.addEventListener("click", () => {
+        if (gameRoot.dataset.mode === "flash-matrix" && gameRoot.dataset.state === "running") {
+          window.location.reload();
+          return;
+        }
+        const button = gameRoot.querySelector<HTMLButtonElement>("[data-restart], [data-again], [data-start]");
+        if (!button) return;
+        button.disabled = false;
+        button.click();
       });
+
+      const localMute = gameRoot.querySelector<HTMLButtonElement>("[data-mute]");
+      if (localMute && muteButton) {
+        muteButton.hidden = false;
+        const syncMute = () => { muteButton.textContent = localMute.textContent?.includes("OFF") ? "音: OFF" : "音: ON"; };
+        syncMute();
+        muteButton.addEventListener("click", () => { localMute.click(); syncMute(); });
+      }
 
       fullscreenButton?.addEventListener("click", async () => {
         try {
@@ -62,12 +85,12 @@ const { gameId, gameName } = Astro.props;
           else await gameRoot.requestFullscreen();
         } catch {}
       });
-
       document.addEventListener("fullscreenchange", () => {
         if (fullscreenButton) fullscreenButton.textContent = document.fullscreenElement ? "全画面を終了" : "全画面";
       });
-    } else if (fullscreenButton) {
-      fullscreenButton.hidden = true;
+    } else {
+      if (fullscreenButton) fullscreenButton.hidden = true;
+      if (retryButton) retryButton.hidden = true;
     }
 
     document.addEventListener("click", (event) => {
@@ -78,13 +101,11 @@ const { gameId, gameName } = Astro.props;
 </script>
 
 <style>
-  .game-common-ui{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:9px 10px;border:1px solid #dbe5f0;border-radius:12px;background:#f8fafc}
+  .game-common-ui{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 10px;border:1px solid #dbe5f0;border-radius:12px;background:#f8fafc}
   .game-common-link,.game-common-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 10px;border:1px solid #d7e0eb;border-radius:9px;background:#fff;color:#334155;font:inherit;font-size:11px;font-weight:850;text-decoration:none;cursor:pointer}
   .game-common-link:hover,.game-common-button:hover{border-color:#93c5fd;color:#0b5bd3}
-  .game-common-actions{display:flex;gap:7px}
-  :global(:fullscreen [data-number-chain]),
-  :global(:fullscreen [data-platformer]),
-  :global(:fullscreen [data-arcade]),
-  :global(:fullscreen [data-quick-game]){width:100vw!important;height:100vh!important;max-width:none!important;margin:0!important;border-radius:0!important}
-  @media(max-width:640px){.game-common-ui{position:sticky;top:6px;z-index:18;margin-bottom:9px;background:rgba(248,250,252,.94);backdrop-filter:blur(10px)}.game-common-link,.game-common-button{min-height:36px;padding:0 9px}.game-common-actions{gap:5px}}
+  .game-common-status{margin-right:auto;padding:5px 9px;border-radius:999px;background:#e0f2fe;color:#075985;font-size:10px;font-weight:900;white-space:nowrap}
+  .game-common-actions{display:flex;gap:6px}
+  :global(:fullscreen [data-number-chain]),:global(:fullscreen [data-platformer]),:global(:fullscreen [data-arcade]),:global(:fullscreen [data-quick-game]){width:100vw!important;height:100vh!important;max-width:none!important;margin:0!important;border-radius:0!important}
+  @media(max-width:640px){.game-common-ui{position:sticky;top:6px;z-index:18;flex-wrap:wrap;margin-bottom:9px;background:rgba(248,250,252,.95);backdrop-filter:blur(10px)}.game-common-status{margin-left:auto;margin-right:0}.game-common-actions{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.game-common-link,.game-common-button{min-height:36px;padding:0 6px;font-size:10px}}
 </style>
