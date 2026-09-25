@@ -548,8 +548,8 @@ test("トップページでカテゴリ絞り込みとページングができ�
   await expect(page).toHaveURL(/\?category=pdf$/);
 
   await page.locator("[data-filter-select]").selectOption("image");
-  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(7);
-  await expect(page.locator("[data-visible-count]")).toHaveText("7件");
+  await expect(page.locator("[data-tool-card]:visible")).toHaveCount(9);
+  await expect(page.locator("[data-visible-count]")).toHaveText("9件");
 
   await page.locator("[data-filter-select]").selectOption("all");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
