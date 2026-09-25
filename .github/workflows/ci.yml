@@ -30,6 +30,7 @@ jobs:
       - run: npm run audit:site
       - run: npx playwright install --with-deps chromium
       - run: npm run test:schedule
+      - run: npm run test:shared
       - run: npm run test:e2e
 
       - name: Resolve Cloudflare account
