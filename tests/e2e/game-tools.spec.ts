@@ -267,7 +267,7 @@ test("3つのシミュレーションゲームが開始して1ターン進めら
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
   await page.locator("[data-match]").click();
-  await expect(page.locator("[data-week]")).toHaveText("2 / 12");
+  await expect(page.locator("[data-week]")).toHaveText("2 / 14");
   await expect(page.locator("[data-result]")).toContainText(/WIN|DRAW|LOSE/);
 
   await page.goto("/game/investment-simulator/");
@@ -276,6 +276,40 @@ test("3つのシミュレーションゲームが開始して1ターン進めら
   await expect(page.locator('[data-holding="nova"]')).toHaveText("5口");
   await page.locator("[data-next-month]").click();
   await expect(page.locator("[data-month]")).toHaveText("2 / 36");
+});
+
+
+test("シミュレーション3本の追加管理機能が実際に操作できる", async ({ page }) => {
+  await page.goto("/game/convenience-store-simulator/");
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-product-card]")).toHaveCount(6);
+  await page.locator("[data-hire]").click();
+  await expect(page.locator("[data-staff]")).toHaveText("3名");
+  await page.locator('[data-upgrade="coffee"]').click();
+  await expect(page.locator('[data-product-card="coffee"]')).not.toHaveClass(/locked/);
+  await page.locator('[data-order="coffee"]').click();
+  await expect(page.locator('[data-stock="coffee"]')).not.toHaveText("20個");
+
+  await page.goto("/game/football-club-manager/");
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-league-table] tr")).toHaveCount(8);
+  await page.selectOption("[data-formation]", "343");
+  await page.selectOption("[data-tactic]", "press");
+  await page.locator('[data-buy-player="0"]').click();
+  await expect(page.locator("[data-attack]")).not.toHaveText("68.0");
+  await page.locator("[data-match]").click();
+  await expect(page.locator("[data-match-feed] div")).toHaveCount(4);
+  await expect(page.locator("[data-league-table]")).toContainText("Harbor City FC");
+
+  await page.goto("/game/investment-simulator/");
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-asset-row]")).toHaveCount(6);
+  await page.locator('[data-buy="nova"]').click();
+  await page.locator('[data-buy="bond"]').click();
+  await expect(page.locator("[data-allocation] .allocation-row")).toHaveCount(3);
+  await page.locator("[data-next-month]").click();
+  await expect(page.locator("[data-chart-points]")).not.toHaveAttribute("points", "0,95 600,95");
+  await expect(page.locator("[data-risk-score]")).not.toHaveText("0");
 });
 
 test("3つのシミュレーションゲームを最終ターンまで完走できる", async ({ page }) => {
@@ -287,7 +321,7 @@ test("3つのシミュレーションゲームを最終ターンまで完走で�
 
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
-  for (let i = 0; i < 12; i++) await page.locator("[data-match]").click();
+  for (let i = 0; i < 14; i++) await page.locator("[data-match]").click();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
   await expect(page.locator("[data-result]")).toContainText("シーズン終了");
 
@@ -305,6 +339,7 @@ test("シミュレーションゲームはスマホで横にはみ出さない",
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     await expect(page.locator("[data-game-retry]")).toBeVisible();
+    await expect(page.locator("[data-game-common]")).toHaveCSS("position", "static");
   }
 });
 

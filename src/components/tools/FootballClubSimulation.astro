@@ -1,0 +1,122 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+<section class="sim-shell football-sim" data-sim-game data-mode="football-club-sim" data-state="ready">
+  <header class="sim-top"><div><p class="sim-kicker">14 MATCH / CLUB MANAGEMENT</p><h2>Harbor City FC</h2><p class="sim-sub">監督兼GMとして、戦術・フォーメーション・練習・補強・施設投資を決める1シーズン。試合結果だけでなく順位、財政、体力、士気まで管理します。</p></div><div class="sim-best"><span>BEST SEASON</span><strong data-best>0 pt</strong></div></header>
+  <div class="sim-kpis">
+    <div class="sim-kpi"><span>MATCH</span><strong data-week>1 / 14</strong><small data-home-away>HOME</small></div>
+    <div class="sim-kpi"><span>POINTS</span><strong data-points>0</strong><small data-rank>8位</small></div>
+    <div class="sim-kpi"><span>BUDGET</span><strong data-budget>¥500,000,000</strong><small data-income>収入 ¥0</small></div>
+    <div class="sim-kpi"><span>TEAM OVR</span><strong data-quality>67.0</strong><small data-form>直近 -</small></div>
+    <div class="sim-kpi"><span>SUPPORTERS</span><strong data-fans>18,000</strong><small data-record>0勝 0分 0敗</small></div>
+  </div>
+
+  <div class="sim-intro" data-intro>
+    <div><h3>中堅クラブを上位へ押し上げろ</h3><p>14試合の短期リーグ。戦術には相性があり、ハイプレス連発は体力を削ります。補強だけでなくトレーニング施設・アカデミー投資もシーズン後半に効いてきます。</p><div class="sim-actions"><button class="button button-primary" type="button" data-start>新シーズン開始</button><button class="button button-secondary" type="button" data-continue hidden>保存データから続ける</button></div></div>
+    <ul><li>4フォーメーション × 5戦術</li><li>6人の移籍候補、3ライン別の補強</li><li>体力・士気・負傷リスクを管理</li><li>8クラブのリーグ順位表を毎節更新</li></ul>
+  </div>
+
+  <div class="sim-play" data-play hidden>
+    <div class="sim-grid">
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>TACTICAL BOARD</h3><span data-opponent-badge>vs Northbridge United</span></div>
+        <div class="football-pitch" data-pitch>
+          <span class="pitch-player gk" style="left:7%;top:44%">GK</span>
+          <span class="pitch-player" style="left:24%;top:16%">DF</span><span class="pitch-player" style="left:24%;top:39%">DF</span><span class="pitch-player" style="left:24%;top:62%">DF</span><span class="pitch-player" style="left:24%;top:78%">DF</span>
+          <span class="pitch-player" style="left:48%;top:24%">MF</span><span class="pitch-player" style="left:48%;top:49%">MF</span><span class="pitch-player" style="left:48%;top:72%">MF</span>
+          <span class="pitch-player" style="left:76%;top:18%">FW</span><span class="pitch-player" style="left:82%;top:47%">FW</span><span class="pitch-player" style="left:76%;top:76%">FW</span>
+        </div>
+        <div class="club-lines"><div><span>ATTACK</span><strong data-attack>68.0</strong></div><div><span>MIDFIELD</span><strong data-midfield>67.0</strong></div><div><span>DEFENSE</span><strong data-defense>66.0</strong></div></div>
+      </section>
+
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>次節の準備</h3><span data-opponent-level>相手 OVR 69</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+          <label style="display:grid;gap:4px;color:#91a6bd;font-size:10px">フォーメーション<select data-formation><option value="433">4-3-3</option><option value="4231">4-2-3-1</option><option value="343">3-4-3</option><option value="532">5-3-2</option></select></label>
+          <label style="display:grid;gap:4px;color:#91a6bd;font-size:10px">戦術<select data-tactic><option value="balanced">バランス</option><option value="possession">ポゼッション</option><option value="counter">カウンター</option><option value="press">ハイプレス</option><option value="block">ローブロック</option></select></label>
+          <label style="display:grid;gap:4px;color:#91a6bd;font-size:10px;grid-column:1/-1">今週の練習<select data-training><option value="balanced">総合練習</option><option value="attack">攻撃連携</option><option value="defense">守備組織</option><option value="fitness">フィジカル</option><option value="recovery">リカバリー</option></select></label>
+        </div>
+        <div class="sim-progress"><span>FITNESS</span><progress data-fitness max="100" value="85"></progress><b data-fitness-text>85</b></div>
+        <div class="sim-progress"><span>MORALE</span><progress data-morale max="100" value="70"></progress><b data-morale-text>70</b></div>
+        <div class="sim-event" data-scout>相手分析：バランス型。大きな弱点は見当たらない。</div>
+        <button class="sim-primary" type="button" data-match>キックオフ</button>
+        <div class="sim-result" data-result>開幕前。戦術と練習メニューを決めよう。</div>
+      </section>
+    </div>
+
+    <div class="sim-grid">
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>移籍市場</h3><span>予算内で何人でも獲得可能</span></div>
+        <div class="transfer-grid">
+          <article class="transfer-card"><div class="player-top"><strong>R. Sato</strong><em>FW 72</em></div><small>決定力型 / ATT +2.2</small><button type="button" data-buy-player="0">¥80,000,000</button></article>
+          <article class="transfer-card"><div class="player-top"><strong>L. Costa</strong><em>MF 74</em></div><small>司令塔 / MID +2.5</small><button type="button" data-buy-player="1">¥120,000,000</button></article>
+          <article class="transfer-card"><div class="player-top"><strong>M. Keller</strong><em>DF 75</em></div><small>対人守備 / DEF +2.8</small><button type="button" data-buy-player="2">¥150,000,000</button></article>
+          <article class="transfer-card"><div class="player-top"><strong>A. Nwosu</strong><em>FW 76</em></div><small>快速ウイング / ATT +3.0</small><button type="button" data-buy-player="3">¥170,000,000</button></article>
+          <article class="transfer-card"><div class="player-top"><strong>Y. Mori</strong><em>MF 70</em></div><small>若手万能型 / MID +1.5、毎節成長</small><button type="button" data-buy-player="4">¥65,000,000</button></article>
+          <article class="transfer-card"><div class="player-top"><strong>D. Silva</strong><em>GK 73</em></div><small>守護神 / DEF +2.1</small><button type="button" data-buy-player="5">¥95,000,000</button></article>
+        </div>
+      </section>
+
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>クラブ施設</h3><span data-facility-count>0 / 4</span></div>
+        <div class="facility-grid">
+          <div class="facility-card"><strong>トレーニングセンター</strong><small>練習成長量 +40%</small><button type="button" data-facility="training">¥100,000,000</button></div>
+          <div class="facility-card"><strong>リカバリー室</strong><small>試合後の体力低下を軽減</small><button type="button" data-facility="recovery">¥80,000,000</button></div>
+          <div class="facility-card"><strong>ユースアカデミー</strong><small>若手成長 + 毎節わずかにOVR上昇</small><button type="button" data-facility="academy">¥120,000,000</button></div>
+          <div class="facility-card"><strong>スタジアム改修</strong><small>ホーム戦収入・ファン増加量UP</small><button type="button" data-facility="stadium">¥150,000,000</button></div>
+        </div>
+        <div class="sim-pills" style="margin-top:10px"><span class="sim-pill" data-injury>負傷者なし</span><span class="sim-pill" data-season-goal>目標：TOP 3</span></div>
+      </section>
+    </div>
+
+    <div class="sim-grid equal">
+      <section class="sim-card"><div class="sim-card-head"><h3>リーグテーブル</h3><span data-table-note>第0節終了</span></div><table class="league-table"><thead><tr><th>#</th><th>CLUB</th><th>P</th><th>GD</th><th>PTS</th></tr></thead><tbody data-league-table></tbody></table></section>
+      <section class="sim-card"><div class="sim-card-head"><h3>マッチセンター</h3><span data-scoreline>-- - --</span></div><div class="match-feed" data-match-feed><div>キックオフすると試合の流れが表示されます。</div></div><ul class="sim-log" data-log></ul></section>
+    </div>
+    <div class="game-over" data-game-over hidden><span>SEASON COMPLETE</span><strong data-final-points>0 pt</strong><p data-final-comment></p></div>
+    <div class="sim-bottom"><button type="button" data-restart>新シーズンでやり直す</button></div>
+  </div>
+</section>
+</ToolLayout>
+
+<script>
+const root=document.querySelector<HTMLElement>('[data-mode="football-club-sim"]')!,intro=root.querySelector<HTMLElement>("[data-intro]")!,play=root.querySelector<HTMLElement>("[data-play]")!;
+const KEY="utility-tools:sim:football-club-sim",BEST=KEY+":best",yen=(n:number)=>"¥"+Math.round(n).toLocaleString("ja-JP"),clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n)),ri=(a:number,b:number)=>Math.floor(a+Math.random()*(b-a+1));
+const teams=[{name:"Harbor City FC",ovr:67},{name:"Northbridge United",ovr:69},{name:"Blue Coast FC",ovr:71},{name:"Redwood Athletic",ovr:66},{name:"Metro Stars",ovr:74},{name:"Riverside 04",ovr:65},{name:"Crown Town",ovr:70},{name:"West Bay",ovr:68}];
+const schedule=[1,2,3,4,5,6,7,7,6,5,4,3,2,1];
+const players=[{cost:8e7,line:"attack",boost:2.2},{cost:12e7,line:"midfield",boost:2.5},{cost:15e7,line:"defense",boost:2.8},{cost:17e7,line:"attack",boost:3},{cost:6.5e7,line:"midfield",boost:1.5,youth:true},{cost:9.5e7,line:"defense",boost:2.1}];
+const facilityCosts:any={training:1e8,recovery:8e7,academy:12e7,stadium:15e7};
+const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch{return null}},save=(x:any)=>{try{localStorage.setItem(KEY,JSON.stringify(x))}catch{}},clear=()=>{try{localStorage.removeItem(KEY)}catch{}},readBest=()=>{try{return Number(localStorage.getItem(BEST)||0)||0}catch{return 0}},saveBest=(n:number)=>{if(n>readBest())try{localStorage.setItem(BEST,String(Math.round(n)))}catch{}};
+const tableFresh=()=>teams.map((t,i)=>({name:t.name,ovr:t.ovr,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0,id:i}));
+const fresh=()=>({week:1,budget:5e8,attack:68,midfield:67,defense:66,fitness:86,morale:70,fans:18000,bought:[false,false,false,false,false,false],facilities:{training:false,recovery:false,academy:false,stadium:false},table:tableFresh(),log:[],feed:[],lastIncome:0,form:[],injuryWeeks:0});
+let s:any=fresh();const q=(x:string)=>root.querySelector<HTMLElement>(x)!,qb=(x:string)=>root.querySelector<HTMLButtonElement>(x)!,qs=(x:string)=>root.querySelector<HTMLSelectElement>(x)!;
+const ovr=()=>((s.attack+s.midfield+s.defense)/3),poisson=(lambda:number)=>{let L=Math.exp(-lambda),p=1,k=0;do{k++;p*=Math.random()}while(p>L&&k<9);return k-1};
+const sortedTable=()=>[...s.table].sort((a:any,b:any)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
+function applyResult(a:any,b:any,ga:number,gb:number){a.p++;b.p++;a.gf+=ga;a.ga+=gb;b.gf+=gb;b.ga+=ga;if(ga>gb){a.w++;b.l++;a.pts+=3}else if(ga<gb){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++;}}
+function renderPitch(){const pos:any={433:[[7,44],[24,16],[24,39],[24,62],[24,78],[48,24],[48,49],[48,72],[76,18],[82,47],[76,76]],4231:[[7,44],[24,15],[24,38],[24,62],[24,79],[45,34],[45,62],[62,16],[62,47],[62,78],[82,47]],343:[[7,44],[25,22],[25,48],[25,74],[48,10],[48,37],[48,62],[48,86],[78,18],[82,47],[78,76]],532:[[7,44],[22,8],[22,27],[22,49],[22,70],[22,88],[50,24],[50,49],[50,74],[80,34],[80,64]]};const f=qs("[data-formation]").value;root.querySelectorAll<HTMLElement>(".pitch-player").forEach((el,i)=>{el.style.left=pos[f][i][0]+"%";el.style.top=pos[f][i][1]+"%"})}
+function render(){
+ const row=s.table[0],rank=sortedTable().findIndex((x:any)=>x.id===0)+1,best=readBest();q("[data-best]").textContent=best?best+" pt":"0 pt";q("[data-week]").textContent=Math.min(s.week,14)+" / 14";q("[data-home-away]").textContent=s.week<=14?(s.week<=7?"HOME":"AWAY"):"FINAL";q("[data-points]").textContent=row.pts+"";q("[data-rank]").textContent=(s.week===1&&row.p===0)?"順位 --":rank+"位";q("[data-budget]").textContent=yen(s.budget);q("[data-income]").textContent="前節収入 "+yen(s.lastIncome);q("[data-quality]").textContent=ovr().toFixed(1);q("[data-form]").textContent="直近 "+(s.form.length?s.form.slice(-5).join(""):"-");q("[data-fans]").textContent=Math.round(s.fans).toLocaleString("ja-JP");q("[data-record]").textContent=`${row.w}勝 ${row.d}分 ${row.l}敗`;q("[data-attack]").textContent=s.attack.toFixed(1);q("[data-midfield]").textContent=s.midfield.toFixed(1);q("[data-defense]").textContent=s.defense.toFixed(1);(root.querySelector<HTMLProgressElement>("[data-fitness]")!).value=s.fitness;(root.querySelector<HTMLProgressElement>("[data-morale]")!).value=s.morale;q("[data-fitness-text]").textContent=Math.round(s.fitness)+"";q("[data-morale-text]").textContent=Math.round(s.morale)+"";
+ const oi=s.week<=14?schedule[s.week-1]:1,opp=teams[oi];q("[data-opponent-badge]").textContent="vs "+opp.name;q("[data-opponent-level]").textContent="相手 OVR "+opp.ovr;q("[data-scout]").textContent=opp.ovr>=72?"相手分析：個の力が高い強敵。守備の安定か鋭いカウンターが有効。":opp.ovr<=66?"相手分析：格下。主導権を握って押し込みたい。":"相手分析：互角の相手。戦術相性とコンディションが重要。";
+ const tbl=sortedTable();q("[data-league-table]").innerHTML=tbl.map((r:any,i:number)=>`<tr class="${r.id===0?"user-team":""}"><td>${i+1}</td><td>${r.name}</td><td>${r.p}</td><td>${r.gf-r.ga>=0?"+":""}${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("");q("[data-table-note]").textContent="第"+Math.min(14,s.week-1)+"節終了";
+ root.querySelectorAll<HTMLButtonElement>("[data-buy-player]").forEach((b,i)=>{b.disabled=s.bought[i]||s.budget<players[i].cost;b.textContent=s.bought[i]?"加入済み":yen(players[i].cost)});let fc=0;Object.keys(facilityCosts).forEach(k=>{const b=qb(`[data-facility="${k}"]`);if(s.facilities[k]){fc++;b.disabled=true;b.textContent="完成"}else{b.disabled=s.budget<facilityCosts[k];b.textContent=yen(facilityCosts[k])}});q("[data-facility-count]").textContent=fc+" / 4";q("[data-injury]").textContent=s.injuryWeeks>0?"主力1名 負傷あと"+s.injuryWeeks+"節":"負傷者なし";q("[data-injury]").className="sim-pill "+(s.injuryWeeks>0?"bad":"good");q("[data-log]").innerHTML=s.log.slice(-6).reverse().map((x:string)=>"<li>"+x+"</li>").join("");q("[data-match-feed]").innerHTML=s.feed.length?s.feed.map((x:string)=>"<div>"+x+"</div>").join(""):"<div>キックオフすると試合の流れが表示されます。</div>";renderPitch();
+}
+function start(load=false){s=load&&read()?read():fresh();intro.hidden=true;play.hidden=false;root.dataset.state="running";save(s);render()}
+qb("[data-start]").addEventListener("click",()=>start(false));const cont=qb("[data-continue]");cont.hidden=!read();cont.addEventListener("click",()=>start(true));qb("[data-restart]").addEventListener("click",()=>{clear();start(false)});qs("[data-formation]").addEventListener("change",renderPitch);
+root.querySelectorAll<HTMLButtonElement>("[data-buy-player]").forEach((b,i)=>b.addEventListener("click",()=>{const p=players[i];if(s.bought[i]||s.budget<p.cost)return;s.budget-=p.cost;s[p.line]+=p.boost;s.bought[i]=true;s.morale=clamp(s.morale+3,0,100);s.log.push("移籍成立："+b.closest(".transfer-card")?.querySelector("strong")?.textContent);save(s);render()}));
+root.querySelectorAll<HTMLButtonElement>("[data-facility]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.facility!;if(s.facilities[k]||s.budget<facilityCosts[k])return;s.budget-=facilityCosts[k];s.facilities[k]=true;s.log.push("施設完成："+k);save(s);render()}));
+qb("[data-match]").addEventListener("click",()=>{if(s.week>14)return;const formation=qs("[data-formation]").value,tactic=qs("[data-tactic]").value,training=qs("[data-training]").value,growth=s.facilities.training?1.4:1;if(training==="attack"){s.attack+=.22*growth;s.fitness-=5}else if(training==="defense"){s.defense+=.22*growth;s.fitness-=4}else if(training==="fitness"){s.fitness+=5;s.morale-=1}else if(training==="recovery"){s.fitness+=12;s.morale+=1}else{s.attack+=.07*growth;s.midfield+=.07*growth;s.defense+=.07*growth;s.fitness-=2}s.midfield+=(s.facilities.academy?.05:0);if(s.bought[4])s.midfield+=.08*(s.facilities.academy?1.5:1);s.fitness=clamp(s.fitness,30,100);s.morale=clamp(s.morale,20,100);
+ const oi=schedule[s.week-1],opp=s.table[oi],oppOvr=teams[oi].ovr;let att=s.attack,mid=s.midfield,def=s.defense,energyCost=7;if(formation==="433")att+=.45;if(formation==="4231"){mid+=.5;def+=.15}if(formation==="343"){att+=.8;def-=.65}if(formation==="532"){def+=.9;att-=.45}
+ const oppStyle=["balanced","press","counter","possession","block"][oi%5];const edges:any={counter:{press:.65,possession:.25},possession:{block:.45,balanced:.2},press:{possession:.45,balanced:.15},block:{counter:.35,press:-.15},balanced:{}};const edge=edges[tactic]?.[oppStyle]??0;if(tactic==="press"){att+=.55;mid+=.45;energyCost=12}else if(tactic==="counter"){att+=.25;def+=.2;energyCost=6}else if(tactic==="possession"){mid+=.65;energyCost=8}else if(tactic==="block"){def+=.75;att-=.25;energyCost=5}att+=edge;def+=edge*.6;
+ const condition=(s.fitness-70)*.025+(s.morale-60)*.018-(s.injuryWeeks>0?1.3:0),attackPower=(att*.48+mid*.28+condition),defPower=(def*.52+mid*.25+condition),ourXg=clamp(1.22+(attackPower-oppOvr*.76)/13,.25,3.4),theirXg=clamp(1.12+(oppOvr*.78-defPower)/14,.2,3.1),our=poisson(ourXg),their=poisson(theirXg);applyResult(s.table[0],opp,our,their);
+ const remaining=s.table.filter((_:any,i:number)=>i!==0&&i!==oi).sort(()=>Math.random()-.5);for(let i=0;i<remaining.length;i+=2){const a=remaining[i],b=remaining[i+1],ag=poisson(clamp(1.2+(a.ovr-b.ovr)/18,.35,2.8)),bg=poisson(clamp(1.2+(b.ovr-a.ovr)/18,.35,2.8));applyResult(a,b,ag,bg)}
+ const won=our>their,draw=our===their,res=won?"W":draw?"D":"L";s.form.push(res);if(s.form.length>5)s.form.shift();s.morale=clamp(s.morale+(won?6:draw?1:-5),20,100);const home=s.week<=7,attendance=Math.round(s.fans*(home?(.75+Math.random()*.2):.25)),income=Math.round(attendance*(s.facilities.stadium?4200:3200)+(won?1.4e7:draw?7e6:3e6));s.lastIncome=income;s.budget+=income;s.fans=clamp(s.fans+(won?ri(700,1700):draw?ri(100,500):-ri(100,600)),7000,50000);s.fitness=clamp(s.fitness-energyCost+(s.facilities.recovery?4:0),25,100);
+ if(s.injuryWeeks>0)s.injuryWeeks--;else if(Math.random()<(s.fitness<55?.16:.05)){s.injuryWeeks=ri(1,3)}
+ const moments=[`<b>12'</b> Harbor City が中盤で主導権。ポゼッション ${ri(43,59)}%。`,our>0?`<b>${ri(20,45)}'</b> GOAL! Harbor City が先制機をものにする。`:`<b>34'</b> 相手守備を崩し切れず、決定機は少ない。`,their>0?`<b>${ri(48,72)}'</b> 相手の反撃。守備陣が対応を迫られる。`:`<b>63'</b> 守備ブロックが機能。相手に決定機を与えない。`,`<b>90'</b> FULL TIME　Harbor City ${our} - ${their} ${teams[oi].name}`];s.feed=moments;q("[data-scoreline]").textContent=our+" - "+their;s.log.push(`第${s.week}節 ${res} ${our}-${their} vs ${teams[oi].name} / +${yen(income)}`);q("[data-result]").textContent=`${our} - ${their}　${won?"WIN":draw?"DRAW":"LOSE"}｜xG ${ourXg.toFixed(1)} - ${theirXg.toFixed(1)}｜入場者 ${attendance.toLocaleString("ja-JP")}人`;s.week++;
+ if(s.week>14){const pts=s.table[0].pts;saveBest(pts);root.dataset.state="complete";q("[data-game-over]").hidden=false;q("[data-final-points]").textContent=pts+" pt / "+(sortedTable().findIndex((x:any)=>x.id===0)+1)+"位";q("[data-final-comment]").textContent=pts>=30?"優勝争い級のシーズン。補強と戦術が高水準で噛み合いました。":pts>=23?"上位フィニッシュ。施設投資とローテーション次第でさらに上を狙えます。":"シーズン完走。体力管理・戦術相性・補強配分を変えて再挑戦できます。";q("[data-result]").textContent+="｜シーズン終了";clear()}else save(s);render()});
+render();
+</script>

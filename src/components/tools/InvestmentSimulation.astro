@@ -1,0 +1,105 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+<section class="sim-shell invest-sim" data-sim-game data-mode="investment-sim" data-state="ready">
+  <header class="sim-top"><div><p class="sim-kicker">36 MONTHS / FICTIONAL MARKET</p><h2>Market Lab</h2><p class="sim-sub">完全架空の6資産を36か月運用。ニュース、配当、手数料、価格変動、ポートフォリオ配分を見ながら資産を増やします。</p></div><div class="sim-best"><span>BEST ASSETS</span><strong data-best>---</strong></div></header>
+  <div class="sim-disclaimer">このゲームの銘柄・価格・ニュースはすべて架空です。実在の金融商品や将来の値動きとは関係ありません。</div>
+  <div class="sim-kpis">
+    <div class="sim-kpi"><span>MONTH</span><strong data-month>1 / 36</strong><small data-regime>通常相場</small></div>
+    <div class="sim-kpi"><span>CASH</span><strong data-cash>¥1,000,000</strong><small data-cash-ratio>現金 100%</small></div>
+    <div class="sim-kpi"><span>ASSETS</span><strong data-assets>¥1,000,000</strong><small data-return>0.0%</small></div>
+    <div class="sim-kpi"><span>RISK</span><strong data-risk>LOW</strong><small>配分で変化</small></div>
+    <div class="sim-kpi"><span>DIVIDEND</span><strong data-dividend>¥0</strong><small>累計受取</small></div>
+  </div>
+
+  <div class="sim-intro" data-intro>
+    <div><h3>ニュースを読み、資金を配分せよ</h3><p>資産ごとに値動きの大きさと配当率が異なります。売買手数料は0.2%。集中投資は伸びると強い一方、ニュースの逆風も大きく受けます。</p><div class="sim-actions"><button class="button button-primary" type="button" data-start>新規運用を始める</button><button class="button button-secondary" type="button" data-continue hidden>保存データから続ける</button></div></div>
+    <ul><li>6つの架空資産を自由に売買</li><li>3か月ごとに一部資産から配当</li><li>ニュースと市場局面でセクターごとに変動</li><li>資産推移・配分・リスクをリアルタイム表示</li></ul>
+  </div>
+
+  <div class="sim-play" data-play hidden>
+    <div class="sim-grid">
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>PORTFOLIO CHART</h3><label>表示<select data-chart-select><option value="portfolio">総資産</option><option value="nova">NOVA</option><option value="harbor">HARBOR</option><option value="green">GREEN</option><option value="med">MEDICA</option><option value="estate">ESTATE</option><option value="bond">STABLE</option></select></label></div>
+        <div class="chart-wrap"><svg viewBox="0 0 600 190" role="img" aria-label="価格推移チャート"><line class="chart-grid" x1="0" x2="600" y1="47" y2="47"/><line class="chart-grid" x1="0" x2="600" y1="95" y2="95"/><line class="chart-grid" x1="0" x2="600" y1="143" y2="143"/><polyline class="chart-line" data-chart-points points="0,95 600,95"/></svg></div>
+        <div class="sim-pills" style="margin-top:8px"><span class="sim-pill" data-peak>最高 ¥1,000,000</span><span class="sim-pill" data-drawdown>最大下落 0.0%</span></div>
+      </section>
+      <section class="sim-card">
+        <div class="sim-card-head"><h3>今月のマーケット</h3><span data-sentiment>NEUTRAL</span></div>
+        <div class="sim-event" data-news>市場は静かなスタート。</div>
+        <div class="risk-meter"><span>RISK</span><meter data-risk-meter min="0" max="100" value="0"></meter><b data-risk-score>0</b></div>
+        <div class="sim-event" data-outlook>次月見通し：政策イベントなし。企業業績に注目。</div>
+        <button class="sim-primary" type="button" data-next-month>1か月進める</button>
+        <div class="sim-result" data-result>ニュースと配分を見て売買しよう。</div>
+      </section>
+    </div>
+
+    <section class="sim-card">
+      <div class="sim-card-head"><h3>架空マーケット</h3><label>売買単位 <select data-qty><option value="1">1口</option><option value="5" selected>5口</option><option value="10">10口</option><option value="25">25口</option><option value="50">50口</option></select></label></div>
+      <div class="market-grid">
+        <article class="asset-card" data-asset-row="nova"><div class="asset-head"><strong>NOVA</strong><span data-change="nova">0.0%</span></div><small>テクノロジー / 高変動</small><div class="asset-meta"><b data-price="nova">¥1,200</b><span data-holding="nova">0口</span></div><div class="asset-actions"><button type="button" data-buy="nova">買う</button><button type="button" data-sell="nova">売る</button></div></article>
+        <article class="asset-card" data-asset-row="harbor"><div class="asset-head"><strong>HARBOR</strong><span data-change="harbor">0.0%</span></div><small>生活・小売 / 配当あり</small><div class="asset-meta"><b data-price="harbor">¥820</b><span data-holding="harbor">0口</span></div><div class="asset-actions"><button type="button" data-buy="harbor">買う</button><button type="button" data-sell="harbor">売る</button></div></article>
+        <article class="asset-card" data-asset-row="green"><div class="asset-head"><strong>GREEN</strong><span data-change="green">0.0%</span></div><small>エネルギー / 高変動</small><div class="asset-meta"><b data-price="green">¥1,480</b><span data-holding="green">0口</span></div><div class="asset-actions"><button type="button" data-buy="green">買う</button><button type="button" data-sell="green">売る</button></div></article>
+        <article class="asset-card" data-asset-row="med"><div class="asset-head"><strong>MEDICA</strong><span data-change="med">0.0%</span></div><small>ヘルスケア / 中変動・配当</small><div class="asset-meta"><b data-price="med">¥1,050</b><span data-holding="med">0口</span></div><div class="asset-actions"><button type="button" data-buy="med">買う</button><button type="button" data-sell="med">売る</button></div></article>
+        <article class="asset-card" data-asset-row="estate"><div class="asset-head"><strong>ESTATE</strong><span data-change="estate">0.0%</span></div><small>不動産 / 中変動・高配当</small><div class="asset-meta"><b data-price="estate">¥940</b><span data-holding="estate">0口</span></div><div class="asset-actions"><button type="button" data-buy="estate">買う</button><button type="button" data-sell="estate">売る</button></div></article>
+        <article class="asset-card" data-asset-row="bond"><div class="asset-head"><strong>STABLE</strong><span data-change="bond">0.0%</span></div><small>安定資産 / 低変動・配当</small><div class="asset-meta"><b data-price="bond">¥1,000</b><span data-holding="bond">0口</span></div><div class="asset-actions"><button type="button" data-buy="bond">買う</button><button type="button" data-sell="bond">売る</button></div></article>
+      </div>
+    </section>
+
+    <div class="sim-grid equal">
+      <section class="sim-card"><div class="sim-card-head"><h3>資産配分</h3><span data-fee>累計手数料 ¥0</span></div><div class="allocation-list" data-allocation></div></section>
+      <section class="sim-card"><div class="sim-card-head"><h3>運用ログ</h3><span data-trade-count>取引 0回</span></div><ul class="sim-log" data-log></ul></section>
+    </div>
+    <div class="game-over" data-game-over hidden><span>36 MONTHS COMPLETE</span><strong data-final-assets>---</strong><p data-final-comment></p></div>
+    <div class="sim-bottom"><button type="button" data-restart>最初からやり直す</button></div>
+  </div>
+</section>
+</ToolLayout>
+
+<script>
+const root=document.querySelector<HTMLElement>('[data-mode="investment-sim"]')!,intro=root.querySelector<HTMLElement>("[data-intro]")!,play=root.querySelector<HTMLElement>("[data-play]")!;
+const KEY="utility-tools:sim:investment-sim",BEST=KEY+":best",yen=(n:number)=>"¥"+Math.round(n).toLocaleString("ja-JP"),ri=(a:number,b:number)=>Math.floor(a+Math.random()*(b-a+1));
+const defs:any={
+ nova:{name:"NOVA",base:1200,vol:.12,div:0,sector:"tech"},harbor:{name:"HARBOR",base:820,vol:.065,div:.006,sector:"consumer"},
+ green:{name:"GREEN",base:1480,vol:.1,div:.002,sector:"energy"},med:{name:"MEDICA",base:1050,vol:.055,div:.004,sector:"health"},
+ estate:{name:"ESTATE",base:940,vol:.07,div:.008,sector:"realestate"},bond:{name:"STABLE",base:1000,vol:.022,div:.003,sector:"bond"}
+};
+const keys=Object.keys(defs);
+const events:any[]=[
+ {sent:"BULLISH",text:"AI投資ブーム。テクノロジー企業への資金流入が加速。",fx:{tech:.11,consumer:.01},regime:"グロース優勢"},
+ {sent:"CAUTIOUS",text:"物価上昇への警戒。金利敏感な不動産と成長株に逆風。",fx:{realestate:-.09,tech:-.055,bond:.02},regime:"金利上昇"},
+ {sent:"BULLISH",text:"再エネ大型案件が相次ぐ。エネルギー関連が物色される。",fx:{energy:.12},regime:"テーマ相場"},
+ {sent:"DEFENSIVE",text:"景気減速懸念。ヘルスケアと安定資産へ資金が移る。",fx:{health:.055,bond:.035,consumer:-.03,tech:-.045},regime:"リスクオフ"},
+ {sent:"NEUTRAL",text:"企業決算はまちまち。方向感の薄い相場。",fx:{all:0},regime:"通常相場"},
+ {sent:"BULLISH",text:"個人消費が予想を上回る。小売と不動産に追い風。",fx:{consumer:.07,realestate:.055},regime:"景気拡大"},
+ {sent:"SELL OFF",text:"市場全体で急な利益確定売り。高変動資産ほど下落。",fx:{all:-.05,tech:-.035,energy:-.025},regime:"調整局面"},
+ {sent:"RECOVERY",text:"悪材料一巡。幅広い資産に買い戻しが入る。",fx:{all:.045},regime:"反発局面"}
+];
+const outlooks=["次月見通し：企業決算が集中。高変動資産は値幅拡大に注意。","次月見通し：政策イベントを控え、安定資産に資金が向かう可能性。","次月見通し：消費統計に注目。小売・不動産が反応しやすい局面。","次月見通し：テーマ材料待ち。分散の効果が出やすい相場。"];
+const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch{return null}},save=(x:any)=>{try{localStorage.setItem(KEY,JSON.stringify(x))}catch{}},clear=()=>{try{localStorage.removeItem(KEY)}catch{}},readBest=()=>{try{return Number(localStorage.getItem(BEST)||0)||0}catch{return 0}},saveBest=(n:number)=>{if(n>readBest())try{localStorage.setItem(BEST,String(Math.round(n)))}catch{}};
+const fresh=()=>({month:1,cash:1000000,prices:{nova:1200,harbor:820,green:1480,med:1050,estate:940,bond:1000},prev:{nova:1200,harbor:820,green:1480,med:1050,estate:940,bond:1000},holdings:{nova:0,harbor:0,green:0,med:0,estate:0,bond:0},avg:{nova:0,harbor:0,green:0,med:0,estate:0,bond:0},history:{nova:[1200],harbor:[820],green:[1480],med:[1050],estate:[940],bond:[1000]},portfolioHistory:[1000000],log:[],eventIndex:4,outlook:0,dividend:0,fees:0,trades:0});
+let s:any=fresh();const q=(x:string)=>root.querySelector<HTMLElement>(x)!,qb=(x:string)=>root.querySelector<HTMLButtonElement>(x)!,qs=(x:string)=>root.querySelector<HTMLSelectElement>(x)!;
+const total=()=>s.cash+keys.reduce((a,k)=>a+s.holdings[k]*s.prices[k],0);
+function riskScore(){const t=total();if(t<=0)return 0;return Math.round(keys.reduce((a,k)=>a+(s.holdings[k]*s.prices[k]/t)*defs[k].vol*650,0))}
+function chartData(){const k=qs("[data-chart-select]").value;return k==="portfolio"?s.portfolioHistory:s.history[k]}
+function drawChart(){const arr=(chartData()||[]).slice(-24);if(arr.length<2){q("[data-chart-points]").setAttribute("points","0,95 600,95");return}const min=Math.min(...arr),max=Math.max(...arr),span=Math.max(1,max-min);const pts=arr.map((v:number,i:number)=>`${i/(arr.length-1)*600},${175-(v-min)/span*160}`).join(" ");q("[data-chart-points]").setAttribute("points",pts)}
+function render(){
+ const t=total(),ret=(t/1000000-1)*100,best=readBest(),risk=riskScore(),ev=events[s.eventIndex];q("[data-best]").textContent=best?yen(best):"---";q("[data-month]").textContent=Math.min(s.month,36)+" / 36";q("[data-regime]").textContent=ev.regime;q("[data-cash]").textContent=yen(s.cash);q("[data-cash-ratio]").textContent="現金 "+Math.round(s.cash/t*100)+"%";q("[data-assets]").textContent=yen(t);q("[data-return]").textContent=(ret>=0?"+":"")+ret.toFixed(1)+"%";q("[data-return]").className=ret>=0?"up":"down";q("[data-dividend]").textContent=yen(s.dividend);q("[data-risk]").textContent=risk<22?"LOW":risk<42?"MED":risk<62?"HIGH":"VERY HIGH";(root.querySelector<HTMLMeterElement>("[data-risk-meter]")!).value=risk;q("[data-risk-score]").textContent=risk+"";q("[data-news]").textContent=ev.text;q("[data-sentiment]").textContent=ev.sent;q("[data-outlook]").textContent=outlooks[s.outlook];q("[data-fee]").textContent="累計手数料 "+yen(s.fees);q("[data-trade-count]").textContent="取引 "+s.trades+"回";
+ keys.forEach(k=>{q(`[data-price="${k}"]`).textContent=yen(s.prices[k]);q(`[data-holding="${k}"]`).textContent=s.holdings[k]+"口";const ch=(s.prices[k]/s.prev[k]-1)*100,c=q(`[data-change="${k}"]`);c.textContent=(ch>=0?"+":"")+ch.toFixed(1)+"%";c.className=ch>=0?"up":"down";});
+ const items=[{name:"現金",v:s.cash},...keys.map(k=>({name:defs[k].name,v:s.holdings[k]*s.prices[k]}))].filter(x=>x.v>0);q("[data-allocation]").innerHTML=items.map(x=>`<div class="allocation-row"><span>${x.name}</span><progress max="${t}" value="${x.v}"></progress><b>${Math.round(x.v/t*100)}%</b></div>`).join("");q("[data-log]").innerHTML=s.log.slice(-8).reverse().map((x:string)=>"<li>"+x+"</li>").join("");
+ const ph=s.portfolioHistory,peak=Math.max(...ph,t);let running=ph[0]||t,dd=0;for(const v of ph){running=Math.max(running,v);dd=Math.min(dd,(v/running-1)*100)}q("[data-peak]").textContent="最高 "+yen(peak);q("[data-drawdown]").textContent="最大下落 "+dd.toFixed(1)+"%";drawChart();
+}
+function start(load=false){s=load&&read()?read():fresh();intro.hidden=true;play.hidden=false;root.dataset.state="running";save(s);render()}
+qb("[data-start]").addEventListener("click",()=>start(false));const cont=qb("[data-continue]");cont.hidden=!read();cont.addEventListener("click",()=>start(true));qb("[data-restart]").addEventListener("click",()=>{clear();start(false)});qs("[data-chart-select]").addEventListener("change",drawChart);
+root.querySelectorAll<HTMLButtonElement>("[data-buy]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.buy!,qty=Number(qs("[data-qty]").value),gross=s.prices[k]*qty,fee=Math.max(20,Math.round(gross*.002)),cost=gross+fee;if(cost>s.cash){q("[data-result]").textContent="現金が足りません。手数料も含めて確認してください。";return}const old=s.holdings[k],newQty=old+qty;s.avg[k]=newQty?((s.avg[k]*old+gross)/newQty):0;s.cash-=cost;s.holdings[k]=newQty;s.fees+=fee;s.trades++;s.log.push(`${defs[k].name} ${qty}口購入 / ${yen(cost)}`);q("[data-result]").textContent=`${defs[k].name}を${qty}口購入。手数料 ${yen(fee)}`;save(s);render()}));
+root.querySelectorAll<HTMLButtonElement>("[data-sell]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.sell!,qty=Number(qs("[data-qty]").value);if(qty>s.holdings[k]){q("[data-result]").textContent="保有口数が足りません。";return}const gross=s.prices[k]*qty,fee=Math.max(20,Math.round(gross*.002));s.cash+=gross-fee;s.holdings[k]-=qty;if(!s.holdings[k])s.avg[k]=0;s.fees+=fee;s.trades++;s.log.push(`${defs[k].name} ${qty}口売却 / ${yen(gross-fee)}`);q("[data-result]").textContent=`${defs[k].name}を${qty}口売却。受取 ${yen(gross-fee)}`;save(s);render()}));
+qb("[data-next-month]").addEventListener("click",()=>{if(s.month>=36){const t=total();saveBest(t);root.dataset.state="complete";q("[data-game-over]").hidden=false;q("[data-final-assets]").textContent=yen(t)+" / "+((t/1000000-1)*100).toFixed(1)+"%";q("[data-final-comment]").textContent=t>=1500000?"大幅な資産成長。リスクとリターンをうまく管理しました。":t>=1150000?"堅実なプラス運用。次は局面ごとの配分変更で上積みを狙えます。":"36か月完走。分散・現金比率・売買回数を変えて再挑戦できます。";q("[data-result]").textContent="36か月終了！ 最終資産 "+yen(t);clear();render();return}
+ s.prev={...s.prices};const nextEvent=ri(0,events.length-1),ev=events[nextEvent];for(const k of keys){const d=defs[k],sectorFx=ev.fx[d.sector]??ev.fx.all??0,noise=(Math.random()-.5)*2*d.vol,mean=.004+(k==="bond"?.001:0);s.prices[k]=Math.max(100,Math.round(s.prices[k]*(1+mean+sectorFx+noise)));s.history[k].push(s.prices[k])}
+ s.month++;let div=0;if(s.month%3===0){for(const k of keys)div+=s.holdings[k]*s.prices[k]*defs[k].div;s.cash+=div;s.dividend+=div}const t=total();s.portfolioHistory.push(t);s.eventIndex=nextEvent;s.outlook=ri(0,outlooks.length-1);s.log.push(`M${s.month} ${ev.regime} / 資産 ${yen(t)}${div>0?" / 配当 "+yen(div):""}`);q("[data-result]").textContent=`価格更新。総資産 ${yen(t)}${div>0?"、配当 "+yen(div)+"を受取":""}`;save(s);render()});
+render();
+</script>

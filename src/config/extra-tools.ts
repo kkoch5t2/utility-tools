@@ -1333,14 +1333,14 @@ export const extraTools: ExtraToolMeta[] = [
     id: "game-football-club-sim", mode: "football-club-sim", family: "game", category: "ゲーム", categoryKey: "game",
     href: "/game/football-club-manager/", name: "サッカークラブ経営シミュレーション",
     title: "サッカークラブ経営シミュレーション｜補強・戦術・育成でリーグ戦",
-    description: "架空クラブHarbor City FCの監督兼GMとして、移籍補強・トレーニング・戦術を選び、12試合のリーグ戦で勝点を積み上げる無料クラブ経営ゲームです。",
+    description: "架空クラブHarbor City FCの監督兼GMとして、移籍補強・トレーニング・戦術を選び、14試合のリーグ戦で勝点を積み上げる無料クラブ経営ゲームです。",
     faqs: [["実在クラブや選手は登場しますか？", "いいえ。クラブ名・対戦相手・選手名はすべてゲーム用の架空設定です。"], ["何を管理しますか？", "予算、チーム力、体力、士気、ファン数を見ながら補強・練習・戦術を決めます。"], ["途中保存できますか？", "はい。同じブラウザのlocalStorageへシーズン進行を保存します。"], privacyFaq],
   },
   {
     id: "game-investment-sim", mode: "investment-sim", family: "game", category: "ゲーム", categoryKey: "game",
     href: "/game/investment-simulator/", name: "投資シミュレーションゲーム",
-    title: "投資シミュレーションゲーム｜架空4資産を36か月運用",
-    description: "100万円の仮想資金で完全架空の4資産を売買し、毎月の架空ニュースと値動きに対応しながら36か月後の資産額を競う無料投資ゲームです。",
+    title: "投資シミュレーションゲーム｜架空6資産を36か月運用",
+    description: "100万円の仮想資金で完全架空の6資産を売買し、ニュース・配当・手数料・資産配分を管理しながら36か月後の資産額を競う無料投資ゲームです。",
     faqs: [["実在する株価データを使いますか？", "いいえ。銘柄・価格・ニュース・値動きはすべてゲーム内で生成する架空データです。"], ["投資の参考にできますか？", "いいえ。実際の投資判断や将来の収益予測には使用できないゲームです。"], ["途中保存できますか？", "はい。同じブラウザのlocalStorageへ保有状況と月数を保存します。"], privacyFaq],
   },
 ];
