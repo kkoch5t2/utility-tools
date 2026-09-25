@@ -44,11 +44,14 @@ test("ゲームカテゴリページと端末ベストスコア表示が動く",
 
   await page.goto("/category/game/");
   await expect(page.getByRole("heading", { name: "ゲームツール一覧" })).toBeVisible();
-  await expect(page.locator(".category-card")).toHaveCount(4);
+  await expect(page.locator(".category-card")).toHaveCount(7);
   await expect(page.locator(".category-card").filter({ hasText: "ナンバーチェイン" })).toContainText("ナンバーチェイン");
   await expect(page.locator(".category-card").filter({ hasText: "Lumo's Sky Run" })).toContainText("Lumo's Sky Run");
   await expect(page.locator(".category-card").filter({ hasText: "Meteor Drift" })).toContainText("Meteor Drift");
   await expect(page.locator(".category-card").filter({ hasText: "Flash Matrix" })).toContainText("Flash Matrix");
+  await expect(page.locator(".category-card").filter({ hasText: "Neon Snake" })).toContainText("Neon Snake");
+  await expect(page.locator(".category-card").filter({ hasText: "Reaction Zero" })).toContainText("Reaction Zero");
+  await expect(page.locator(".category-card").filter({ hasText: "Orbit Catch" })).toContainText("Orbit Catch");
 });
 
 
@@ -99,7 +102,7 @@ test("Lumo's Sky Runのスマホ操作とベストタイム表示が動く", asy
   expect(controlSelect).toBe("none");
 
   await page.goto("/category/game/");
-  await expect(page.locator(".category-card")).toHaveCount(4);
+  await expect(page.locator(".category-card")).toHaveCount(7);
   await expect(page.locator(".category-card").filter({ hasText: "Lumo's Sky Run" })).toBeVisible();
 });
 
@@ -144,10 +147,50 @@ test("Flash Matrixの正解シーケンスを入力すると次ラウンドへ�
   await expect(page.locator("[data-score]")).not.toHaveText("0");
 });
 
-test("ブラウザゲーム目的別ページに4ゲームが表示される", async ({ page }) => {
+test("ブラウザゲーム目的別ページに7ゲームが表示される", async ({ page }) => {
   await page.goto("/use-case/browser-games/");
   await expect(page.getByRole("heading", { name: "ブラウザでゲームを遊ぶ" })).toBeVisible();
-  await expect(page.locator(".usecase-card")).toHaveCount(4);
+  await expect(page.locator(".usecase-card")).toHaveCount(7);
   await expect(page.locator(".usecase-card").filter({ hasText: "Meteor Drift" })).toBeVisible();
   await expect(page.locator(".usecase-card").filter({ hasText: "Flash Matrix" })).toBeVisible();
+  await expect(page.locator(".usecase-card").filter({ hasText: "Neon Snake" })).toBeVisible();
+  await expect(page.locator(".usecase-card").filter({ hasText: "Reaction Zero" })).toBeVisible();
+  await expect(page.locator(".usecase-card").filter({ hasText: "Orbit Catch" })).toBeVisible();
+});
+
+
+test("Neon Snakeが開始して実際に前進する", async ({ page }) => {
+  await page.goto("/game/neon-snake/");
+  await expect(page.locator("h1")).toHaveText("Neon Snake");
+  await expect(page.locator("[data-snake]")).toBeVisible();
+  const startX = Number(await page.locator("[data-quick-game]").getAttribute("data-head-x"));
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-quick-game]")).toHaveAttribute("data-state", "running");
+  await page.waitForTimeout(360);
+  const movedX = Number(await page.locator("[data-quick-game]").getAttribute("data-head-x"));
+  expect(movedX).toBeGreaterThan(startX);
+  await expect(page.locator("[data-length]")).toHaveText(/3|4|5|6/);
+});
+
+test("Reaction ZeroでGO後の反応時間を計測できる", async ({ page }) => {
+  await page.goto("/game/reaction-zero/");
+  await expect(page.locator("h1")).toHaveText("Reaction Zero");
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-quick-game]")).toHaveAttribute("data-state", "go", { timeout: 4500 });
+  await page.locator("[data-reaction-pad]").click();
+  await expect(page.locator("[data-round]")).toHaveText("1 / 5");
+  await expect(page.locator("[data-last]")).toHaveText(/\d+ ms/);
+  await expect(page.locator("[data-quick-game]")).toHaveAttribute("data-state", "hit");
+});
+
+test("Orbit CatchでSTOPすると試行回数が進む", async ({ page }) => {
+  await page.goto("/game/orbit-catch/");
+  await expect(page.locator("h1")).toHaveText("Orbit Catch");
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-quick-game]")).toHaveAttribute("data-state", "running");
+  await expect(page.locator("[data-stop]")).toBeEnabled();
+  await page.waitForTimeout(250);
+  await page.locator("[data-stop]").click();
+  await expect(page.locator("strong[data-tries]")).toHaveText("1 / 10");
+  await expect(page.locator("[data-orbit-status]")).toHaveText(/PERFECT|GREAT|CLOSE|MISS/);
 });

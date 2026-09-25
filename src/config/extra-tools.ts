@@ -1301,6 +1301,27 @@ export const extraTools: ExtraToolMeta[] = [
     description: "4×4のマスが光る順番を覚えて同じ順番でタップする記憶力ゲーム。ラウンドごとに記憶する数が増え、3回ミスするまで挑戦できます。",
     faqs: [["ルールは？", "光ったマスの順番を覚え、表示が終わったら同じ順番でマスをタップします。正解すると次のラウンドで1手増えます。"], ["ミスしたらどうなりますか？", "残機が1つ減り、同じ順番をもう一度確認できます。3回ミスするとゲーム終了です。"], ["ベスト記録は保存されますか？", "はい。同じブラウザのlocalStorageへ到達した最高ラウンドだけ保存します。"], privacyFaq],
   },
+  {
+    id: "game-neon-snake", mode: "neon-snake", family: "game", category: "ゲーム", categoryKey: "game",
+    href: "/game/neon-snake/", name: "Neon Snake",
+    title: "Neon Snake｜スワイプで遊べる無料スネークゲーム",
+    description: "光るフードを食べて伸び続けるクラシックなスネーク系ゲーム。スマホはスワイプ、PCは矢印キーやWASDで操作し、自己ベスト更新を狙えます。",
+    faqs: [["どうやって操作しますか？", "スマホではゲーム画面を上下左右にスワイプ、PCでは矢印キーまたはWASDで進行方向を変えます。"], ["ゲームオーバー条件は？", "壁または自分の体にぶつかるとゲーム終了です。"], ["ベストスコアは保存されますか？", "はい。同じブラウザのlocalStorageへ最高スコアだけ保存します。"], privacyFaq],
+  },
+  {
+    id: "game-reaction-zero", mode: "reaction-zero", family: "game", category: "ゲーム", categoryKey: "game",
+    href: "/game/reaction-zero/", name: "Reaction Zero",
+    title: "Reaction Zero｜反応速度を測る無料リアクションゲーム",
+    description: "画面が光った瞬間にタップして反応速度をミリ秒で測る無料ゲーム。5回の平均タイムと自己ベストをスマホ・PCで確認できます。",
+    faqs: [["どうやって遊びますか？", "START後に待機し、画面が青く変わってTAP!と表示された瞬間にタップします。"], ["早押しするとどうなりますか？", "フライング扱いになり、そのラウンドは再度待機からやり直します。"], ["記録は保存されますか？", "5回平均の自己ベストだけを同じブラウザのlocalStorageへ保存します。"], privacyFaq],
+  },
+  {
+    id: "game-orbit-catch", mode: "orbit-catch", family: "game", category: "ゲーム", categoryKey: "game",
+    href: "/game/orbit-catch/", name: "Orbit Catch",
+    title: "Orbit Catch｜1タップで遊べる無料タイミングゲーム",
+    description: "円周を回る光点が黄色いゾーンに重なった瞬間にSTOPする1タップタイミングゲーム。10回の合計スコアとコンボで自己ベストを狙えます。",
+    faqs: [["ルールは？", "ゲーム開始後、円周上を回る水色の光点が黄色いゾーンに重なった瞬間にSTOPを押します。"], ["得点はどう決まりますか？", "黄色いゾーンの中心に近いほど高得点で、連続成功するとコンボ補正が加わります。"], ["スマホでも遊べますか？", "はい。STOPボタンまたはゲーム画面のタップだけで遊べます。"], privacyFaq],
+  },
 ];
 
 export const extraToolByPath = new Map(extraTools.map((tool) => [tool.href, tool]));
