@@ -85,7 +85,7 @@ const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch{r
 const fresh=()=>({month:1,cash:1000000,prices:{nova:1200,harbor:820,green:1480,med:1050,estate:940,bond:1000},prev:{nova:1200,harbor:820,green:1480,med:1050,estate:940,bond:1000},holdings:{nova:0,harbor:0,green:0,med:0,estate:0,bond:0},avg:{nova:0,harbor:0,green:0,med:0,estate:0,bond:0},history:{nova:[1200],harbor:[820],green:[1480],med:[1050],estate:[940],bond:[1000]},portfolioHistory:[1000000],log:[],eventIndex:4,outlook:0,dividend:0,fees:0,trades:0});
 let s:any=fresh();const q=(x:string)=>root.querySelector<HTMLElement>(x)!,qb=(x:string)=>root.querySelector<HTMLButtonElement>(x)!,qs=(x:string)=>root.querySelector<HTMLSelectElement>(x)!;
 const total=()=>s.cash+keys.reduce((a,k)=>a+s.holdings[k]*s.prices[k],0);
-function riskScore(){const t=total();if(t<=0)return 0;return Math.round(keys.reduce((a,k)=>a+(s.holdings[k]*s.prices[k]/t)*defs[k].vol*650,0))}
+function riskScore(){const t=total();if(t<=0)return 0;const invested=keys.some(k=>s.holdings[k]>0);const score=Math.round(keys.reduce((a,k)=>a+(s.holdings[k]*s.prices[k]/t)*defs[k].vol*650,0));return invested?Math.max(1,score):0}
 function chartData(){const k=qs("[data-chart-select]").value;return k==="portfolio"?s.portfolioHistory:s.history[k]}
 function drawChart(){const arr=(chartData()||[]).slice(-24);if(arr.length<2){q("[data-chart-points]").setAttribute("points","0,95 600,95");return}const min=Math.min(...arr),max=Math.max(...arr),span=Math.max(1,max-min);const pts=arr.map((v:number,i:number)=>`${i/(arr.length-1)*600},${175-(v-min)/span*160}`).join(" ");q("[data-chart-points]").setAttribute("points",pts)}
 function render(){
