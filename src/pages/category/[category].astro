@@ -30,6 +30,7 @@ const relatedCategoryKeys: Record<CategoryMeta["key"], CategoryMeta["key"][]> = 
   security: ["developer", "text", "pdf"],
   japan: ["japanese", "date", "calculator"],
   office: ["text", "date", "calculator"],
+  game: ["calculator", "share", "text"],
   share: ["date", "calculator", "text"],
 };
 const relatedCategories = relatedCategoryKeys[category.key]
@@ -98,7 +99,7 @@ const collectionJson = {
               <h3>{tool.name}</h3>
               <p>{tool.description}</p>
             </div>
-            <a href={tool.href} aria-label={`${tool.name}を開く`}>ツールを開く <span aria-hidden="true">→</span></a>
+            <a href={tool.href} aria-label={`${tool.name}を開く`}>{category.key === "game" ? "ゲームを開く" : "ツールを開く"} <span aria-hidden="true">→</span></a>
           </article>
         ))}
       </div>

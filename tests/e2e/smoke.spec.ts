@@ -127,10 +127,11 @@ test("関連ツールとSEO構造化データが表示される", async ({ page 
   await expect(page.locator(".seo-tips li")).toHaveCount(2);
   await expect(page.locator('.breadcrumbs [aria-current="page"]')).toHaveText("Base64エンコード・デコード");
   await expect(page.locator('.footer-categories a[href="/category/developer/"]')).toHaveText("開発者");
-  await expect(page.locator(".footer-categories a")).toHaveCount(15);
+  await expect(page.locator(".footer-categories a")).toHaveCount(16);
   await expect(page.locator('.footer-categories a[href="/category/security/"]')).toHaveText("セキュリティ");
   await expect(page.locator('.footer-categories a[href="/category/japan/"]')).toHaveText("日本向け");
   await expect(page.locator('.footer-categories a[href="/category/office/"]')).toHaveText("仕事・事務");
+  await expect(page.locator('.footer-categories a[href="/category/game/"]')).toHaveText("ゲーム");
   const datlumeLink = page.locator('.footer-related a[href="https://datlume.com/"]');
   await expect(datlumeLink).toContainText("Datlume");
   await expect(datlumeLink.locator('img[src="/brand/datlume.svg"]')).toBeVisible();

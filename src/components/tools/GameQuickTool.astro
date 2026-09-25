@@ -1,0 +1,428 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="game-card" data-number-chain>
+    <div class="game-hero">
+      <div>
+        <p class="game-kicker">60 SECOND PUZZLE</p>
+        <h2>数字をなぞって、合計10。</h2>
+        <p>上下左右・斜めにつながる数字を指でなぞって、合計が10になったら指を離す。連続成功でコンボ倍率が上がります。</p>
+      </div>
+      <div class="target-orb" aria-label="目標合計10"><span>TARGET</span><strong>10</strong></div>
+    </div>
+
+    <div class="game-stats" aria-label="ゲーム状況">
+      <div><span>SCORE</span><strong data-score>0</strong></div>
+      <div><span>TIME</span><strong data-time>60</strong></div>
+      <div><span>COMBO</span><strong data-combo>×1</strong></div>
+      <div><span>BEST</span><strong data-best>0</strong></div>
+    </div>
+
+    <div class="game-status" data-status aria-live="polite">「ゲーム開始」を押すと60秒スタート。</div>
+
+    <div class="game-board-wrap">
+      <div class="game-board" data-board role="grid" aria-label="6×6の数字パズル盤"></div>
+      <div class="game-flash" data-flash aria-hidden="true"></div>
+    </div>
+
+    <div class="selection-panel">
+      <div>
+        <span>選択合計</span>
+        <strong data-sum>0</strong>
+      </div>
+      <div class="selection-path" data-path>数字をなぞってください</div>
+    </div>
+
+    <div class="game-actions">
+      <button class="button button-primary game-start" type="button" data-start>ゲーム開始</button>
+      <button class="button button-secondary" type="button" data-hint disabled>ヒント <span data-hints>3</span></button>
+      <button class="button button-secondary" type="button" data-shuffle disabled>シャッフル -100</button>
+    </div>
+
+    <div class="game-rules">
+      <div><strong>1</strong><span>隣り合う数字をなぞる</span></div>
+      <div><strong>2</strong><span>合計10で指を離す</span></div>
+      <div><strong>3</strong><span>3秒以内の連続成功でコンボ</span></div>
+    </div>
+  </section>
+</ToolLayout>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-number-chain]")!;
+  const boardEl = root.querySelector<HTMLElement>("[data-board]")!;
+  const scoreEl = root.querySelector<HTMLElement>("[data-score]")!;
+  const timeEl = root.querySelector<HTMLElement>("[data-time]")!;
+  const comboEl = root.querySelector<HTMLElement>("[data-combo]")!;
+  const bestEl = root.querySelector<HTMLElement>("[data-best]")!;
+  const sumEl = root.querySelector<HTMLElement>("[data-sum]")!;
+  const pathEl = root.querySelector<HTMLElement>("[data-path]")!;
+  const statusEl = root.querySelector<HTMLElement>("[data-status]")!;
+  const startButton = root.querySelector<HTMLButtonElement>("[data-start]")!;
+  const hintButton = root.querySelector<HTMLButtonElement>("[data-hint]")!;
+  const shuffleButton = root.querySelector<HTMLButtonElement>("[data-shuffle]")!;
+  const hintsEl = root.querySelector<HTMLElement>("[data-hints]")!;
+  const flashEl = root.querySelector<HTMLElement>("[data-flash]")!;
+
+  const SIZE = 6;
+  const TARGET = 10;
+  const DURATION = 60_000;
+  const BEST_KEY = "utility-tools:number-chain-10:best";
+
+  let board: number[][] = [];
+  let score = 0;
+  let best = 0;
+  let combo = 1;
+  let hints = 3;
+  let active = false;
+  let dragging = false;
+  let selected: number[] = [];
+  let selectedSum = 0;
+  let timerId = 0;
+  let startedAt = 0;
+  let lastClearAt = 0;
+  let hintTimer = 0;
+  try {
+    best = Math.max(0, Number(localStorage.getItem(BEST_KEY) ?? "0") || 0);
+  } catch {}
+  bestEl.textContent = String(best);
+
+  function randomValue() {
+    return 1 + Math.floor(Math.random() * 9);
+  }
+
+  function neighbors(index: number) {
+    const row = Math.floor(index / SIZE);
+    const col = index % SIZE;
+    const result: number[] = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = row + dr;
+        const nc = col + dc;
+        if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) result.push(nr * SIZE + nc);
+      }
+    }
+    return result;
+  }
+
+  function valueAt(index: number) {
+    return board[Math.floor(index / SIZE)][index % SIZE];
+  }
+
+  function findPath() {
+    const visit = (index: number, sum: number, path: number[], used: Set<number>): number[] | null => {
+      const nextSum = sum + valueAt(index);
+      const nextPath = [...path, index];
+      if (nextSum === TARGET && nextPath.length >= 2) return nextPath;
+      if (nextSum >= TARGET || nextPath.length >= 7) return null;
+      used.add(index);
+      for (const next of neighbors(index)) {
+        if (used.has(next)) continue;
+        const found = visit(next, nextSum, nextPath, used);
+        if (found) return found;
+      }
+      used.delete(index);
+      return null;
+    };
+
+    for (let index = 0; index < SIZE * SIZE; index++) {
+      const found = visit(index, 0, [], new Set<number>());
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function generateBoard() {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      board = Array.from({ length: SIZE }, () => Array.from({ length: SIZE }, randomValue));
+      if (findPath()) return;
+    }
+    board = Array.from({ length: SIZE }, () => Array.from({ length: SIZE }, randomValue));
+    board[0][0] = 4;
+    board[0][1] = 6;
+  }
+
+  function renderBoard() {
+    boardEl.innerHTML = board.flat().map((value, index) => {
+      const hue = 205 + value * 11;
+      return `<button class="number-tile" type="button" role="gridcell" data-cell="${index}" data-value="${value}" style="--tile-hue:${hue}" aria-label="${Math.floor(index / SIZE) + 1}行${index % SIZE + 1}列、数字${value}"><span>${value}</span></button>`;
+    }).join("");
+    syncSelection();
+  }
+
+  function updateStats() {
+    scoreEl.textContent = score.toLocaleString("ja-JP");
+    comboEl.textContent = "×" + combo;
+    bestEl.textContent = Math.max(best, score).toLocaleString("ja-JP");
+    hintsEl.textContent = String(hints);
+  }
+
+  function syncSelection() {
+    boardEl.querySelectorAll<HTMLElement>("[data-cell]").forEach((cell) => {
+      const index = Number(cell.dataset.cell);
+      cell.classList.toggle("is-selected", selected.includes(index));
+      cell.classList.toggle("is-over", selectedSum > TARGET && selected.includes(index));
+      cell.classList.toggle("is-perfect", selectedSum === TARGET && selected.includes(index));
+    });
+    sumEl.textContent = String(selectedSum);
+    sumEl.classList.toggle("is-perfect", selectedSum === TARGET);
+    sumEl.classList.toggle("is-over", selectedSum > TARGET);
+    pathEl.textContent = selected.length
+      ? selected.map((index) => String(valueAt(index))).join(" + ") + " = " + selectedSum
+      : "数字をなぞってください";
+  }
+
+  function resetSelection() {
+    selected = [];
+    selectedSum = 0;
+    syncSelection();
+  }
+
+  function beginSelection(index: number) {
+    if (!active) return;
+    dragging = true;
+    selected = [index];
+    selectedSum = valueAt(index);
+    syncSelection();
+  }
+
+  function addSelection(index: number) {
+    if (!dragging || !active || !selected.length) return;
+    const last = selected[selected.length - 1];
+    if (index === last) return;
+
+    const previous = selected[selected.length - 2];
+    if (index === previous) {
+      selected.pop();
+      selectedSum = selected.reduce((sum, cell) => sum + valueAt(cell), 0);
+      syncSelection();
+      return;
+    }
+
+    if (selected.includes(index) || !neighbors(last).includes(index)) return;
+    selected.push(index);
+    selectedSum += valueAt(index);
+    syncSelection();
+  }
+
+  function refillBoard() {
+    const cleared = new Set(selected);
+    for (let col = 0; col < SIZE; col++) {
+      const remaining: number[] = [];
+      for (let row = 0; row < SIZE; row++) {
+        const index = row * SIZE + col;
+        if (!cleared.has(index)) remaining.push(board[row][col]);
+      }
+      const incoming = Array.from({ length: SIZE - remaining.length }, randomValue);
+      const column = [...incoming, ...remaining];
+      for (let row = 0; row < SIZE; row++) board[row][col] = column[row];
+    }
+    if (!findPath()) generateBoard();
+  }
+  function showFlash(text: string) {
+    flashEl.textContent = text;
+    flashEl.classList.remove("show");
+    void flashEl.offsetWidth;
+    flashEl.classList.add("show");
+  }
+
+  function finishSelection() {
+    if (!dragging) return;
+    dragging = false;
+    if (!active) return resetSelection();
+
+    if (selectedSum === TARGET && selected.length >= 2) {
+      const now = performance.now();
+      combo = lastClearAt && now - lastClearAt <= 3000 ? Math.min(combo + 1, 9) : 1;
+      lastClearAt = now;
+      const base = 80 + selected.length * 60;
+      const gained = base * combo;
+      score += gained;
+      statusEl.textContent = `成功！ +${gained.toLocaleString("ja-JP")}点${combo > 1 ? " / COMBO ×" + combo : ""}`;
+      showFlash("+" + gained.toLocaleString("ja-JP"));
+      refillBoard();
+      resetSelection();
+      renderBoard();
+      updateStats();
+      return;
+    }
+
+    if (selected.length > 1) {
+      statusEl.textContent = selectedSum > TARGET ? "10を超えました。別の経路を狙おう。" : "合計10までつないでから指を離そう。";
+    }
+    resetSelection();
+  }
+
+  function clearHint() {
+    window.clearTimeout(hintTimer);
+    boardEl.querySelectorAll<HTMLElement>(".is-hint").forEach((cell) => {
+      cell.classList.remove("is-hint");
+      delete cell.dataset.hintOrder;
+    });
+  }
+
+  function showHint() {
+    if (!active || hints <= 0) return;
+    clearHint();
+    const path = findPath();
+    if (!path) return;
+    hints--;
+    path.forEach((index, order) => {
+      const cell = boardEl.querySelector<HTMLElement>(`[data-cell="${index}"]`);
+      if (!cell) return;
+      cell.classList.add("is-hint");
+      cell.dataset.hintOrder = String(order);
+    });
+    hintsEl.textContent = String(hints);
+    statusEl.textContent = "光っている数字を順番になぞると10になります。";
+    hintButton.disabled = hints <= 0;
+    hintTimer = window.setTimeout(clearHint, 1800);
+  }
+
+  function shuffleBoard() {
+    if (!active) return;
+    score = Math.max(0, score - 100);
+    combo = 1;
+    generateBoard();
+    resetSelection();
+    renderBoard();
+    updateStats();
+    statusEl.textContent = "盤面をシャッフルしました。-100点";
+  }
+
+  function updateTimer() {
+    if (!active) return;
+    const leftMs = Math.max(0, DURATION - (performance.now() - startedAt));
+    const seconds = Math.ceil(leftMs / 1000);
+    timeEl.textContent = String(seconds);
+    timeEl.classList.toggle("is-danger", seconds <= 10);
+    if (leftMs <= 0) endGame();
+  }
+
+  function endGame() {
+    if (!active) return;
+    active = false;
+    dragging = false;
+    window.clearInterval(timerId);
+    clearHint();
+    hintButton.disabled = true;
+    shuffleButton.disabled = true;
+    startButton.textContent = "もう一度遊ぶ";
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem(BEST_KEY, String(best)); } catch {}
+      statusEl.textContent = `TIME UP！ ${score.toLocaleString("ja-JP")}点　NEW BEST！`;
+      showFlash("NEW BEST!");
+    } else {
+      statusEl.textContent = `TIME UP！ スコア ${score.toLocaleString("ja-JP")}点`;
+    }
+    bestEl.textContent = best.toLocaleString("ja-JP");
+    resetSelection();
+  }
+
+  function startGame() {
+    window.clearInterval(timerId);
+    clearHint();
+    score = 0;
+    combo = 1;
+    hints = 3;
+    lastClearAt = 0;
+    active = true;
+    dragging = false;
+    startedAt = performance.now();
+    generateBoard();
+    resetSelection();
+    renderBoard();
+    updateStats();
+    timeEl.textContent = "60";
+    timeEl.classList.remove("is-danger");
+    statusEl.textContent = "スタート！ 数字をなぞって合計10を作ろう。";
+    startButton.textContent = "最初から";
+    hintButton.disabled = false;
+    shuffleButton.disabled = false;
+    timerId = window.setInterval(updateTimer, 100);
+  }
+
+  boardEl.addEventListener("pointerdown", (event) => {
+    const cell = (event.target as HTMLElement).closest<HTMLElement>("[data-cell]");
+    if (!cell || !active) return;
+    event.preventDefault();
+    boardEl.setPointerCapture(event.pointerId);
+    beginSelection(Number(cell.dataset.cell));
+  });
+
+  boardEl.addEventListener("pointermove", (event) => {
+    if (!dragging || !active) return;
+    event.preventDefault();
+    const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-cell]");
+    if (cell && boardEl.contains(cell)) addSelection(Number(cell.dataset.cell));
+  });
+
+  boardEl.addEventListener("pointerup", (event) => {
+    if (!dragging) return;
+    event.preventDefault();
+    if (boardEl.hasPointerCapture(event.pointerId)) boardEl.releasePointerCapture(event.pointerId);
+    finishSelection();
+  });
+  boardEl.addEventListener("pointercancel", finishSelection);
+
+  startButton.addEventListener("click", startGame);
+  hintButton.addEventListener("click", showHint);
+  shuffleButton.addEventListener("click", shuffleBoard);
+
+  generateBoard();
+  renderBoard();
+  updateStats();
+</script>
+<style>
+  .game-card{position:relative;overflow:hidden;padding:22px;border:1px solid #dbe5f0;border-radius:20px;background:linear-gradient(180deg,#07111f 0%,#0a1628 100%);box-shadow:0 18px 45px rgba(15,23,42,.16);color:#f8fbff}
+  .game-card:before{content:"";position:absolute;inset:-35% auto auto -20%;width:70%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.16),transparent 64%);pointer-events:none}
+  .game-hero{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px}
+  .game-kicker{margin:0 0 5px;color:#67e8f9;font-size:11px;font-weight:900;letter-spacing:.16em}
+  .game-hero h2{margin:0;color:#fff;font-size:clamp(24px,4vw,38px);line-height:1.1}
+  .game-hero p{max-width:680px;margin:9px 0 0;color:#a8bdd5;font-size:14px;line-height:1.75}
+  .target-orb{display:grid;place-items:center;flex:0 0 84px;aspect-ratio:1;border:1px solid rgba(103,232,249,.5);border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(34,211,238,.35),rgba(30,64,175,.18) 46%,rgba(15,23,42,.9));box-shadow:0 0 28px rgba(34,211,238,.18)}
+  .target-orb span{margin-top:11px;color:#8fe9f5;font-size:9px;font-weight:900;letter-spacing:.13em}
+  .target-orb strong{margin-top:-10px;font-size:36px;line-height:1}
+  .game-stats{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .game-stats>div{padding:10px 12px;border:1px solid rgba(148,163,184,.16);border-radius:12px;background:rgba(15,23,42,.68)}
+  .game-stats span{display:block;color:#7f95ae;font-size:9px;font-weight:900;letter-spacing:.12em}
+  .game-stats strong{display:block;margin-top:2px;color:#fff;font-size:21px;font-variant-numeric:tabular-nums}
+  .game-stats strong.is-danger{color:#fda4af;animation:pulse-time .65s ease-in-out infinite alternate}
+  .game-status{position:relative;min-height:24px;margin:0 0 10px;color:#d9e7f7;font-size:13px;font-weight:700;text-align:center}
+  .game-board-wrap{position:relative;max-width:560px;margin:0 auto}
+  .game-board{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;padding:10px;border:1px solid rgba(103,232,249,.18);border-radius:18px;background:rgba(2,8,23,.68);touch-action:none;user-select:none;-webkit-user-select:none}
+  .number-tile{position:relative;display:grid;place-items:center;aspect-ratio:1;border:1px solid hsla(var(--tile-hue),85%,72%,.27);border-radius:13px;background:linear-gradient(145deg,hsla(var(--tile-hue),72%,48%,.25),hsla(var(--tile-hue),68%,25%,.14));box-shadow:inset 0 1px 0 rgba(255,255,255,.06);color:#eafcff;cursor:crosshair;transition:transform .09s ease,border-color .09s ease,background .09s ease,box-shadow .09s ease}
+  .number-tile span{font-size:clamp(19px,5vw,31px);font-weight:900;line-height:1;text-shadow:0 2px 10px rgba(0,0,0,.3);pointer-events:none}
+  .number-tile:hover{transform:translateY(-1px);border-color:hsla(var(--tile-hue),90%,76%,.6)}
+  .number-tile.is-selected{transform:scale(.92);border-color:#67e8f9;background:rgba(6,182,212,.33);box-shadow:0 0 0 2px rgba(34,211,238,.14),0 0 22px rgba(34,211,238,.22)}
+  .number-tile.is-perfect{border-color:#86efac;background:rgba(34,197,94,.3);box-shadow:0 0 24px rgba(34,197,94,.28)}
+  .number-tile.is-over{border-color:#fda4af;background:rgba(244,63,94,.28);box-shadow:0 0 20px rgba(244,63,94,.2)}
+  .number-tile.is-hint{animation:hint-glow .5s ease-in-out infinite alternate;border-color:#fde047;box-shadow:0 0 0 2px rgba(250,204,21,.18),0 0 24px rgba(250,204,21,.35)}
+  .game-flash{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#fff;font-size:clamp(28px,8vw,56px);font-weight:950;text-shadow:0 4px 30px rgba(34,211,238,.8);opacity:0;transform:scale(.7)}
+  .game-flash.show{animation:score-pop .65s ease-out}
+  .selection-panel{display:flex;align-items:center;gap:14px;max-width:560px;margin:10px auto 0;padding:10px 12px;border:1px solid rgba(148,163,184,.16);border-radius:12px;background:rgba(15,23,42,.62)}
+  .selection-panel>div:first-child{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+  .selection-panel span{color:#8ca2bb;font-size:11px;font-weight:800}
+  .selection-panel strong{color:#fff;font-size:25px;font-variant-numeric:tabular-nums}
+  .selection-panel strong.is-perfect{color:#86efac}.selection-panel strong.is-over{color:#fda4af}
+  .selection-path{min-width:0;overflow:hidden;color:#a9bdd3;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+  .game-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:14px}
+  .game-actions .button{min-width:132px}.game-start{box-shadow:0 10px 28px rgba(37,99,235,.28)}
+  .game-rules{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+  .game-rules>div{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid rgba(148,163,184,.12);border-radius:11px;background:rgba(15,23,42,.38);color:#9eb2ca;font-size:12px}
+  .game-rules strong{display:grid;place-items:center;flex:0 0 25px;aspect-ratio:1;border-radius:50%;background:rgba(34,211,238,.14);color:#67e8f9}
+  @keyframes hint-glow{to{transform:scale(.93);filter:brightness(1.35)}}
+  @keyframes score-pop{0%{opacity:0;transform:scale(.65)}35%{opacity:1;transform:scale(1.06)}100%{opacity:0;transform:scale(1.24)}}
+  @keyframes pulse-time{to{opacity:.55}}
+  @media(max-width:640px){
+    .game-card{padding:14px;border-radius:16px}.game-hero{align-items:center}.game-hero p{font-size:12px}.target-orb{flex-basis:66px}.target-orb strong{font-size:29px}
+    .game-stats{gap:5px}.game-stats>div{padding:8px}.game-stats strong{font-size:17px}.game-board{gap:5px;padding:7px;border-radius:14px}.number-tile{border-radius:10px}
+    .game-rules{grid-template-columns:1fr}.selection-panel{gap:8px}.game-actions .button{flex:1;min-width:120px}
+  }
+</style>

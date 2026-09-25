@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-const TOOL_PATH = /^(?:\/(schedule|poll|attendance|split-bill|survey|team-divider|lottery-order|availability-match|packing-list|shared-checklist|seat-shuffle|travel-expense|candidate-ranking)\/|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator)\/)/;
+const TOOL_PATH = /^(?:\/(schedule|poll|attendance|split-bill|survey|team-divider|lottery-order|availability-match|packing-list|shared-checklist|seat-shuffle|travel-expense|candidate-ranking)\/|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator|security|japan|office|game)\/)/;
 
 test("全ツールをPC・スマホで表示監査する", async ({ browser, request }) => {
+  test.setTimeout(90_000);
   const sitemapResponse = await request.get("/sitemap.xml");
   expect(sitemapResponse.ok()).toBeTruthy();
   const sitemap = await sitemapResponse.text();
@@ -31,7 +32,7 @@ test("全ツールをPC・スマホで表示監査する", async ({ browser, req
         await expect(page.locator("[data-create-form]"), `${viewport.name}: ${path}`).toBeVisible();
       } else {
         await expect(page.locator(".tool-heading h1"), `${viewport.name}: ${path}`).toBeVisible();
-        await expect(page.locator(".tool-card"), `${viewport.name}: ${path}`).toBeVisible();
+        await expect(page.locator(".tool-card, .game-card").first(), `${viewport.name}: ${path}`).toBeVisible();
       }
 
       const overflow = await page.evaluate(() => ({
