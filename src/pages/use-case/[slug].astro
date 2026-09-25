@@ -1,0 +1,118 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { tools } from "../../config/tools";
+import { useCasePages, type UseCasePage } from "../../config/use-cases";
+import { siteConfig } from "../../config/site";
+
+export function getStaticPaths() {
+  return useCasePages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+interface Props { page: UseCasePage; }
+const { page } = Astro.props;
+const selectedTools = page.toolIds
+  .map((id) => tools.find((tool) => tool.id === id))
+  .filter((tool): tool is (typeof tools)[number] => Boolean(tool));
+const currentIndex = useCasePages.findIndex((item) => item.slug === page.slug);
+const relatedPages = [1, 2, 3]
+  .map((offset) => useCasePages[(currentIndex + offset) % useCasePages.length])
+  .filter(Boolean);
+const canonical = new URL(`/use-case/${page.slug}/`, siteConfig.url).toString();
+const breadcrumbJson = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "ホーム", item: siteConfig.url + "/" },
+    { "@type": "ListItem", position: 2, name: "目的から探す", item: siteConfig.url + "/use-case/" },
+    { "@type": "ListItem", position: 3, name: page.label, item: canonical },
+  ],
+};
+const collectionJson = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: page.title,
+  url: canonical,
+  description: page.description,
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: selectedTools.length,
+    itemListElement: selectedTools.map((tool, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: tool.name,
+      url: new URL(tool.href, siteConfig.url).toString(),
+    })),
+  },
+};
+---
+<BaseLayout title={page.title} description={page.description}>
+  <div class="shell usecase-page">
+    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href="/use-case/">目的から探す</a><span>/</span><span aria-current="page">{page.label}</span></nav>
+    <header class="usecase-heading">
+      <p class="eyebrow">BY PURPOSE</p>
+      <h1>{page.label}</h1>
+      <p>{page.intro}</p>
+    </header>
+
+    <section class="usecase-needs" aria-labelledby="usecase-needs-title">
+      <h2 id="usecase-needs-title">こんなときに</h2>
+      <ul>{page.bullets.map((item) => <li>{item}</li>)}</ul>
+    </section>
+
+    <section aria-labelledby="usecase-tools-title">
+      <div class="section-heading">
+        <h2 id="usecase-tools-title">おすすめツール</h2>
+        <span>{selectedTools.length}件</span>
+      </div>
+      <div class="usecase-grid">
+        {selectedTools.map((tool, index) => (
+          <article class="usecase-card">
+            <div class="usecase-card-top"><span class="order">{String(index + 1).padStart(2, "0")}</span><span class="category-tag">{tool.category.toUpperCase()}</span></div>
+            <h3>{tool.name}</h3>
+            <p>{tool.description}</p>
+            <a href={tool.href}>ツールを開く <span aria-hidden="true">→</span></a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="related-purposes" aria-labelledby="related-purposes-title">
+      <h2 id="related-purposes-title">ほかの目的から探す</h2>
+      <div class="related-purpose-grid">
+        {relatedPages.map((item) => <a href={`/use-case/${item.slug}/`}><strong>{item.label}</strong><span>{item.description}</span></a>)}
+      </div>
+      <a class="all-purposes" href="/use-case/">目的別一覧を見る →</a>
+    </section>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJson)} />
+  <script type="application/ld+json" set:html={JSON.stringify(collectionJson)} />
+</BaseLayout>
+
+<style>
+  .usecase-page{padding-top:32px}
+  .usecase-heading{max-width:840px;margin:26px 0 30px}
+  .usecase-heading h1{margin:4px 0 12px;font-size:clamp(30px,5vw,46px);letter-spacing:-.035em;line-height:1.2}
+  .usecase-heading>p:not(.eyebrow){margin:0;color:var(--muted);font-size:17px;line-height:1.8}
+  .usecase-needs{margin:0 0 36px;padding:20px;border:1px solid var(--line);border-radius:15px;background:var(--surface-muted)}
+  .usecase-needs h2{margin:0 0 12px;font-size:20px}
+  .usecase-needs ul{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
+  .usecase-needs li{position:relative;padding-left:20px;color:var(--muted);font-size:14px;line-height:1.65}
+  .usecase-needs li:before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:900}
+  .section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:14px}
+  .section-heading h2{margin:0;font-size:24px}.section-heading span{color:var(--muted);font-size:13px;font-weight:800}
+  .usecase-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .usecase-card{display:flex;flex-direction:column;min-height:220px;padding:20px;border:1px solid var(--line);border-radius:15px;background:var(--surface);box-shadow:0 2px 8px rgba(15,23,42,.035)}
+  .usecase-card:hover{border-color:#c3d1e4;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+  .usecase-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .order{color:#9babc0;font-size:11px;font-weight:900}.category-tag{padding:3px 8px;border-radius:999px;background:#eef5ff;color:var(--accent);font-size:10px;font-weight:900}
+  .usecase-card h3{margin:12px 0 7px;font-size:18px;line-height:1.45}.usecase-card p{flex:1;margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.7}
+  .usecase-card a{align-self:flex-start;font-size:13px;font-weight:800;text-decoration:none}
+  .related-purposes{margin-top:50px}.related-purposes h2{margin:0 0 14px;font-size:22px}
+  .related-purpose-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .related-purpose-grid a{display:flex;flex-direction:column;gap:5px;padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--text);text-decoration:none}
+  .related-purpose-grid a:hover{border-color:#b8c8dc;box-shadow:0 8px 20px rgba(15,23,42,.06)}
+  .related-purpose-grid strong{font-size:15px}.related-purpose-grid span{color:var(--muted);font-size:12px;line-height:1.6}
+  .all-purposes{display:inline-block;margin-top:14px;font-size:13px;font-weight:800;text-decoration:none}
+  @media(max-width:900px){.usecase-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.usecase-needs ul{grid-template-columns:1fr}}
+  @media(max-width:640px){.usecase-grid,.related-purpose-grid{grid-template-columns:1fr}.usecase-card{min-height:0}}
+</style>

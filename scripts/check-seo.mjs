@@ -1,6 +1,7 @@
 import { extraTools } from "../src/config/extra-tools.ts";
 import { categoryMeta } from "../src/config/categories.ts";
 import { prioritySeoContent } from "../src/config/seo-content.ts";
+import { useCasePages } from "../src/config/use-cases.ts";
 
 const errors = [];
 
@@ -67,7 +68,26 @@ for (const tool of extraTools) {
   if (!categoryKeys.has(tool.categoryKey)) errors.push(`missing category landing page: ${tool.id} -> ${tool.categoryKey}`);
 }
 
+const baseToolIds = ["image-batch-converter", "csv-split", "remove-duplicate-lines"];
+const toolIds = new Set([...extraTools.map((tool) => tool.id), ...baseToolIds]);
 const toolHrefs = new Set([...extraTools.map((tool) => tool.href), "/image/batch-converter/", "/csv/split/", "/text/remove-duplicates/"]);
+
+const useCaseSlugs = new Set();
+for (const page of useCasePages) {
+  if (useCaseSlugs.has(page.slug)) errors.push(`duplicate use-case slug: ${page.slug}`);
+  useCaseSlugs.add(page.slug);
+  if (![...page.title].length || [...page.title].length > 65) errors.push(`use-case title invalid: ${page.slug}`);
+  if ([...page.description].length < 30 || [...page.description].length > 140) errors.push(`use-case description length invalid: ${page.slug}`);
+  if (!Array.isArray(page.bullets) || page.bullets.length < 3 || page.bullets.some((item) => !item.trim())) errors.push(`use-case bullets invalid: ${page.slug}`);
+  if (!Array.isArray(page.toolIds) || page.toolIds.length < 3) errors.push(`use-case tools too few: ${page.slug}`);
+  const seen = new Set();
+  for (const id of page.toolIds) {
+    if (!toolIds.has(id)) errors.push(`use-case points to missing tool: ${page.slug} -> ${id}`);
+    if (seen.has(id)) errors.push(`duplicate tool in use-case: ${page.slug} -> ${id}`);
+    seen.add(id);
+  }
+}
+
 const priorityEntries = Object.entries(prioritySeoContent);
 if (priorityEntries.length < 20) errors.push(`priority SEO coverage too small: ${priorityEntries.length}`);
 for (const [href, content] of priorityEntries) {
@@ -84,4 +104,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`SEO metadata OK: ${extraTools.length} tools / ${categoryMeta.length} categories / ${priorityEntries.length} priority pages.`);
+console.log(`SEO metadata OK: ${extraTools.length} tools / ${categoryMeta.length} categories / ${useCasePages.length} use-case pages / ${priorityEntries.length} priority pages.`);

@@ -64,7 +64,8 @@ const showFile = fileModes.includes(meta.mode);
 
   function parseDelimited(value:string,delimiter=","){
     const parsed=Papa.parse<string[]>(value.replace(/^\uFEFF/,""),{delimiter,skipEmptyLines:false});
-    if(parsed.errors.length)throw new Error(parsed.errors[0].message);
+    const fatal=parsed.errors.find((error)=>error.code!=="UndetectableDelimiter");
+    if(fatal)throw new Error(fatal.message);
     return parsed.data;
   }
   function utf8ToBase64(value:string){

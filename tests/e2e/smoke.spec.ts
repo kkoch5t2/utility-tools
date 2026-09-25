@@ -159,6 +159,57 @@ test("カテゴリページからツールへ移動できる", async ({ page }) 
   expect(jsonLd.some((text) => text.includes('"@type":"ItemList"'))).toBeTruthy();
 });
 
+test("最近使ったツールを端末内履歴から表示・削除できる", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.removeItem("utility-tools:recent"));
+
+  await page.goto("/developer/base64/");
+  await page.goto("/text/character-count/");
+  await page.goto("/");
+
+  const recent = page.locator("[data-recent-tools]");
+  await expect(recent).toBeVisible();
+  await expect(recent.locator(".recent-card")).toHaveCount(2);
+  await expect(recent.locator(".recent-card").first()).toContainText("文字数カウント");
+  await expect(recent.locator(".recent-card").nth(1)).toContainText("Base64");
+
+  await page.getByRole("button", { name: "履歴を消す" }).click();
+  await expect(recent).toBeHidden();
+});
+
+test("目的別ページから関連ツールを探せる", async ({ page }) => {
+  await page.goto("/use-case/");
+  await expect(page.getByRole("heading", { name: "やりたいことから探す" })).toBeVisible();
+  await expect(page.locator(".purpose-card")).toHaveCount(9);
+
+  await page.goto("/use-case/video-edit/");
+  await expect(page.getByRole("heading", { name: "動画を軽く・編集する" })).toBeVisible();
+  await expect(page.locator(".usecase-card")).toHaveCount(9);
+  await expect(page.locator(".usecase-card").filter({ hasText: "動画切り抜き・トリミング" }).locator("a")).toHaveAttribute("href", "/video/trim/");
+  await expect(page.locator(".usecase-card").filter({ hasText: "動画 → GIF変換" }).locator("a")).toHaveAttribute("href", "/video/to-gif/");
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(jsonLd.some((text) => text.includes('"@type":"CollectionPage"'))).toBeTruthy();
+});
+
+test("動画ツール9種の設定UIが表示される", async ({ page }) => {
+  const cases = [
+    ["/video/compress/", "[data-quality]", "動画を圧縮"],
+    ["/video/to-mp3/", "[data-bitrate]", "MP3に変換"],
+    ["/video/trim/", "[data-duration]", "動画を切り抜く"],
+    ["/video/remove-audio/", "[data-file]", "音声を削除"],
+    ["/video/resize/", "[data-width]", "動画をリサイズ"],
+    ["/video/rotate/", "[data-rotate]", "動画を回転"],
+    ["/video/speed/", "[data-speed]", "再生速度を変更"],
+    ["/video/to-webm/", "[data-webm-quality]", "WebMに変換"],
+    ["/video/to-gif/", "[data-gif-duration]", "GIFに変換"],
+  ] as const;
+  for (const [path, selector, action] of cases) {
+    await page.goto(path);
+    await expect(page.locator(selector), path).toBeVisible();
+    await expect(page.getByRole("button", { name: action }), path).toBeDisabled();
+  }
+});
+
 test("サイトマップがツール一覧から自動生成される", async ({ request, page }) => {
   const response = await request.get("/sitemap.xml");
   expect(response.ok()).toBeTruthy();
@@ -167,8 +218,11 @@ test("サイトマップがツール一覧から自動生成される", async ({
   expect(body).toContain("https://utility-tools-jp.com/developer/base64/");
   expect(body).toContain("https://utility-tools-jp.com/privacy/");
   expect(body).toContain("https://utility-tools-jp.com/category/developer/");
+  expect(body).toContain("https://utility-tools-jp.com/use-case/");
+  expect(body).toContain("https://utility-tools-jp.com/use-case/video-edit/");
 
   await page.goto("/");
   const toolCount = await page.locator("[data-tool-card]").count();
-  expect((body.match(/<url>/g) ?? []).length).toBe(toolCount + 13);
+  const purposeCount = await page.locator(".purpose-links-grid > a").count();
+  expect((body.match(/<url>/g) ?? []).length).toBe(toolCount + purposeCount + 14);
 });

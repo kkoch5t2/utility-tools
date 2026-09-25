@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import PopularTools from "../components/home/PopularTools.astro";
 import { tools, type ToolDefinition } from "../config/tools";
 import { siteConfig } from "../config/site";
+import { useCasePages } from "../config/use-cases";
 
 const categories: Array<{ key: "all" | ToolDefinition["category"]; label: string }> = [
   { key: "all", label: "すべて" },
@@ -29,7 +30,37 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
       <p>無料・登録不要。ファイルは外部サーバーへ送らず、あなたの端末内で処理します。</p>
     </header>
 
+    <section class="recent-tools" data-recent-tools aria-labelledby="recent-tools-title" hidden>
+      <div class="recent-heading">
+        <div>
+          <p class="eyebrow">RECENT</p>
+          <h2 id="recent-tools-title">最近使ったツール</h2>
+        </div>
+        <button type="button" data-recent-clear>履歴を消す</button>
+      </div>
+      <div class="recent-grid" data-recent-grid></div>
+    </section>
+
     <PopularTools />
+
+    <section class="purpose-links" aria-labelledby="purpose-links-title">
+      <div class="purpose-links-heading">
+        <div>
+          <p class="eyebrow">BY PURPOSE</p>
+          <h2 id="purpose-links-title">目的から探す</h2>
+        </div>
+        <a href="/use-case/">一覧を見る →</a>
+      </div>
+      <div class="purpose-links-grid">
+        {useCasePages.map((item) => (
+          <a href={`/use-case/${item.slug}/`}>
+            <strong>{item.label}</strong>
+            <span>{item.bullets[0]}</span>
+            <em aria-hidden="true">→</em>
+          </a>
+        ))}
+      </div>
+    </section>
 
     <section aria-labelledby="tools-title">
       <div class="tools-heading">
@@ -104,8 +135,12 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   const pageNumbers = document.querySelector<HTMLElement>("[data-page-numbers]");
   const prev = document.querySelector<HTMLButtonElement>("[data-page-prev]");
   const next = document.querySelector<HTMLButtonElement>("[data-page-next]");
+  const recentSection = document.querySelector<HTMLElement>("[data-recent-tools]");
+  const recentGrid = document.querySelector<HTMLElement>("[data-recent-grid]");
+  const recentClear = document.querySelector<HTMLButtonElement>("[data-recent-clear]");
 
   const FAVORITES_KEY = "utility-tools:favorites";
+  const RECENT_KEY = "utility-tools:recent";
   let currentCategory = "all";
   let currentPage = 1;
   let currentQuery = "";
@@ -277,6 +312,42 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     render(true, true);
   });
 
+  function renderRecent() {
+    if (!recentSection || !recentGrid) return;
+    let saved: Array<{ id?: string; href?: string; name?: string; category?: string }> = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+      if (Array.isArray(parsed)) saved = parsed;
+    } catch {}
+    const validIds = new Set(cards.map((card) => card.dataset.toolId ?? ""));
+    const recent = saved.filter((item) => item?.id && validIds.has(item.id)).slice(0, 6);
+    recentGrid.replaceChildren();
+    for (const item of recent) {
+      const link = document.createElement("a");
+      link.className = "recent-card";
+      link.href = item.href ?? "/";
+      const copy = document.createElement("span");
+      copy.className = "recent-copy";
+      const strong = document.createElement("strong");
+      strong.textContent = item.name ?? "ツール";
+      const small = document.createElement("small");
+      small.textContent = (item.category ?? "").toUpperCase();
+      copy.append(strong, small);
+      const arrow = document.createElement("span");
+      arrow.className = "recent-arrow";
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.textContent = "→";
+      link.append(copy, arrow);
+      recentGrid.append(link);
+    }
+    recentSection.hidden = recent.length === 0;
+  }
+
+  recentClear?.addEventListener("click", () => {
+    localStorage.removeItem(RECENT_KEY);
+    renderRecent();
+  });
+
   function applyFromUrl() {
     const url = new URL(window.location.href);
     const category = url.searchParams.get("category") ?? "all";
@@ -290,6 +361,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
 
   window.addEventListener("popstate", applyFromUrl);
   window.matchMedia("(max-width: 760px)").addEventListener("change", () => render(false));
+  renderRecent();
   applyFromUrl();
 </script>
 
@@ -298,6 +370,30 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .home-intro { max-width: none; margin-bottom: 40px; }
   h1 { font-size: clamp(22px, 5.2vw, 52px); line-height: 1.2; letter-spacing: -0.04em; white-space: nowrap; margin: 0 0 14px; }
   .home-intro p { color: var(--muted); font-size: 18px; }
+
+  .recent-tools { margin: 0 0 34px; }
+  .recent-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+  .recent-heading h2 { margin: 0; font-size: 22px; }
+  .recent-heading button { border: 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 800; cursor: pointer; }
+  .recent-heading button:hover { color: var(--accent); }
+  .recent-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+  .recent-card { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 13px 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--text); text-decoration: none; }
+  .recent-card:hover { border-color: #b8c8dc; box-shadow: 0 8px 20px rgba(15,23,42,.06); transform: translateY(-1px); }
+  .recent-copy { display: grid; flex: 1; min-width: 0; gap: 2px; }
+  .recent-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .recent-copy small { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+  .recent-arrow { color: var(--accent); font-weight: 900; }
+
+  .purpose-links { margin: 0 0 42px; }
+  .purpose-links-heading { display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:14px; }
+  .purpose-links-heading h2 { margin:0;font-size:24px; }
+  .purpose-links-heading>a { font-size:12px;font-weight:800;text-decoration:none; }
+  .purpose-links-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
+  .purpose-links-grid>a { position:relative;display:flex;flex-direction:column;gap:4px;min-height:104px;padding:15px 42px 15px 15px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--text);text-decoration:none; }
+  .purpose-links-grid>a:hover { border-color:#b8c8dc;box-shadow:0 8px 20px rgba(15,23,42,.06);transform:translateY(-1px); }
+  .purpose-links-grid strong { font-size:14px;line-height:1.4; }
+  .purpose-links-grid span { color:var(--muted);font-size:11px;line-height:1.55; }
+  .purpose-links-grid em { position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--accent);font-style:normal;font-weight:900; }
 
   .tools-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
   .tools-heading h2 { margin-bottom: 12px; }
@@ -461,6 +557,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
 
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
+    .recent-grid, .purpose-links-grid { grid-template-columns: 1fr; }
     .tool-grid { grid-template-columns: 1fr; }
     .tool-search-row { align-items: stretch; }
     .tool-search { min-width: 0; }

@@ -6,7 +6,7 @@ const routes = [
   "/csv/merge/","/csv/columns/","/csv/encoding/","/csv/json-converter/",
   "/text/json-formatter/","/text/character-count/","/text/fullwidth-halfwidth/","/text/newline-converter/",
   "/pdf/merge/","/pdf/split/","/pdf/to-images/",
-  "/qr/generate/","/qr/read/","/video/compress/","/video/to-mp3/",
+  "/qr/generate/","/qr/read/","/video/compress/","/video/to-mp3/","/video/trim/","/video/remove-audio/","/video/resize/","/video/rotate/","/video/speed/","/video/to-webm/","/video/to-gif/",
   "/csv/find-duplicates/","/csv/remove-empty-rows/","/csv/tsv-converter/",
   "/json/jsonl-converter/","/text/invisible-characters/","/text/unicode-normalize/",
   "/japanese/hiragana-katakana/","/japanese/wareki/",
@@ -526,15 +526,18 @@ test("PDFの結合と画像化が動く", async ({ page }) => {
 
 test("トップページでカテゴリ絞り込みとページングができる", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("[data-visible-count]")).toHaveText("150件");
+  const allCount = await page.locator("[data-tool-card]").count();
+  const totalPages = Math.ceil(allCount / 12);
+  const lastPageCount = allCount - (totalPages - 1) * 12;
+  await expect(page.locator("[data-visible-count]")).toHaveText(allCount + "件");
   await expect(page.locator("[data-tool-card]:visible")).toHaveCount(12);
   await expect(page.locator("[data-pagination]")).toBeVisible();
-  await expect(page.locator("[data-page-numbers] button")).toHaveCount(13);
+  await expect(page.locator("[data-page-numbers] button")).toHaveCount(totalPages);
 
-  for (let pageNumber = 2; pageNumber <= 13; pageNumber++) {
+  for (let pageNumber = 2; pageNumber <= totalPages; pageNumber++) {
     await page.getByRole("button", { name: "次へ →" }).click();
     expect(new URL(page.url()).searchParams.get("page")).toBe(String(pageNumber));
-    await expect(page.locator("[data-tool-card]:visible")).toHaveCount(pageNumber === 13 ? 6 : 12);
+    await expect(page.locator("[data-tool-card]:visible")).toHaveCount(pageNumber === totalPages ? lastPageCount : 12);
   }
 
   await page.locator("[data-filter-select]").selectOption("pdf");
@@ -609,6 +612,7 @@ test("追加したニッチテキスト・開発者ツールが動く", async ({
 
 test("トップページで検索とお気に入りが使える", async ({ page }) => {
   await page.goto("/");
+  const allCount = await page.locator("[data-tool-card]").count();
 
   const search = page.locator("[data-tool-search]");
   await search.fill("Base64エンコード・デコード");
@@ -620,7 +624,7 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   const base64Card = page.locator("[data-tool-card]").filter({ hasText: "Base64エンコード・デコード" });
   await base64Card.locator("[data-favorite]").click();
   await page.locator("[data-search-clear]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("150件");
+  await expect(page.locator("[data-visible-count]")).toHaveText(allCount + "件");
   await expect(base64Card.locator("[data-favorite]")).toHaveAttribute("aria-pressed", "true");
 
   await page.locator("[data-favorites-only]").click();
@@ -633,7 +637,7 @@ test("トップページで検索とお気に入りが使える", async ({ page 
   await expect(page.locator("[data-tool-card]:visible h3")).toHaveText("Base64エンコード・デコード");
 
   await page.locator("[data-favorites-only]").click();
-  await expect(page.locator("[data-visible-count]")).toHaveText("150件");
+  await expect(page.locator("[data-visible-count]")).toHaveText(allCount + "件");
 });
 
 test("150ツール化で追加したJSON・テキスト・計算ツールが動く", async ({ page }) => {

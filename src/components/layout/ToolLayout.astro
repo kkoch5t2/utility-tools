@@ -75,6 +75,16 @@ const faqJson = {
       <h1>{name}</h1>
       <p>{description}</p>
     </header>
+    {currentTool && (
+      <span
+        data-recent-tool
+        data-tool-id={currentTool.id}
+        data-tool-href={currentTool.href}
+        data-tool-name={currentTool.name}
+        data-tool-category={currentTool.category}
+        hidden
+      ></span>
+    )}
     <slot />
     <section class="content-section tool-guide" aria-labelledby="tool-guide-title">
       <h2 id="tool-guide-title">{name}の使い方</h2>
@@ -120,4 +130,21 @@ const faqJson = {
   <script type="application/ld+json" set:html={JSON.stringify(toolJson)} />
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJson)} />
   <script type="application/ld+json" set:html={JSON.stringify(faqJson)} />
+  <script>
+    const recentEl = document.querySelector<HTMLElement>("[data-recent-tool]");
+    if (recentEl?.dataset.toolId) {
+      const key = "utility-tools:recent";
+      try {
+        const current = {
+          id: recentEl.dataset.toolId,
+          href: recentEl.dataset.toolHref ?? "",
+          name: recentEl.dataset.toolName ?? "",
+          category: recentEl.dataset.toolCategory ?? "",
+        };
+        const saved = JSON.parse(localStorage.getItem(key) ?? "[]");
+        const items = Array.isArray(saved) ? saved.filter((item) => item?.id !== current.id) : [];
+        localStorage.setItem(key, JSON.stringify([current, ...items].slice(0, 6)));
+      } catch {}
+    }
+  </script>
 </BaseLayout>

@@ -63,7 +63,8 @@ const { meta } = Astro.props;
   const base=(name:string)=>name.replace(/\.[^.]+$/,"");
   function parseCsv(value:string){
     const parsed=Papa.parse<string[]>(value.replace(/^\uFEFF/,""),{skipEmptyLines:false});
-    if(parsed.errors.length)throw new Error(parsed.errors[0].message);
+    const fatal=parsed.errors.find((error)=>error.code!=="UndetectableDelimiter");
+    if(fatal)throw new Error(fatal.message);
     if(!parsed.data.length||!parsed.data[0].length)throw new Error("CSVが空です。");
     return parsed.data;
   }
