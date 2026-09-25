@@ -24,9 +24,10 @@ const relatedCategoryKeys: Record<CategoryMeta["key"], CategoryMeta["key"][]> = 
   qr: ["image", "developer", "text"],
   video: ["image", "developer", "pdf"],
   japanese: ["text", "date", "developer"],
-  date: ["calculator", "japanese", "developer"],
-  calculator: ["date", "developer", "csv"],
+  date: ["calculator", "share", "japanese"],
+  calculator: ["date", "share", "developer"],
   developer: ["json", "text", "csv"],
+  share: ["date", "calculator", "text"],
 };
 const relatedCategories = relatedCategoryKeys[category.key]
   .map((key) => categoryMeta.find((item) => item.key === key))

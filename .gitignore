@@ -27,3 +27,6 @@ pnpm-debug.log*
 test-results/
 playwright-report/
 blob-report/
+
+# local Cloudflare state
+.wrangler/

@@ -18,6 +18,7 @@ const categories: Array<{ key: "all" | ToolDefinition["category"]; label: string
   { key: "date", label: "DATE" },
   { key: "calculator", label: "CALCULATOR" },
   { key: "developer", label: "DEVELOPER" },
+  { key: "share", label: "SHARE" },
 ];
 
 const counts = new Map<string, number>();
@@ -27,7 +28,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   <div class="shell home">
     <header class="home-intro">
       <h1>必要な処理を、ブラウザですぐに。</h1>
-      <p>無料・登録不要。ファイルは外部サーバーへ送らず、あなたの端末内で処理します。</p>
+      <p>無料・登録不要。ファイル処理は原則端末内、共有ツールは必要なデータだけ保存します。</p>
     </header>
 
     <section class="recent-tools" data-recent-tools aria-labelledby="recent-tools-title" hidden>
