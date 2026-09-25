@@ -1,5 +1,5 @@
-export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special" | "security" | "japan";
-export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share" | "security" | "japan";
+export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special" | "security" | "japan" | "office";
+export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share" | "security" | "japan" | "office";
 
 export type ExtraToolMeta = {
   id: string;
@@ -1216,6 +1216,62 @@ export const extraTools: ExtraToolMeta[] = [
     title: "入学・卒業年度計算｜生年月日から小中高・大学の学歴年を早見",
     description: "生年月日から小学校・中学校・高校・4年制大学の入学・卒業年度を、西暦と和暦でまとめて計算します。",
     faqs: [["4月1日生まれはどの学年になりますか？", "4月1日生まれは前日の3月31日に満年齢へ達する扱いのため、翌日の4月2日以降生まれより一つ上の学年になります。"], ["浪人・留年にも対応しますか？", "現在は留年・浪人・休学なし、高校3年・4年制大学の標準進行で計算します。"], privacyFaq],
+  },
+  {
+    id: "office-meeting-minutes", mode: "meeting-minutes", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/meeting-minutes/", name: "議事録テンプレート作成",
+    title: "議事録テンプレート作成｜会議名・決定事項・ToDoを整理",
+    description: "会議名、参加者、議題、決定事項、ToDoを入力して、そのまま貼り付けやすい議事録テンプレートを作成します。",
+    faqs: [["議事録の内容は送信されますか？", "いいえ。入力内容からのテンプレート生成はブラウザ内だけで行います。"], ["録音から自動文字起こしできますか？", "いいえ。このツールは入力済みの要点を整理するテンプレート作成専用です。"], privacyFaq],
+  },
+  {
+    id: "office-daily-report", mode: "daily-report", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/daily-report/", name: "日報テンプレート作成",
+    title: "日報テンプレート作成｜実施内容・課題・明日の予定を整理",
+    description: "本日の実施内容、課題・気づき、明日の予定を入力して、シンプルな日報テンプレートを作成します。",
+    faqs: [["箇条書きで入力できますか？", "はい。実施内容と明日の予定は1行1項目で入力すると箇条書きに整形します。"], privacyFaq],
+  },
+  {
+    id: "office-report-template", mode: "report-template", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/report-template/", name: "報告書テンプレート作成",
+    title: "報告書テンプレート作成｜要約・実績・課題・今後の対応を整理",
+    description: "要約、事実・実績、課題・原因、今後の対応を入力して、業務報告や障害報告に使いやすい構成へ整えます。",
+    faqs: [["どんな報告に使えますか？", "進捗報告、作業報告、障害対応報告など、要約・事実・課題・次の対応を整理する用途に使えます。"], privacyFaq],
+  },
+  {
+    id: "office-approval-template", mode: "approval-template", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/approval-request/", name: "稟議書テンプレート作成",
+    title: "稟議書テンプレート作成｜目的・費用・効果・リスクを整理",
+    description: "目的、背景、費用、実施時期、期待効果、リスクを入力して、社内稟議のたたき台をブラウザ内で作成します。",
+    faqs: [["会社ごとの稟議フォーマットに対応しますか？", "共通的な項目を使った汎用テンプレートです。社内指定フォーマットがある場合は出力を転記・調整してください。"], privacyFaq],
+  },
+  {
+    id: "office-email-subject", mode: "email-subject", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/email-subject/", name: "ビジネスメール件名生成",
+    title: "ビジネスメール件名生成｜依頼・確認・連絡・至急・お礼",
+    description: "用件、案件名、期限、種別から、ビジネスメールで使いやすい件名候補を5パターン生成します。",
+    faqs: [["本文も生成できますか？", "このツールは件名専用です。用件が一目で伝わる件名候補を複数作成します。"], privacyFaq],
+  },
+  {
+    id: "office-business-keigo", mode: "business-keigo", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/business-keigo/", name: "ビジネス敬語変換",
+    title: "ビジネス敬語変換｜よくある表現を丁寧な言い方へ置換",
+    description: "了解、すみません、見てください、送ってください等のよくある表現を、ビジネス向けの丁寧表現へブラウザ内で簡易変換します。",
+    faqs: [["文脈まで理解して変換しますか？", "いいえ。定型表現の置換による簡易変換です。送信前に文脈や相手との関係に合うか確認してください。"], privacyFaq],
+  },
+  {
+    id: "office-overtime-sum", mode: "overtime-sum", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/overtime-sum/", name: "残業時間合計・平均計算",
+    title: "残業時間集計｜日ごとの残業を合計・平均・最大で確認",
+    description: "1日ごとの残業時間を1:30や2.25の形式で入力し、合計・平均・最大時間と小数時間をまとめて計算します。",
+    faqs: [["1:30は何時間ですか？", "1時間30分として扱います。小数で1.5と入力しても同じ90分になります。"], ["法定残業かどうかも判定しますか？", "いいえ。入力した時間の集計専用です。法令や会社の就業規則に基づく判定は行いません。"], privacyFaq],
+  },
+  {
+    id: "office-salary-converter", mode: "salary-converter", family: "office", category: "仕事・事務", categoryKey: "office",
+    href: "/office/salary-converter/", name: "時給・月給・年収換算",
+    title: "時給・月給・年収換算｜労働時間から相互に単純換算",
+    description: "時給・月給・年収のいずれかと1日の労働時間、月の勤務日数から、3つの金額を相互に単純換算します。",
+    faqs: [["手取り額も計算できますか？", "いいえ。賞与、残業代、税金、社会保険等を含めない単純な額面換算です。"], ["年収は何か月分ですか？", "月給換算額の12か月分として計算します。"], privacyFaq],
   },
 ];
 

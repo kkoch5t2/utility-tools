@@ -1,0 +1,284 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card office-tool" data-office-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>💼</span><div><strong>ブラウザ内だけで処理</strong><br />入力した業務内容は外部サーバーへ送信しません。</div></div>
+
+    {meta.mode === "meeting-minutes" && <>
+      <div class="settings-grid">
+        <div class="field"><label for="meeting-title">会議名</label><input id="meeting-title" data-title type="text" placeholder="週次定例" /></div>
+        <div class="field"><label for="meeting-date">日時</label><input id="meeting-date" data-date type="text" placeholder="2026/09/25 10:00-11:00" /></div>
+      </div>
+      <div class="field"><label for="meeting-attendees">参加者</label><input id="meeting-attendees" data-attendees type="text" placeholder="田中、佐藤、鈴木" /></div>
+      <div class="field"><label for="meeting-agenda">議題</label><textarea id="meeting-agenda" data-agenda class="textarea" placeholder="1行1項目"></textarea></div>
+      <div class="field"><label for="meeting-decisions">決定事項</label><textarea id="meeting-decisions" data-decisions class="textarea" placeholder="1行1項目"></textarea></div>
+      <div class="field"><label for="meeting-todos">ToDo</label><textarea id="meeting-todos" data-todos class="textarea" placeholder="担当者 / 内容 / 期限 を1行ずつ"></textarea></div>
+    </>}
+
+    {meta.mode === "daily-report" && <>
+      <div class="settings-grid">
+        <div class="field"><label for="daily-date">日付</label><input id="daily-date" data-date type="date" /></div>
+        <div class="field"><label for="daily-name">氏名・チーム</label><input id="daily-name" data-name type="text" placeholder="山田 / データ基盤チーム" /></div>
+      </div>
+      <div class="field"><label for="daily-done">本日の実施内容</label><textarea id="daily-done" data-done class="textarea" placeholder="1行1項目"></textarea></div>
+      <div class="field"><label for="daily-issue">課題・気づき</label><textarea id="daily-issue" data-issue class="textarea"></textarea></div>
+      <div class="field"><label for="daily-next">明日の予定</label><textarea id="daily-next" data-next class="textarea" placeholder="1行1項目"></textarea></div>
+    </>}
+
+    {meta.mode === "report-template" && <>
+      <div class="field"><label for="report-title">報告タイトル</label><input id="report-title" data-title type="text" placeholder="障害対応報告 / 進捗報告 など" /></div>
+      <div class="field"><label for="report-summary">要約</label><textarea id="report-summary" data-summary class="textarea"></textarea></div>
+      <div class="field"><label for="report-facts">事実・実績</label><textarea id="report-facts" data-facts class="textarea" placeholder="1行1項目"></textarea></div>
+      <div class="field"><label for="report-issues">課題・原因</label><textarea id="report-issues" data-issues class="textarea"></textarea></div>
+      <div class="field"><label for="report-next">今後の対応</label><textarea id="report-next" data-next class="textarea" placeholder="1行1項目"></textarea></div>
+    </>}
+    {meta.mode === "approval-template" && <>
+      <div class="field"><label for="approval-title">件名</label><input id="approval-title" data-title type="text" placeholder="○○導入について" /></div>
+      <div class="field"><label for="approval-purpose">目的</label><textarea id="approval-purpose" data-purpose class="textarea"></textarea></div>
+      <div class="field"><label for="approval-background">背景・現状</label><textarea id="approval-background" data-background class="textarea"></textarea></div>
+      <div class="settings-grid">
+        <div class="field"><label for="approval-cost">費用</label><input id="approval-cost" data-cost type="text" placeholder="月額10,000円 / 初期費用0円" /></div>
+        <div class="field"><label for="approval-period">実施時期</label><input id="approval-period" data-period type="text" placeholder="2026年10月〜" /></div>
+      </div>
+      <div class="field"><label for="approval-benefit">期待効果</label><textarea id="approval-benefit" data-benefit class="textarea"></textarea></div>
+      <div class="field"><label for="approval-risk">リスク・懸念</label><textarea id="approval-risk" data-risk class="textarea"></textarea></div>
+    </>}
+
+    {meta.mode === "email-subject" && <>
+      <div class="settings-grid">
+        <div class="field"><label for="email-purpose">用件</label><input id="email-purpose" data-purpose type="text" placeholder="資料確認のお願い" /></div>
+        <div class="field"><label for="email-project">案件名・対象</label><input id="email-project" data-project type="text" placeholder="A案件 / 9月請求書 など" /></div>
+      </div>
+      <div class="settings-grid">
+        <div class="field"><label for="email-deadline">期限</label><input id="email-deadline" data-deadline type="text" placeholder="9/30まで" /></div>
+        <div class="field"><label for="email-tone">種別</label><select id="email-tone" data-tone><option value="request">依頼</option><option value="notice">連絡</option><option value="confirm">確認</option><option value="urgent">至急</option><option value="thanks">お礼</option></select></div>
+      </div>
+    </>}
+
+    {meta.mode === "business-keigo" && <>
+      <div class="field"><label for="keigo-source">変換する文章</label><textarea id="keigo-source" data-source class="textarea tall" placeholder="了解しました。資料を見てください。"></textarea></div>
+      <p class="inline-note">定型的な言い換えを行う簡易変換です。文脈に応じた敬語の正しさは最終確認してください。</p>
+    </>}
+
+    {meta.mode === "overtime-sum" && <>
+      <div class="field"><label for="overtime-values">残業時間</label><textarea id="overtime-values" data-values class="textarea tall" placeholder={"1行1日で入力\n1:30\n0:45\n2.25\n01:10"}></textarea></div>
+      <p class="inline-note">「1:30」は1時間30分、「2.25」は2.25時間として集計します。</p>
+    </>}
+
+    {meta.mode === "salary-converter" && <>
+      <div class="settings-grid">
+        <div class="field"><label for="salary-type">入力する金額</label><select id="salary-type" data-type><option value="hourly">時給</option><option value="monthly">月給</option><option value="annual">年収</option></select></div>
+        <div class="field"><label for="salary-value">金額（円）</label><input id="salary-value" data-value type="number" min="0" step="1" placeholder="1500" /></div>
+      </div>
+      <div class="settings-grid">
+        <div class="field"><label for="salary-hours">1日の労働時間</label><input id="salary-hours" data-hours type="number" min="0.1" step="0.1" value="8" /></div>
+        <div class="field"><label for="salary-days">月の勤務日数</label><input id="salary-days" data-days type="number" min="1" step="1" value="20" /></div>
+      </div>
+      <p class="inline-note">賞与・残業代・税金・社会保険等を含めない単純換算です。</p>
+    </>}
+
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>{["meeting-minutes","daily-report","report-template","approval-template","email-subject"].includes(meta.mode) ? "作成する" : "計算・変換"}</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-copy>結果をコピー</button>
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <div class="field result-field"><label for="office-result">結果</label><textarea id="office-result" class="textarea result-area" data-result readonly></textarea></div>
+  </section>
+</ToolLayout>
+<script>
+  const root=document.querySelector<HTMLElement>("[data-office-tool]")!;
+  const mode=root.dataset.mode!;
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const get=(selector:string)=>root.querySelector<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>(selector)?.value.trim()??"";
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const lines=(value:string)=>value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean);
+  const bullets=(value:string)=>lines(value).length?lines(value).map(v=>"・"+v).join("\n"):"・";
+  const yen=(value:number)=>Math.round(value).toLocaleString("ja-JP")+"円";
+
+  function meetingMinutes(){
+    const title=get("[data-title]"); if(!title)throw new Error("会議名を入力してください。");
+    result.value=[
+      "# "+title+" 議事録",
+      "",
+      "日時: "+(get("[data-date]")||""),
+      "参加者: "+(get("[data-attendees]")||""),
+      "",
+      "## 議題",
+      bullets(get("[data-agenda]")),
+      "",
+      "## 決定事項",
+      bullets(get("[data-decisions]")),
+      "",
+      "## ToDo",
+      bullets(get("[data-todos]")),
+      "",
+      "## 次回確認事項",
+      "・"
+    ].join("\n");
+  }
+
+  function dailyReport(){
+    result.value=[
+      "# 日報",
+      "",
+      "日付: "+(get("[data-date]")||""),
+      "氏名・チーム: "+(get("[data-name]")||""),
+      "",
+      "## 本日の実施内容",
+      bullets(get("[data-done]")),
+      "",
+      "## 課題・気づき",
+      get("[data-issue]")||"・",
+      "",
+      "## 明日の予定",
+      bullets(get("[data-next]"))
+    ].join("\n");
+  }
+
+  function reportTemplate(){
+    const title=get("[data-title]"); if(!title)throw new Error("報告タイトルを入力してください。");
+    result.value=[
+      "# "+title,
+      "",
+      "## 1. 要約",
+      get("[data-summary]")||"",
+      "",
+      "## 2. 事実・実績",
+      bullets(get("[data-facts]")),
+      "",
+      "## 3. 課題・原因",
+      get("[data-issues]")||"",
+      "",
+      "## 4. 今後の対応",
+      bullets(get("[data-next]")),
+      "",
+      "## 5. 補足",
+      ""
+    ].join("\n");
+  }
+  function approvalTemplate(){
+    const title=get("[data-title]"); if(!title)throw new Error("件名を入力してください。");
+    result.value=[
+      "# 稟議: "+title,
+      "",
+      "## 目的",
+      get("[data-purpose]")||"",
+      "",
+      "## 背景・現状",
+      get("[data-background]")||"",
+      "",
+      "## 費用",
+      get("[data-cost]")||"",
+      "",
+      "## 実施時期",
+      get("[data-period]")||"",
+      "",
+      "## 期待効果",
+      get("[data-benefit]")||"",
+      "",
+      "## リスク・懸念",
+      get("[data-risk]")||"",
+      "",
+      "## 承認依頼",
+      "上記内容にて実施したく、ご承認をお願いいたします。"
+    ].join("\n");
+  }
+
+  function emailSubject(){
+    const purpose=get("[data-purpose]"); if(!purpose)throw new Error("用件を入力してください。");
+    const project=get("[data-project]"),deadline=get("[data-deadline]"),tone=get("[data-tone]");
+    const prefix:Record<string,string>={request:"【ご依頼】",notice:"【ご連絡】",confirm:"【ご確認】",urgent:"【至急】",thanks:"【御礼】"};
+    const suffix=deadline?"（"+deadline+"）":"";
+    const target=project?project+"：":"";
+    result.value=[
+      prefix[tone]+target+purpose+suffix,
+      target+purpose+(deadline?"のお願い "+suffix:""),
+      (deadline?"【"+deadline+"まで】":"")+target+purpose,
+      prefix[tone]+purpose+(project?"｜"+project:""),
+      purpose+(project?"（"+project+"）":"")
+    ].join("\n");
+  }
+
+  function businessKeigo(){
+    let value=get("[data-source]"); if(!value)throw new Error("文章を入力してください。");
+    const rules:[RegExp,string][]=[
+      [/了解しました/g,"承知いたしました"],[/了解です/g,"承知いたしました"],[/わかりました/g,"承知いたしました"],
+      [/すみません/g,"申し訳ございません"],[/ごめんなさい/g,"申し訳ございません"],
+      [/ありがとう/g,"ありがとうございます"],[/確認してください/g,"ご確認をお願いいたします"],
+      [/見てください/g,"ご確認ください"],[/送ってください/g,"ご送付をお願いいたします"],
+      [/教えてください/g,"お知らせいただけますでしょうか"],[/待ってください/g,"少々お待ちください"],
+      [/できません/g,"いたしかねます"],[/大丈夫です/g,"問題ございません"],
+      [/行きます/g,"伺います"],[/来ます/g,"参ります"],[/言います/g,"申し上げます"],
+      [/知っています/g,"存じております"],[/知りません/g,"存じ上げません"]
+    ];
+    for(const [pattern,replacement] of rules)value=value.replace(pattern,replacement);
+    result.value=value;
+  }
+
+  function overtimeSum(){
+    const raw=lines(get("[data-values]")); if(!raw.length)throw new Error("残業時間を1行以上入力してください。");
+    const mins=raw.map((v,i)=>{
+      if(/^\d+:\d{1,2}$/.test(v)){const [h,m]=v.split(":").map(Number);if(m>=60)throw new Error((i+1)+"行目の分は0〜59で入力してください。");return h*60+m;}
+      if(/^\d+(?:\.\d+)?$/.test(v))return Math.round(Number(v)*60);
+      throw new Error((i+1)+"行目の形式を確認してください。");
+    });
+    const total=mins.reduce((a,b)=>a+b,0),avg=total/mins.length,max=Math.max(...mins);
+    const fmt=(m:number)=>Math.floor(m/60)+"時間"+String(Math.round(m%60)).padStart(2,"0")+"分";
+    result.value=[
+      "入力日数: "+mins.length+"日",
+      "合計残業時間: "+fmt(total),
+      "平均: "+fmt(avg),
+      "最大: "+fmt(max),
+      "合計（小数時間）: "+(total/60).toFixed(2)+"時間"
+    ].join("\n");
+  }
+
+  function salaryConverter(){
+    const type=get("[data-type]"),value=Number(get("[data-value]")),hours=Number(get("[data-hours]")),days=Number(get("[data-days]"));
+    if(!(value>0))throw new Error("金額を入力してください。");
+    if(!(hours>0&&days>0))throw new Error("労働時間と勤務日数を確認してください。");
+    const monthlyHours=hours*days;
+    let hourly=0,monthly=0,annual=0;
+    if(type==="hourly"){hourly=value;monthly=value*monthlyHours;annual=monthly*12;}
+    else if(type==="monthly"){monthly=value;hourly=value/monthlyHours;annual=value*12;}
+    else {annual=value;monthly=value/12;hourly=monthly/monthlyHours;}
+    result.value=[
+      "時給換算: "+yen(hourly),
+      "月給換算: "+yen(monthly),
+      "年収換算: "+yen(annual),
+      "",
+      "前提: 1日"+hours+"時間 × 月"+days+"日 = 月"+monthlyHours.toFixed(1)+"時間",
+      "※賞与・残業代・税金・社会保険等を含めない単純換算です。"
+    ].join("\n");
+  }
+
+  root.querySelector<HTMLButtonElement>("[data-run]")!.addEventListener("click",()=>{
+    setMsg(errorBox);setMsg(successBox);
+    try{
+      if(mode==="meeting-minutes")meetingMinutes();
+      else if(mode==="daily-report")dailyReport();
+      else if(mode==="report-template")reportTemplate();
+      else if(mode==="approval-template")approvalTemplate();
+      else if(mode==="email-subject")emailSubject();
+      else if(mode==="business-keigo")businessKeigo();
+      else if(mode==="overtime-sum")overtimeSum();
+      else if(mode==="salary-converter")salaryConverter();
+      setMsg(successBox,"作成しました。");
+    }catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}
+  });
+  root.querySelector<HTMLButtonElement>("[data-copy]")!.addEventListener("click",async()=>{if(!result.value)return;try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"結果をコピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}});
+  root.querySelector<HTMLButtonElement>("[data-clear]")!.addEventListener("click",()=>{root.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>("input,textarea").forEach(el=>el.value="");result.value="";setMsg(errorBox);setMsg(successBox);});
+</script>
+<style>
+  .office-tool{display:grid;gap:18px}.tall{min-height:180px}.result-area{min-height:320px}.result-field{margin-top:2px}
+</style>

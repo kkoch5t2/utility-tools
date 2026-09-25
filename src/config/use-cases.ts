@@ -82,6 +82,15 @@ export const useCasePages: readonly UseCasePage[] = [
     toolIds: ["japan-postal-code","japan-phone-number","japan-address-normalize","japan-prefecture-code","japan-corporate-number","japan-school-year","wareki","tax-calculator","id-photo-maker"],
   },
   {
+    slug: "office-work",
+    label: "仕事の文書・時間を整理する",
+    title: "仕事・事務の無料ツール集｜議事録・日報・稟議・残業・給与換算",
+    description: "議事録、日報、報告書、稟議書、メール件名、敬語変換、残業集計、給与換算、勤務時間・営業日数など、日々の事務作業を補助する無料ツールをまとめています。",
+    intro: "会議後の整理、社内文書のたたき台、メール件名、勤怠や給与の簡易確認など、毎日の細かな事務作業を短時間で済ませたいときに使えます。",
+    bullets: ["議事録・日報・報告書・稟議書を素早く整えたい", "メール件名や敬語表現を整えたい", "残業時間・勤務時間・給与換算を確認したい"],
+    toolIds: ["office-meeting-minutes","office-daily-report","office-report-template","office-approval-template","office-email-subject","office-business-keigo","office-overtime-sum","office-salary-converter","work-hours","business-days"],
+  },
+  {
     slug: "date-calculation",
     label: "日付・期間を計算する",
     title: "日付計算の無料ツール集｜日数差・年齢・営業日・曜日・週番号",
