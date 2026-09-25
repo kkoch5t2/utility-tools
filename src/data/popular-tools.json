@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T04:18:10.393Z",
+  "generatedAt": "2026-09-25T04:40:27.185Z",
   "periodDays": 7,
   "items": [
     {
@@ -10,15 +10,6 @@
     },
     {
       "path": "/csv/split/"
-    },
-    {
-      "path": "/csv/columns/"
-    },
-    {
-      "path": "/video/to-mp3/"
-    },
-    {
-      "path": "/image/target-filesize/"
     }
   ]
 }
