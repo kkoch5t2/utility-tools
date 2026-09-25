@@ -6,7 +6,7 @@ interface Props { meta: ExtraToolMeta; }
 const { meta } = Astro.props;
 ---
 <ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
-  <section class="game-card" data-number-chain>
+  <section class="game-card" data-number-chain data-state="ready">
     <div class="game-hero">
       <div>
         <p class="game-kicker">60 SECOND PUZZLE</p>
@@ -308,6 +308,7 @@ const { meta } = Astro.props;
     if (!active) return;
     active = false;
     dragging = false;
+    root.dataset.state = "complete";
     window.clearInterval(timerId);
     clearHint();
     hintButton.disabled = true;
@@ -334,6 +335,7 @@ const { meta } = Astro.props;
     lastClearAt = 0;
     active = true;
     dragging = false;
+    root.dataset.state = "running";
     startedAt = performance.now();
     generateBoard();
     resetSelection();

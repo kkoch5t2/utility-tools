@@ -43,15 +43,15 @@ test("ゲームカテゴリページと端末ベストスコア表示が動く",
   await expect(page.locator("[data-best]")).toHaveText("4,321");
 
   await page.goto("/category/game/");
-  await expect(page.getByRole("heading", { name: "ゲームツール一覧" })).toBeVisible();
-  await expect(page.locator(".category-card")).toHaveCount(7);
-  await expect(page.locator(".category-card").filter({ hasText: "ナンバーチェイン" })).toContainText("ナンバーチェイン");
-  await expect(page.locator(".category-card").filter({ hasText: "Lumo's Sky Run" })).toContainText("Lumo's Sky Run");
-  await expect(page.locator(".category-card").filter({ hasText: "Meteor Drift" })).toContainText("Meteor Drift");
-  await expect(page.locator(".category-card").filter({ hasText: "Flash Matrix" })).toContainText("Flash Matrix");
-  await expect(page.locator(".category-card").filter({ hasText: "Neon Snake" })).toContainText("Neon Snake");
-  await expect(page.locator(".category-card").filter({ hasText: "Reaction Zero" })).toContainText("Reaction Zero");
-  await expect(page.locator(".category-card").filter({ hasText: "Orbit Catch" })).toContainText("Orbit Catch");
+  await expect(page.getByRole("heading", { name: "無料ブラウザゲーム" })).toBeVisible();
+  await expect(page.locator(".game-hub-card")).toHaveCount(7);
+  await expect(page.locator(".game-hub-card").filter({ hasText: "ナンバーチェイン" })).toContainText("ナンバーチェイン");
+  await expect(page.locator(".game-hub-card").filter({ hasText: "Lumo's Sky Run" })).toContainText("Lumo's Sky Run");
+  await expect(page.locator(".game-hub-card").filter({ hasText: "Meteor Drift" })).toContainText("Meteor Drift");
+  await expect(page.locator(".game-hub-card").filter({ hasText: "Flash Matrix" })).toContainText("Flash Matrix");
+  await expect(page.locator(".game-hub-card").filter({ hasText: "Neon Snake" })).toContainText("Neon Snake");
+  await expect(page.locator(".game-hub-card").filter({ hasText: "Reaction Zero" })).toContainText("Reaction Zero");
+  await expect(page.locator(".game-hub-card").filter({ hasText: "Orbit Catch" })).toContainText("Orbit Catch");
 });
 
 
@@ -102,8 +102,8 @@ test("Lumo's Sky Runのスマホ操作とベストタイム表示が動く", asy
   expect(controlSelect).toBe("none");
 
   await page.goto("/category/game/");
-  await expect(page.locator(".category-card")).toHaveCount(7);
-  await expect(page.locator(".category-card").filter({ hasText: "Lumo's Sky Run" })).toBeVisible();
+  await expect(page.locator(".game-hub-card")).toHaveCount(7);
+  await expect(page.locator(".game-hub-card").filter({ hasText: "Lumo's Sky Run" })).toBeVisible();
 });
 
 
@@ -193,4 +193,48 @@ test("Orbit CatchでSTOPすると試行回数が進む", async ({ page }) => {
   await page.locator("[data-stop]").click();
   await expect(page.locator("strong[data-tries]")).toHaveText("1 / 10");
   await expect(page.locator("[data-orbit-status]")).toHaveText(/PERFECT|GREAT|CLOSE|MISS/);
+});
+
+
+test("GAME専用ハブでサムネ・最近遊んだゲーム・ジャンル絞り込みが動く", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("utility-tools:recent", JSON.stringify([
+      { id: "game-neon-snake", href: "/game/neon-snake/", name: "Neon Snake", category: "game" },
+      { id: "game-reaction-zero", href: "/game/reaction-zero/", name: "Reaction Zero", category: "game" },
+    ]));
+  });
+  await page.goto("/category/game/");
+  await expect(page.locator(".game-hub-hero")).toBeVisible();
+  await expect(page.locator(".game-hub-card")).toHaveCount(7);
+  await expect(page.locator(".game-hub-card img")).toHaveCount(7);
+  await expect(page.locator("[data-recent-games]")).toBeVisible();
+  await expect(page.locator("[data-recent-game-grid] a")).toHaveCount(2);
+
+  await page.locator('[data-game-filter="反応速度"]').click();
+  await expect(page.locator(".game-hub-card:not([hidden])")).toHaveCount(1);
+  await expect(page.locator(".game-hub-card:not([hidden])")).toContainText("Reaction Zero");
+
+  await page.locator('[data-game-filter="all"]').click();
+  await expect(page.locator(".game-hub-card:not([hidden])")).toHaveCount(7);
+});
+
+test("各ゲームページが個別OG画像を使う", async ({ page }) => {
+  await page.goto("/game/lumo-sky-run/");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /game-lumo-sky-run\.png$/);
+  await page.goto("/game/reaction-zero/");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /game-reaction-zero\.png$/);
+});
+
+test("ゲーム終了後に次に遊ぶ3ゲームが表示される", async ({ page }) => {
+  await page.goto("/game/orbit-catch/");
+  await expect(page.locator("[data-game-next]")).toBeHidden();
+  await page.locator("[data-start]").click();
+  for (let i = 0; i < 10; i++) {
+    await page.locator("[data-stop]").click();
+    if (i < 9) await page.waitForTimeout(360);
+  }
+  await expect(page.locator("[data-quick-game]")).toHaveAttribute("data-state", "complete", { timeout: 2000 });
+  await expect(page.locator("[data-game-next]")).toBeVisible();
+  await expect(page.locator("[data-game-next] .game-next-card")).toHaveCount(3);
+  await expect(page.locator('[data-game-next] a[href="/category/game/"]')).toBeVisible();
 });
