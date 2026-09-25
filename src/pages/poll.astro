@@ -1,0 +1,54 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="匿名投票ツール｜URL共有で無料の多数決";
+const description="選択肢を作ってURLを共有し、登録不要で匿名投票できる無料ツールです。結果はリアルタイム集計され、同じ端末なら投票変更もできます。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"匿名投票ツール",url:siteConfig.url+"/poll/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="匿名投票ツール｜無料Web便利ツール集">
+  <div class="shell shared-page">
+    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span aria-current="page">匿名投票</span></nav>
+    <div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+
+    <section data-create hidden>
+      <header class="shared-heading"><p class="eyebrow">POLL</p><h1>匿名投票</h1><p>質問と選択肢を作ってURLを共有。参加者は登録なしで1票を投じられます。</p></header>
+      <div class="shared-card">
+        <form data-create-form>
+          <div class="shared-field"><label for="poll-title">質問 <span>必須</span></label><input id="poll-title" name="title" maxlength="100" required placeholder="例：次の飲み会はどこにする？" /></div>
+          <div class="shared-field"><label for="poll-description">補足</label><textarea id="poll-description" name="description" rows="3" maxlength="800" placeholder="条件や補足があれば入力"></textarea></div>
+          <div class="shared-field"><label for="poll-options">選択肢 <span>2件以上</span></label><textarea id="poll-options" name="options" rows="7" required placeholder="1行に1候補ずつ入力&#10;焼肉&#10;寿司&#10;居酒屋"></textarea><small>最大20候補</small></div>
+          <div class="shared-storage"><strong>投票データを最大90日保存します</strong><p>投票内容は共有URLから集計するためCloudflare上に保存します。氏名入力はありません。</p></div>
+          <p class="shared-error" data-create-error hidden></p>
+          <button class="button button-primary shared-submit" type="submit" data-create-button>投票を作成</button>
+        </form>
+      </div>
+    </section>
+
+    <section data-event hidden>
+      <div class="shared-created" data-created hidden><strong>投票を作成しました</strong><span>共有URLを参加者へ送ってください。</span></div>
+      <header class="shared-heading"><p class="eyebrow">POLL</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-expiry></span><span data-total>0票</span></div></header>
+      <div class="shared-sharebox"><div><strong>共有URL</strong><span>URLを知っている人が投票できます</span></div><div class="shared-share-row"><input data-share-url readonly /><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+
+      <div class="shared-grid">
+        <section class="shared-card">
+          <div class="shared-section-title"><div><p class="eyebrow">VOTE</p><h2 data-vote-heading>投票する</h2></div></div>
+          <form data-vote-form><div class="poll-options" data-options></div><p class="shared-error" data-vote-error hidden></p><div class="shared-actions"><button class="button button-primary" type="submit" data-vote-submit>投票する</button><button class="button button-secondary" type="button" data-vote-delete hidden>投票を取り消す</button></div></form>
+        </section>
+        <aside class="shared-card"><p class="eyebrow">RESULT</p><h2 class="side-title">投票結果</h2><div class="poll-results" data-results></div><p class="shared-empty" data-empty>まだ投票はありません。</p></aside>
+      </div>
+      <div class="shared-footer-actions"><a class="button button-secondary" href="/poll/">新しい投票を作る</a><button class="shared-danger" type="button" data-delete hidden>この投票を削除</button></div>
+    </section>
+
+    <section class="shared-not-found" data-not-found hidden><h2>投票が見つかりません</h2><p>URLが違うか、保存期限を過ぎた可能性があります。</p><a class="button button-primary" href="/poll/">新しく作成する</a></section>
+
+    <section class="shared-info"><div class="shared-info-block"><p class="eyebrow">HOW TO USE</p><h2>使い方</h2><div class="shared-howto"><div><strong>1. 質問を作る</strong><span>質問と候補を入力。</span></div><div><strong>2. URL共有</strong><span>参加者へリンクを送信。</span></div><div><strong>3. 自動集計</strong><span>票数と割合を確認。</span></div></div></div><div class="shared-info-block shared-faq"><p class="eyebrow">FAQ</p><h2>よくある質問</h2><details><summary>本当に匿名ですか？</summary><p>氏名やアカウント情報を入力せず投票できます。ただし厳密な本人認証や不正投票防止を行う仕組みではありません。</p></details><details><summary>投票を変更できますか？</summary><p>同じ端末・ブラウザなら投票を変更または取消できます。</p></details></div></section>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(appJson)} />
+  <script src="../scripts/poll.ts"></script>
+</BaseLayout>
+<style>
+  .shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.side-title{margin:3px 0 14px;font-size:21px}
+  .poll-options{display:grid;gap:9px;margin-bottom:18px}.poll-option{position:relative}.poll-option input{position:absolute;opacity:0}.poll-option span{display:block;padding:13px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-size:14px;font-weight:700}.poll-option input:checked+span{border-color:var(--accent);background:#eef5ff;color:var(--accent)}
+  .poll-results{display:grid;gap:12px}.poll-result-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;font-weight:800}.poll-result-bar{height:8px;margin-top:6px;border-radius:999px;background:#e8eef6;overflow:hidden}.poll-result-fill{height:100%;border-radius:999px;background:var(--accent)}
+</style>

@@ -68,9 +68,9 @@ for (const tool of extraTools) {
   if (!categoryKeys.has(tool.categoryKey)) errors.push(`missing category landing page: ${tool.id} -> ${tool.categoryKey}`);
 }
 
-const baseToolIds = ["image-batch-converter", "csv-split", "remove-duplicate-lines"];
+const baseToolIds = ["image-batch-converter", "csv-split", "remove-duplicate-lines", "schedule-coordination", "anonymous-poll", "attendance-check", "shared-split-bill"];
 const toolIds = new Set([...extraTools.map((tool) => tool.id), ...baseToolIds]);
-const toolHrefs = new Set([...extraTools.map((tool) => tool.href), "/image/batch-converter/", "/csv/split/", "/text/remove-duplicates/"]);
+const toolHrefs = new Set([...extraTools.map((tool) => tool.href), "/image/batch-converter/", "/csv/split/", "/text/remove-duplicates/", "/schedule/", "/poll/", "/attendance/", "/split-bill/"]);
 
 const useCaseSlugs = new Set();
 for (const page of useCasePages) {

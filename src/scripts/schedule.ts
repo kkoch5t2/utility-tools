@@ -1,3 +1,4 @@
+export {};
 type AnswerStatus = "yes" | "maybe" | "no";
 type ScheduleOption = { id: number; label: string; sortOrder: number };
 type ScheduleResponse = {

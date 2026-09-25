@@ -42,6 +42,30 @@ const baseTools: ToolDefinition[] = [
     description: "候補日を共有し、参加者が○△×で回答。結果を自動集計します。",
     status: "available",
   },
+  {
+    id: "anonymous-poll",
+    name: "匿名投票",
+    category: "share",
+    href: "/poll/",
+    description: "選択肢を共有し、登録不要の匿名投票をリアルタイム集計します。",
+    status: "available",
+  },
+  {
+    id: "attendance-check",
+    name: "出欠確認",
+    category: "share",
+    href: "/attendance/",
+    description: "イベントの参加・未定・不参加を共有URLで集計します。",
+    status: "available",
+  },
+  {
+    id: "shared-split-bill",
+    name: "割り勘・立替精算",
+    category: "share",
+    href: "/split-bill/",
+    description: "立替を共有して、誰が誰へいくら払うかを自動計算します。",
+    status: "available",
+  },
 ];
 
 export const tools: ToolDefinition[] = [
