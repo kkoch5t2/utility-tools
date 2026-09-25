@@ -9,6 +9,13 @@ let log="";
 worker.stdout.on("data",c=>{log+=c.toString()});
 worker.stderr.on("data",c=>{log+=c.toString()});
 const assert=(v,m)=>{if(!v)throw new Error(m)};
+async function waitText(page, selector, expected) {
+  await page.waitForFunction(
+    ({ selector, expected }) => document.querySelector(selector)?.textContent?.includes(expected),
+    { selector, expected },
+    { timeout: 5000 },
+  );
+}
 async function waitServer(){const end=Date.now()+30000;while(Date.now()<end){try{const r=await fetch(BASE+"/api/health");if(r.ok)return}catch{}await new Promise(r=>setTimeout(r,250))}throw new Error("server did not start\n"+log)}
 let browser;
 try{
@@ -30,14 +37,12 @@ try{
   await pollGuest.locator('[name="poll-option"]').nth(1).check();
   await pollGuest.getByRole("button",{name:"投票する"}).click();
   await pollGuest.getByRole("button",{name:"投票を変更"}).waitFor({state:"visible"});
-  assert((await pollGuest.locator("[data-total]").textContent())==="1票","poll count should be 1");
+  await waitText(pollGuest,"[data-total]","1票");
   await pollGuest.locator('[name="poll-option"]').nth(0).check();
   await pollGuest.getByRole("button",{name:"投票を変更"}).click();
-  await pollGuest.waitForTimeout(100);
   pollGuest.once("dialog",d=>d.accept());
   await pollGuest.getByRole("button",{name:"投票を取り消す"}).click();
-  await pollGuest.waitForTimeout(100);
-  assert((await pollGuest.locator("[data-total]").textContent())==="0票","poll delete should work");
+  await waitText(pollGuest,"[data-total]","0票");
   pollOwner.once("dialog",d=>d.accept());
   await pollOwner.getByRole("button",{name:"この投票を削除"}).click();
   await pollOwner.waitForURL(BASE+"/poll/");
@@ -61,15 +66,13 @@ try{
   await attGuest.locator("[data-comment]").fill("調整中");
   await attGuest.getByRole("button",{name:"回答を送信"}).click();
   await attGuest.getByRole("button",{name:"回答を更新"}).waitFor({state:"visible"});
-  assert((await attGuest.locator("[data-count-maybe]").textContent())==="1","attendance maybe should be 1");
+  await waitText(attGuest,"[data-count-maybe]","1");
   await attGuest.locator('input[name="attendance-status"][value="yes"]').check();
   await attGuest.getByRole("button",{name:"回答を更新"}).click();
-  await attGuest.waitForTimeout(100);
-  assert((await attGuest.locator("[data-count-yes]").textContent())==="1","attendance update should work");
+  await waitText(attGuest,"[data-count-yes]","1");
   attGuest.once("dialog",d=>d.accept());
   await attGuest.getByRole("button",{name:"自分の回答を削除"}).click();
-  await attGuest.waitForTimeout(100);
-  assert((await attGuest.locator("[data-count-yes]").textContent())==="0","attendance delete should work");
+  await waitText(attGuest,"[data-count-yes]","0");
   attOwner.once("dialog",d=>d.accept());
   await attOwner.getByRole("button",{name:"この出欠確認を削除"}).click();
   await attOwner.waitForURL(BASE+"/attendance/");
@@ -88,8 +91,7 @@ try{
   await splitOwner.locator("[data-amount]").fill("12000");
   await splitOwner.locator("[data-memo]").fill("ホテル");
   await splitOwner.getByRole("button",{name:"支払いを追加"}).click();
-  await splitOwner.waitForTimeout(120);
-  assert((await splitOwner.locator("[data-total]").textContent())?.includes("12,000円"),"split total should be 12000");
+  await waitText(splitOwner,"[data-total]","12,000円");
   assert((await splitOwner.locator("[data-settlements]").textContent())?.includes("鈴木 → 田中"),"split settlement should include Suzuki");
   assert((await splitOwner.locator("[data-settlements]").textContent())?.includes("佐藤 → 田中"),"split settlement should include Sato");
 
@@ -102,18 +104,15 @@ try{
   const checks=splitGuest.locator("[data-members] input");
   await checks.nth(0).uncheck();
   await splitGuest.getByRole("button",{name:"支払いを追加"}).click();
-  await splitGuest.waitForTimeout(120);
-  assert((await splitGuest.locator("[data-total]").textContent())?.includes("15,000円"),"split second expense should update total");
+  await waitText(splitGuest,"[data-total]","15,000円");
   await splitGuest.locator(".expense-edit").click();
   await splitGuest.locator("[data-amount]").fill("4000");
   await splitGuest.getByRole("button",{name:"支払いを更新"}).click();
-  await splitGuest.waitForTimeout(120);
-  assert((await splitGuest.locator("[data-total]").textContent())?.includes("16,000円"),"split edit should update total");
+  await waitText(splitGuest,"[data-total]","16,000円");
   await splitGuest.locator(".expense-edit").click();
   splitGuest.once("dialog",d=>d.accept());
   await splitGuest.getByRole("button",{name:"この支払いを削除"}).click();
-  await splitGuest.waitForTimeout(120);
-  assert((await splitGuest.locator("[data-total]").textContent())?.includes("12,000円"),"split delete should update total");
+  await waitText(splitGuest,"[data-total]","12,000円");
   splitOwner.once("dialog",d=>d.accept());
   await splitOwner.getByRole("button",{name:"この割り勘を削除"}).click();
   await splitOwner.waitForURL(BASE+"/split-bill/");
