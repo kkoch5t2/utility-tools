@@ -1280,6 +1280,13 @@ export const extraTools: ExtraToolMeta[] = [
     description: "6×6の数字をなぞって合計10を作る60秒パズル。コンボ、ヒント、シャッフル、端末保存のベストスコア付きで無料で遊べます。",
     faqs: [["どうやって遊びますか？", "上下左右・斜めにつながる数字を指やマウスでなぞり、合計が10になったところで指を離すと得点になります。"], ["ベストスコアは保存されますか？", "はい。同じブラウザのlocalStorageへベストスコアだけ保存します。ゲーム内容や操作履歴は外部サーバーへ送信しません。"], ["コンボとは何ですか？", "成功から3秒以内に次の10を作るとコンボが続き、獲得点の倍率が上がります。"], privacyFaq],
   },
+  {
+    id: "game-lumo-sky-run", mode: "lumo-sky-run", family: "game", category: "ゲーム", categoryKey: "game",
+    href: "/game/lumo-sky-run/", name: "Lumo's Sky Run",
+    title: "Lumo's Sky Run｜無料で遊べる横スクロールアクションゲーム",
+    description: "走る・ジャンプ・敵を踏む・スター収集・チェックポイント・動く足場を楽しめる、3ステージ構成の完全オリジナル無料ブラウザアクションです。",
+    faqs: [["どんなゲームですか？", "左右移動とジャンプで空中遺跡を進む横スクロールアクションです。敵は上から踏むと倒せ、スターを集めながら3ステージのゴールを目指します。"], ["スマホでも遊べますか？", "はい。スマホでは画面下の左右ボタンとJUMPボタン、PCでは矢印キーまたはA/DとSpace・W・↑で操作できます。"], ["セーブされる内容は？", "ベストタイムだけを同じブラウザのlocalStorageへ保存します。ゲーム進行や操作履歴を外部サーバーへ送信しません。"], privacyFaq],
+  },
 ];
 
 export const extraToolByPath = new Map(extraTools.map((tool) => [tool.href, tool]));

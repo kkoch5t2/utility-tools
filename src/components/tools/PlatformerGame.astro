@@ -1,0 +1,389 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="platformer-shell" data-platformer data-state="ready" data-player-x="0" data-player-y="0">
+    <div class="platformer-head">
+      <div>
+        <p class="eyebrow">ORIGINAL SIDE-SCROLL ACTION</p>
+        <h2>Lumo's Sky Run</h2>
+        <p>光のかけらを集めながら、空中遺跡を駆け抜けよう。敵は上から踏めば倒せる。トゲと穴には注意。</p>
+      </div>
+      <div class="best-box"><span>BEST TOTAL</span><strong data-total-best>--:--</strong></div>
+    </div>
+
+    <div class="hud">
+      <div><span>STAGE</span><strong data-level>1 / 3</strong></div>
+      <div><span>SCORE</span><strong data-score>0</strong></div>
+      <div><span>STARS</span><strong data-stars>0 / 0</strong></div>
+      <div><span>LIVES</span><strong data-lives>♥♥♥</strong></div>
+      <div><span>TIME</span><strong data-time>0.0</strong></div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas data-canvas width="960" height="540" aria-label="Lumo's Sky Run ゲーム画面"></canvas>
+      <div class="start-overlay" data-overlay>
+        <div class="overlay-card">
+          <p class="mini">STAGE 1</p>
+          <h3>Cloud Ruins</h3>
+          <p>左右移動とジャンプだけのシンプル操作。まずは光のかけらを集めてゴールへ。</p>
+          <button class="button button-primary" type="button" data-start>ゲーム開始</button>
+          <div class="key-guide"><span>← → / A D：移動</span><span>Space / W / ↑：ジャンプ</span></div>
+        </div>
+      </div>
+      <div class="toast" data-toast aria-live="polite"></div>
+    </div>
+
+    <div class="mobile-controls" aria-label="スマホ操作">
+      <div class="move-controls">
+        <button type="button" data-control="left" aria-label="左へ移動">◀</button>
+        <button type="button" data-control="right" aria-label="右へ移動">▶</button>
+      </div>
+      <button class="jump-control" type="button" data-control="jump" aria-label="ジャンプ">JUMP</button>
+    </div>
+
+    <div class="platformer-actions">
+      <button class="button button-secondary" type="button" data-restart>ステージをやり直す</button>
+      <button class="button button-secondary" type="button" data-mute>効果音: ON</button>
+    </div>
+
+    <div class="feature-strip">
+      <div><strong>3</strong><span>STAGES</span></div>
+      <div><strong>3</strong><span>LIVES</span></div>
+      <div><strong>★</strong><span>COLLECT</span></div>
+      <div><strong>⏱</strong><span>BEST TIME</span></div>
+    </div>
+  </section>
+</ToolLayout>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-platformer]")!;
+  const canvas = root.querySelector<HTMLCanvasElement>("[data-canvas]")!;
+  const ctx = canvas.getContext("2d")!;
+  const overlay = root.querySelector<HTMLElement>("[data-overlay]")!;
+  const toast = root.querySelector<HTMLElement>("[data-toast]")!;
+  const levelEl = root.querySelector<HTMLElement>("[data-level]")!;
+  const scoreEl = root.querySelector<HTMLElement>("[data-score]")!;
+  const starsEl = root.querySelector<HTMLElement>("[data-stars]")!;
+  const livesEl = root.querySelector<HTMLElement>("[data-lives]")!;
+  const timeEl = root.querySelector<HTMLElement>("[data-time]")!;
+  const totalBestEl = root.querySelector<HTMLElement>("[data-total-best]")!;
+  const startButton = root.querySelector<HTMLButtonElement>("[data-start]")!;
+  const restartButton = root.querySelector<HTMLButtonElement>("[data-restart]")!;
+  const muteButton = root.querySelector<HTMLButtonElement>("[data-mute]")!;
+
+  type Rect = { x:number; y:number; w:number; h:number };
+  type Platform = Rect & { moving?: boolean; minX?: number; maxX?: number; speed?: number; dir?: number };
+  type Enemy = Rect & { vx:number; alive:boolean; minX:number; maxX:number; kind:"crawler"|"hopper"; phase?:number };
+  type Star = { x:number; y:number; r:number; taken:boolean };
+  type Spike = Rect;
+  type Level = {
+    name:string; subtitle:string; width:number; start:{x:number;y:number}; goal:Rect; checkpoint:{x:number;y:number};
+    platforms:Platform[]; enemies:Enemy[]; stars:Star[]; spikes:Spike[]; sky:[string,string]; accent:string;
+  };
+
+  const W=960, H=540, GRAVITY=2100, MOVE=390, JUMP=760, PLAYER_W=34, PLAYER_H=44;
+  const BEST_KEY="utility-tools:lumo-sky-run:best";
+  const keys={left:false,right:false,jump:false};
+  let muted=false, audioCtx:AudioContext|null=null;
+  let running=false, completed=false, levelIndex=0, score=0, lives=3, cameraX=0;
+  let levelStart=0, totalStart=0, lastFrame=0, raf=0, checkpointActive=false, stageTimes:number[]=[];
+  let current:Level;
+  const player={x:0,y:0,w:PLAYER_W,h:PLAYER_H,vx:0,vy:0,onGround:false,coyote:0,jumpBuffer:0,invincible:0,face:1};
+  let platforms:Platform[]=[], enemies:Enemy[]=[], stars:Star[]=[], spikes:Spike[]=[];
+  const levelTemplates:Level[]=[
+    {
+      name:"Cloud Ruins",subtitle:"風の遺跡",width:3100,start:{x:90,y:360},goal:{x:2960,y:280,w:42,h:120},checkpoint:{x:1540,y:345},
+      sky:["#80d8ff","#eefaff"],accent:"#38bdf8",
+      platforms:[
+        {x:0,y:440,w:620,h:100},{x:690,y:410,w:360,h:130},{x:1130,y:455,w:470,h:90},{x:1660,y:420,w:400,h:120},{x:2130,y:455,w:370,h:90},{x:2570,y:410,w:530,h:130},
+        {x:360,y:330,w:150,h:24},{x:820,y:300,w:150,h:24},{x:1260,y:345,w:160,h:24},{x:1830,y:300,w:160,h:24},{x:2290,y:335,w:150,h:24},
+        {x:1450,y:260,w:120,h:22,moving:true,minX:1380,maxX:1640,speed:70,dir:1}
+      ],
+      enemies:[
+        {x:470,y:402,w:38,h:38,vx:70,alive:true,minX:420,maxX:575,kind:"crawler"},
+        {x:890,y:372,w:38,h:38,vx:-65,alive:true,minX:735,maxX:1010,kind:"crawler"},
+        {x:1900,y:382,w:38,h:38,vx:70,alive:true,minX:1700,maxX:2010,kind:"crawler"},
+        {x:2690,y:372,w:38,h:38,vx:75,alive:true,minX:2600,maxX:2880,kind:"crawler"}
+      ],
+      stars:[
+        {x:430,y:290,r:12,taken:false},{x:760,y:360,r:12,taken:false},{x:890,y:255,r:12,taken:false},{x:1320,y:300,r:12,taken:false},
+        {x:1510,y:215,r:12,taken:false},{x:1880,y:255,r:12,taken:false},{x:2210,y:405,r:12,taken:false},{x:2360,y:290,r:12,taken:false},{x:2780,y:355,r:12,taken:false}
+      ],
+      spikes:[{x:620,y:430,w:70,h:18},{x:1050,y:430,w:80,h:18},{x:2060,y:430,w:70,h:18},{x:2500,y:430,w:70,h:18}]
+    },
+    {
+      name:"Sunset Foundry",subtitle:"夕焼け工房",width:3500,start:{x:80,y:350},goal:{x:3360,y:250,w:44,h:150},checkpoint:{x:1770,y:330},
+      sky:["#fb7185","#fde68a"],accent:"#f97316",
+      platforms:[
+        {x:0,y:435,w:480,h:110},{x:560,y:455,w:420,h:90},{x:1070,y:400,w:340,h:145},{x:1510,y:450,w:450,h:95},{x:2050,y:410,w:420,h:135},{x:2560,y:455,w:360,h:90},{x:3010,y:400,w:500,h:145},
+        {x:250,y:320,w:130,h:22},{x:720,y:330,w:140,h:22},{x:1190,y:285,w:130,h:22},{x:1600,y:320,w:150,h:22},{x:2150,y:290,w:140,h:22},{x:2690,y:330,w:130,h:22},{x:3140,y:270,w:150,h:22},
+        {x:980,y:260,w:110,h:22,moving:true,minX:930,maxX:1160,speed:95,dir:1},{x:2420,y:245,w:120,h:22,moving:true,minX:2350,maxX:2650,speed:85,dir:-1}
+      ],
+      enemies:[
+        {x:330,y:397,w:38,h:38,vx:85,alive:true,minX:120,maxX:430,kind:"crawler"},
+        {x:700,y:417,w:38,h:38,vx:-80,alive:true,minX:600,maxX:920,kind:"crawler"},
+        {x:1260,y:362,w:38,h:38,vx:80,alive:true,minX:1100,maxX:1360,kind:"hopper",phase:0},
+        {x:1690,y:412,w:38,h:38,vx:85,alive:true,minX:1530,maxX:1910,kind:"crawler"},
+        {x:2210,y:372,w:38,h:38,vx:-85,alive:true,minX:2080,maxX:2420,kind:"hopper",phase:1.5},
+        {x:3180,y:362,w:38,h:38,vx:90,alive:true,minX:3050,maxX:3330,kind:"crawler"}
+      ],
+      stars:[
+        {x:300,y:275,r:12,taken:false},{x:630,y:400,r:12,taken:false},{x:790,y:285,r:12,taken:false},{x:1040,y:215,r:12,taken:false},{x:1255,y:240,r:12,taken:false},
+        {x:1670,y:275,r:12,taken:false},{x:2120,y:360,r:12,taken:false},{x:2210,y:245,r:12,taken:false},{x:2480,y:200,r:12,taken:false},{x:2740,y:285,r:12,taken:false},{x:3200,y:225,r:12,taken:false}
+      ],
+      spikes:[{x:480,y:425,w:80,h:20},{x:980,y:425,w:90,h:20},{x:1410,y:425,w:100,h:20},{x:1960,y:425,w:90,h:20},{x:2470,y:425,w:90,h:20},{x:2920,y:425,w:90,h:20}]
+    },
+    {
+      name:"Moon Temple",subtitle:"月の神殿",width:3900,start:{x:80,y:360},goal:{x:3740,y:230,w:50,h:170},checkpoint:{x:1980,y:330},
+      sky:["#172554","#6d28d9"],accent:"#a78bfa",
+      platforms:[
+        {x:0,y:445,w:500,h:100},{x:600,y:410,w:330,h:135},{x:1040,y:460,w:410,h:85},{x:1560,y:415,w:420,h:130},{x:2100,y:455,w:380,h:90},{x:2610,y:410,w:420,h:135},{x:3150,y:455,w:300,h:90},{x:3550,y:395,w:350,h:150},
+        {x:280,y:315,w:140,h:22},{x:700,y:280,w:140,h:22},{x:1150,y:330,w:130,h:22},{x:1670,y:270,w:150,h:22},{x:2200,y:310,w:140,h:22},{x:2730,y:270,w:150,h:22},{x:3260,y:315,w:130,h:22},{x:3610,y:250,w:150,h:22},
+        {x:940,y:250,w:105,h:22,moving:true,minX:900,maxX:1120,speed:105,dir:1},{x:1990,y:240,w:110,h:22,moving:true,minX:1950,maxX:2200,speed:95,dir:-1},{x:3040,y:245,w:115,h:22,moving:true,minX:2980,maxX:3230,speed:110,dir:1}
+      ],
+      enemies:[
+        {x:350,y:407,w:38,h:38,vx:90,alive:true,minX:100,maxX:460,kind:"crawler"},
+        {x:760,y:372,w:38,h:38,vx:-90,alive:true,minX:620,maxX:890,kind:"hopper",phase:.5},
+        {x:1200,y:422,w:38,h:38,vx:90,alive:true,minX:1080,maxX:1400,kind:"crawler"},
+        {x:1710,y:377,w:38,h:38,vx:-95,alive:true,minX:1590,maxX:1930,kind:"hopper",phase:1},
+        {x:2230,y:417,w:38,h:38,vx:95,alive:true,minX:2130,maxX:2440,kind:"crawler"},
+        {x:2790,y:372,w:38,h:38,vx:-95,alive:true,minX:2640,maxX:2990,kind:"hopper",phase:2},
+        {x:3290,y:417,w:38,h:38,vx:100,alive:true,minX:3180,maxX:3410,kind:"crawler"},
+        {x:3650,y:357,w:38,h:38,vx:-100,alive:true,minX:3570,maxX:3710,kind:"crawler"}
+      ],
+      stars:[
+        {x:330,y:270,r:12,taken:false},{x:680,y:365,r:12,taken:false},{x:770,y:235,r:12,taken:false},{x:990,y:205,r:12,taken:false},{x:1210,y:285,r:12,taken:false},{x:1430,y:410,r:12,taken:false},
+        {x:1740,y:225,r:12,taken:false},{x:2050,y:195,r:12,taken:false},{x:2250,y:265,r:12,taken:false},{x:2690,y:365,r:12,taken:false},{x:2800,y:225,r:12,taken:false},{x:3100,y:195,r:12,taken:false},{x:3310,y:270,r:12,taken:false},{x:3670,y:205,r:12,taken:false}
+      ],
+      spikes:[{x:500,y:425,w:100,h:20},{x:930,y:425,w:110,h:20},{x:1450,y:425,w:110,h:20},{x:1980,y:425,w:120,h:20},{x:2480,y:425,w:130,h:20},{x:3030,y:425,w:120,h:20},{x:3450,y:425,w:100,h:20}]
+    }
+  ];
+  function cloneLevel(src:Level):Level {
+    return {
+      ...src,
+      start:{...src.start},goal:{...src.goal},checkpoint:{...src.checkpoint},
+      platforms:src.platforms.map(p=>({...p})), enemies:src.enemies.map(e=>({...e})), stars:src.stars.map(s=>({...s})), spikes:src.spikes.map(s=>({...s}))
+    };
+  }
+
+  function beep(freq:number,duration=.08,type:OscillatorType="sine",gain=.035){
+    if(muted) return;
+    try{
+      audioCtx ||= new AudioContext();
+      const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
+      osc.type=type;osc.frequency.value=freq;g.gain.value=gain;
+      osc.connect(g);g.connect(audioCtx.destination);osc.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+duration);osc.stop(audioCtx.currentTime+duration);
+    }catch{}
+  }
+
+  function showToast(text:string){
+    toast.textContent=text;toast.classList.remove("show");void toast.offsetWidth;toast.classList.add("show");
+  }
+  const fmt=(sec:number)=>sec<60?sec.toFixed(1)+"s":Math.floor(sec/60)+":"+String(Math.floor(sec%60)).padStart(2,"0");
+  function readBest(){
+    try{
+      const raw=JSON.parse(localStorage.getItem(BEST_KEY)||"{}");
+      const total=Number(raw.total||0);
+      totalBestEl.textContent=total>0?fmt(total):"--:--";
+    }catch{totalBestEl.textContent="--:--";}
+  }
+  function saveBest(){
+    const total=stageTimes.reduce((a,b)=>a+b,0);
+    try{
+      const raw=JSON.parse(localStorage.getItem(BEST_KEY)||"{}");
+      const next={...raw};
+      stageTimes.forEach((t,i)=>{if(!next["stage"+(i+1)]||t<next["stage"+(i+1)])next["stage"+(i+1)]=t;});
+      if(!next.total||total<next.total)next.total=total;
+      localStorage.setItem(BEST_KEY,JSON.stringify(next));
+    }catch{}
+    readBest();
+  }
+
+  function loadLevel(index:number){
+    levelIndex=index;current=cloneLevel(levelTemplates[index]);platforms=current.platforms;enemies=current.enemies;stars=current.stars;spikes=current.spikes;
+    player.x=current.start.x;player.y=current.start.y;player.vx=0;player.vy=0;player.onGround=false;player.coyote=0;player.jumpBuffer=0;player.invincible=0;
+    checkpointActive=false;cameraX=0;levelStart=performance.now();
+    levelEl.textContent=(index+1)+" / 3";updateHud();
+    root.dataset.level=String(index+1);
+    showToast("STAGE "+(index+1)+" — "+current.name);
+  }
+
+  function startGame(){
+    score=0;lives=3;stageTimes=[];completed=false;totalStart=performance.now();running=true;overlay.classList.add("is-hidden");root.dataset.state="running";
+    loadLevel(0);lastFrame=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+  }
+  function restartStage(){
+    if(!running && (completed || lives<=0)){startGame();return;}
+    loadLevel(levelIndex);running=true;completed=false;overlay.classList.add("is-hidden");root.dataset.state="running";lastFrame=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+  }
+
+  function updateHud(){
+    scoreEl.textContent=score.toLocaleString("ja-JP");
+    const got=stars.filter(s=>s.taken).length;starsEl.textContent=got+" / "+stars.length;
+    livesEl.textContent="♥".repeat(Math.max(0,lives))+"♡".repeat(Math.max(0,3-lives));
+    if(running)timeEl.textContent=((performance.now()-levelStart)/1000).toFixed(1);
+    root.dataset.playerX=player.x.toFixed(1);root.dataset.playerY=player.y.toFixed(1);
+  }
+
+  function overlap(a:Rect,b:Rect){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
+  function pointRect(x:number,y:number,r:number,b:Rect){return x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h;}
+
+  function respawn(reason:string){
+    if(player.invincible>0)return;
+    lives--;beep(140,.18,"sawtooth",.05);showToast(reason);
+    if(lives<=0){
+      running=false;root.dataset.state="gameover";
+      overlay.innerHTML='<div class="overlay-card"><p class="mini">GAME OVER</p><h3>もう一度挑戦しよう</h3><p>スコア '+score.toLocaleString("ja-JP")+' 点</p><button class="button button-primary" type="button" data-again>最初から遊ぶ</button></div>';
+      overlay.classList.remove("is-hidden");overlay.querySelector<HTMLButtonElement>("[data-again]")?.addEventListener("click",startGame);return;
+    }
+    const spawn=checkpointActive?current.checkpoint:current.start;
+    player.x=spawn.x;player.y=spawn.y-20;player.vx=0;player.vy=0;player.invincible=1.6;updateHud();
+  }
+
+  function activateCheckpoint(){
+    if(checkpointActive||player.x<current.checkpoint.x)return;
+    checkpointActive=true;score+=250;beep(620,.12,"triangle",.04);showToast("CHECKPOINT +250");
+  }
+
+  function completeStage(){
+    if(!running)return;
+    const t=(performance.now()-levelStart)/1000;stageTimes[levelIndex]=t;score+=1000+Math.max(0,Math.round(600-t*10));beep(880,.18,"square",.04);
+    if(levelIndex<levelTemplates.length-1){
+      running=false;root.dataset.state="stageclear";
+      overlay.innerHTML='<div class="overlay-card"><p class="mini">STAGE CLEAR</p><h3>'+current.name+' 完走！</h3><p>TIME '+fmt(t)+' / SCORE '+score.toLocaleString("ja-JP")+'</p><button class="button button-primary" type="button" data-next>次のステージへ</button></div>';
+      overlay.classList.remove("is-hidden");
+      overlay.querySelector<HTMLButtonElement>("[data-next]")?.addEventListener("click",()=>{overlay.classList.add("is-hidden");running=true;root.dataset.state="running";loadLevel(levelIndex+1);lastFrame=performance.now();raf=requestAnimationFrame(loop);});
+    }else{
+      running=false;completed=true;root.dataset.state="complete";saveBest();const total=(performance.now()-totalStart)/1000;
+      overlay.innerHTML='<div class="overlay-card"><p class="mini">ALL CLEAR</p><h3>Sky Run 完走！</h3><p>TOTAL '+fmt(total)+' / SCORE '+score.toLocaleString("ja-JP")+'</p><button class="button button-primary" type="button" data-again>もう一度遊ぶ</button></div>';
+      overlay.classList.remove("is-hidden");overlay.querySelector<HTMLButtonElement>("[data-again]")?.addEventListener("click",startGame);beep(1040,.28,"triangle",.05);
+    }
+  }
+  function resolvePlatforms(prevX:number,prevY:number,dt:number){
+    player.onGround=false;
+    for(const p of platforms){
+      if(!overlap(player,p))continue;
+      const prevBottom=prevY+player.h, prevTop=prevY, prevRight=prevX+player.w, prevLeft=prevX;
+      if(prevBottom<=p.y+5&&player.vy>=0){player.y=p.y-player.h;player.vy=0;player.onGround=true;if(p.moving)player.x+=(p.speed||0)*(p.dir||1)*dt;}
+      else if(prevTop>=p.y+p.h-5&&player.vy<0){player.y=p.y+p.h;player.vy=0;}
+      else if(prevRight<=p.x+5&&player.vx>0){player.x=p.x-player.w;player.vx=0;}
+      else if(prevLeft>=p.x+p.w-5&&player.vx<0){player.x=p.x+p.w;player.vx=0;}
+    }
+  }
+
+  function update(dt:number){
+    if(!running)return;
+    if(player.invincible>0)player.invincible-=dt;
+    if(keys.jump)player.jumpBuffer=.12;else player.jumpBuffer=Math.max(0,player.jumpBuffer-dt);
+    player.coyote=player.onGround ? .11 : Math.max(0,player.coyote-dt);
+    const axis=(keys.right?1:0)-(keys.left?1:0);
+    if(axis!==0){player.vx+=axis*1700*dt;player.face=axis;}else player.vx*=Math.pow(.0009,dt);
+    player.vx=Math.max(-MOVE,Math.min(MOVE,player.vx));
+    if(player.jumpBuffer>0&&player.coyote>0){player.vy=-JUMP;player.onGround=false;player.coyote=0;player.jumpBuffer=0;beep(420,.07,"square",.025);}
+    if(!keys.jump&&player.vy<0)player.vy+=GRAVITY*.75*dt;
+    player.vy+=GRAVITY*dt;player.vy=Math.min(player.vy,1250);
+    const prevX=player.x,prevY=player.y;player.x+=player.vx*dt;player.y+=player.vy*dt;
+    player.x=Math.max(0,Math.min(current.width-player.w,player.x));
+    resolvePlatforms(prevX,prevY,dt);
+
+    for(const p of platforms){
+      if(!p.moving)continue;
+      p.x+=(p.speed||0)*(p.dir||1)*dt;
+      if(p.x<=(p.minX||0)){p.x=p.minX||0;p.dir=1;}
+      if(p.x+p.w>=(p.maxX||current.width)){p.x=(p.maxX||current.width)-p.w;p.dir=-1;}
+    }
+
+    for(const e of enemies){
+      if(!e.alive)continue;
+      e.x+=e.vx*dt;if(e.x<e.minX){e.x=e.minX;e.vx=Math.abs(e.vx);}if(e.x+e.w>e.maxX){e.x=e.maxX-e.w;e.vx=-Math.abs(e.vx);}
+      if(e.kind==="hopper"){e.phase=(e.phase||0)+dt*3.1;e.y+=Math.sin(e.phase)*18*dt;}
+      if(overlap(player,e)){
+        const prevBottom=prevY+player.h;
+        if(player.vy>80&&prevBottom<=e.y+12){e.alive=false;player.vy=-470;score+=300;beep(720,.08,"square",.035);showToast("STOMP +300");}
+        else respawn("敵にぶつかった！");
+      }
+    }
+    for(const s of stars){
+      if(!s.taken&&pointRect(s.x,s.y,s.r,player)){s.taken=true;score+=150;beep(940,.06,"triangle",.03);}
+    }
+    for(const sp of spikes){if(overlap(player,sp))respawn("トゲに触れた！");}
+    if(player.y>H+160)respawn("足場から落ちた！");
+    activateCheckpoint();
+    if(overlap(player,current.goal))completeStage();
+    cameraX+=((player.x-W*.38)-cameraX)*Math.min(1,dt*6);cameraX=Math.max(0,Math.min(current.width-W,cameraX));
+    updateHud();
+  }
+
+  function roundRect(x:number,y:number,w:number,h:number,r:number,fill:string){
+    ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
+  }
+  function drawStar(x:number,y:number,r:number,color:string){
+    ctx.save();ctx.translate(x,y);ctx.fillStyle=color;ctx.beginPath();
+    for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2===0?r:r*.44;const px=Math.cos(a)*rr,py=Math.sin(a)*rr;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+    ctx.closePath();ctx.fill();ctx.restore();
+  }
+  function drawBackground(){
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,current.sky[0]);g.addColorStop(1,current.sky[1]);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=.22;for(let i=0;i<8;i++){const x=((i*190-cameraX*.16)%1200+1200)%1200-100,y=80+(i%3)*72;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,42,0,Math.PI*2);ctx.arc(x+42,y+8,34,0,Math.PI*2);ctx.arc(x-38,y+10,28,0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=1;ctx.fillStyle="rgba(15,23,42,.12)";for(let i=0;i<12;i++){const x=((i*310-cameraX*.32)%3900+3900)%3900-120;ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(x+140,H-120-(i%4)*25);ctx.lineTo(x+280,H);ctx.fill();}
+  }
+  function drawWorld(){
+    ctx.save();ctx.translate(-cameraX,0);
+    for(const p of platforms){
+      roundRect(p.x,p.y,p.w,p.h,10,"#334155");ctx.fillStyle=current.accent;ctx.fillRect(p.x,p.y,p.w,7);ctx.fillStyle="rgba(255,255,255,.12)";ctx.fillRect(p.x+8,p.y+13,Math.max(0,p.w-16),4);
+    }
+    for(const sp of spikes){ctx.fillStyle="#fb7185";const count=Math.max(1,Math.floor(sp.w/18));for(let i=0;i<count;i++){const x=sp.x+i*sp.w/count;ctx.beginPath();ctx.moveTo(x,sp.y+sp.h);ctx.lineTo(x+sp.w/count/2,sp.y);ctx.lineTo(x+sp.w/count,sp.y+sp.h);ctx.fill();}}
+    for(const s of stars){if(!s.taken)drawStar(s.x,s.y,s.r,"#fde047");}
+    if(!checkpointActive){ctx.strokeStyle="#f8fafc";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(current.checkpoint.x,440);ctx.lineTo(current.checkpoint.x,335);ctx.stroke();ctx.fillStyle="#22d3ee";ctx.fillRect(current.checkpoint.x,338,44,24);}
+    else{ctx.strokeStyle="#f8fafc";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(current.checkpoint.x,440);ctx.lineTo(current.checkpoint.x,335);ctx.stroke();ctx.fillStyle="#86efac";ctx.fillRect(current.checkpoint.x,338,44,24);}
+    ctx.fillStyle="#e2e8f0";ctx.fillRect(current.goal.x,current.goal.y,6,current.goal.h);ctx.fillStyle="#f8fafc";ctx.beginPath();ctx.moveTo(current.goal.x+6,current.goal.y);ctx.lineTo(current.goal.x+58,current.goal.y+22);ctx.lineTo(current.goal.x+6,current.goal.y+44);ctx.fill();
+
+    for(const e of enemies){
+      if(!e.alive)continue;ctx.save();ctx.translate(e.x,e.y);roundRect(0,6,e.w,e.h-6,12,e.kind==="hopper"?"#f97316":"#ef4444");ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(12,19,5,0,Math.PI*2);ctx.arc(27,19,5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#111827";ctx.beginPath();ctx.arc(13,20,2,0,Math.PI*2);ctx.arc(28,20,2,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+
+    ctx.save();ctx.translate(player.x,player.y);if(player.invincible>0&&Math.floor(player.invincible*12)%2===0)ctx.globalAlpha=.32;
+    ctx.fillStyle="#fde68a";ctx.beginPath();ctx.arc(player.w/2,14,13,0,Math.PI*2);ctx.fill();roundRect(5,23,24,18,8,"#22c55e");ctx.fillStyle="#0f172a";ctx.fillRect(player.face>0?21:10,11,4,4);ctx.fillStyle="#38bdf8";ctx.beginPath();ctx.moveTo(player.face>0?8:26,26);ctx.lineTo(player.face>0?-8:42,33);ctx.lineTo(player.face>0?8:24,38);ctx.fill();ctx.restore();
+    ctx.restore();
+  }
+  function render(){drawBackground();drawWorld();}
+  function loop(now:number){
+    const dt=Math.min(.033,(now-lastFrame)/1000||0);lastFrame=now;update(dt);render();if(running)raf=requestAnimationFrame(loop);
+  }
+
+  function setKey(code:string,value:boolean){
+    if(["ArrowLeft","KeyA"].includes(code))keys.left=value;
+    if(["ArrowRight","KeyD"].includes(code))keys.right=value;
+    if(["ArrowUp","KeyW","Space"].includes(code))keys.jump=value;
+  }
+  window.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyW"].includes(e.code))e.preventDefault();setKey(e.code,true);});
+  window.addEventListener("keyup",e=>setKey(e.code,false));
+  root.querySelectorAll<HTMLButtonElement>("[data-control]").forEach(btn=>{
+    const type=btn.dataset.control!;
+    const down=(e:PointerEvent)=>{e.preventDefault();btn.setPointerCapture(e.pointerId);if(type==="left")keys.left=true;if(type==="right")keys.right=true;if(type==="jump")keys.jump=true;};
+    const up=()=>{if(type==="left")keys.left=false;if(type==="right")keys.right=false;if(type==="jump")keys.jump=false;};
+    btn.addEventListener("pointerdown",down);btn.addEventListener("pointerup",up);btn.addEventListener("pointercancel",up);btn.addEventListener("pointerleave",up);
+  });
+  startButton.addEventListener("click",startGame);restartButton.addEventListener("click",restartStage);
+  muteButton.addEventListener("click",()=>{muted=!muted;muteButton.textContent="効果音: "+(muted?"OFF":"ON");});
+  readBest();current=cloneLevel(levelTemplates[0]);platforms=current.platforms;enemies=current.enemies;stars=current.stars;spikes=current.spikes;render();updateHud();
+</script>
+<style>
+  .platformer-shell{display:grid;gap:14px;padding:20px;border:1px solid #dbe5f0;border-radius:22px;background:linear-gradient(180deg,#081526,#0b1220);box-shadow:0 20px 55px rgba(15,23,42,.18);color:#f8fafc}
+  .platformer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.platformer-head h2{margin:0;color:white;font-size:clamp(28px,4.5vw,44px);line-height:1}.platformer-head p:not(.eyebrow){max-width:680px;margin:9px 0 0;color:#a8bdd2;font-size:14px;line-height:1.7}.eyebrow{margin:0 0 5px;color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.16em}
+  .best-box{flex:0 0 120px;padding:12px;border:1px solid rgba(103,232,249,.25);border-radius:14px;background:rgba(15,23,42,.65);text-align:center}.best-box span{display:block;color:#7dd3fc;font-size:9px;font-weight:900;letter-spacing:.1em}.best-box strong{display:block;margin-top:3px;font-size:21px}
+  .hud{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.hud>div{padding:9px 11px;border:1px solid rgba(148,163,184,.14);border-radius:11px;background:rgba(15,23,42,.62)}.hud span{display:block;color:#7f95ad;font-size:9px;font-weight:900;letter-spacing:.1em}.hud strong{font-size:18px;font-variant-numeric:tabular-nums}
+  .canvas-wrap{position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.2);border-radius:18px;background:#0f172a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;touch-action:none}
+  .start-overlay{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:linear-gradient(180deg,rgba(2,8,23,.24),rgba(2,8,23,.78));transition:opacity .2s}.start-overlay.is-hidden{opacity:0;pointer-events:none}.overlay-card{max-width:430px;padding:24px;border:1px solid rgba(148,163,184,.25);border-radius:18px;background:rgba(8,21,38,.9);box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center;backdrop-filter:blur(10px)}.overlay-card .mini{margin:0;color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.14em}.overlay-card h3{margin:5px 0 8px;color:#fff;font-size:28px}.overlay-card p{margin:0 0 16px;color:#b5c8dc;line-height:1.7}.key-guide{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:12px;color:#91a8bf;font-size:11px}
+  .toast{position:absolute;top:18px;left:50%;z-index:4;padding:8px 14px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(15,23,42,.78);color:#fff;font-size:12px;font-weight:900;opacity:0;transform:translate(-50%,-10px);pointer-events:none}.toast.show{animation:toast-pop 1.5s ease}
+  .mobile-controls{display:none;justify-content:space-between;gap:16px}.move-controls{display:flex;gap:10px}.mobile-controls button{display:grid;place-items:center;width:68px;height:58px;border:1px solid rgba(148,163,184,.25);border-radius:16px;background:#172033;color:#fff;font-size:21px;font-weight:900;touch-action:none}.mobile-controls .jump-control{width:92px;border-color:rgba(34,211,238,.35);background:linear-gradient(145deg,#0891b2,#2563eb);font-size:13px}
+  .platformer-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.feature-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.feature-strip>div{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px;border:1px solid rgba(148,163,184,.12);border-radius:10px;background:rgba(15,23,42,.4)}.feature-strip strong{color:#67e8f9}.feature-strip span{color:#8ea5bd;font-size:10px;font-weight:900;letter-spacing:.08em}
+  @keyframes toast-pop{0%{opacity:0;transform:translate(-50%,-10px)}15%,70%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}
+  @media(max-width:760px){.platformer-shell{padding:12px;border-radius:16px}.platformer-head p:not(.eyebrow){font-size:12px}.best-box{flex-basis:96px}.hud{grid-template-columns:repeat(5,1fr);gap:4px}.hud>div{padding:7px 5px}.hud strong{font-size:14px}.hud span{font-size:7px}.mobile-controls{display:flex}.feature-strip{grid-template-columns:repeat(2,1fr)}.overlay-card{padding:18px}.overlay-card h3{font-size:24px}}
+  @media(max-width:480px){.platformer-head{align-items:center}.platformer-head h2{font-size:27px}.best-box{display:none}.canvas-wrap{border-radius:12px}.mobile-controls button{width:62px;height:54px}.hud strong{font-size:12px}}
+</style>
