@@ -36,6 +36,7 @@ const isQuality = ["compress","png-to-jpg","webp-converter"].includes(meta.mode)
         <div class="field"><label for="target-kb">目標容量（KB）</label><input id="target-kb" data-target-kb type="number" min="10" max="50000" value="500" /></div>
         <div class="field"><label for="format">出力形式</label><select id="format" data-format><option value="jpeg">JPEG</option><option value="webp">WebP</option></select></div>
       </>}
+      {meta.mode === "id-photo" && <div class="field"><label for="id-preset">証明写真サイズ</label><select id="id-preset" data-id-preset><option value="resume">履歴書 30×40mm</option><option value="passport">パスポート 35×45mm</option><option value="license">運転免許 24×30mm</option></select></div>}
     </div>
     <div class="actions">
       <button class="button button-primary" type="button" data-run disabled>処理する</button>
@@ -130,6 +131,14 @@ const isQuality = ["compress","png-to-jpg","webp-converter"].includes(meta.mode)
         if(sx<0||sy<0||sw<1||sh<1||sx+sw>bmp.width||sy+sh>bmp.height) throw new Error("切り抜き範囲が画像サイズを超えています。");
         dw=sw;dh=sh;
       }
+      if(mode==="id-photo"){
+        const preset=field<HTMLSelectElement>("[data-id-preset]")?.value??"resume";
+        const sizes:Record<string,[number,number]>={resume:[354,472],passport:[413,531],license:[283,354]};
+        [dw,dh]=sizes[preset]??sizes.resume;
+        const targetRatio=dw/dh,currentRatio=bmp.width/bmp.height;
+        if(currentRatio>targetRatio){sw=bmp.height*targetRatio;sx=(bmp.width-sw)/2;}
+        else{sh=bmp.width/targetRatio;sy=(bmp.height-sh)/2;}
+      }
       canvas.width=dw;canvas.height=dh;
       const ctx=canvas.getContext("2d")!;
       const wantsJpeg=mode==="png-to-jpg" || field<HTMLSelectElement>("[data-format]")?.value==="jpeg";
@@ -142,6 +151,8 @@ const isQuality = ["compress","png-to-jpg","webp-converter"].includes(meta.mode)
       else if(mode==="webp-converter"){const f=field<HTMLSelectElement>("[data-format]")!.value;type=f==="jpeg"?"image/jpeg":"image/png";suffix="."+(f==="jpeg"?"jpg":"png");}
       else if(mode==="resize"){type=file.type==="image/png"?"image/png":file.type==="image/webp"?"image/webp":"image/jpeg";suffix="-resized."+(type==="image/png"?"png":type==="image/webp"?"webp":"jpg");quality=.9;}
       else if(mode==="crop"){type=file.type==="image/png"?"image/png":file.type==="image/webp"?"image/webp":"image/jpeg";suffix="-cropped."+(type==="image/png"?"png":type==="image/webp"?"webp":"jpg");quality=.9;}
+      else if(mode==="remove-exif"){type=file.type==="image/png"?"image/png":file.type==="image/webp"?"image/webp":"image/jpeg";suffix="-metadata-removed."+(type==="image/png"?"png":type==="image/webp"?"webp":"jpg");quality=.92;}
+      else if(mode==="id-photo"){type="image/jpeg";suffix="-id-photo.jpg";quality=.94;}
       if(mode==="target-filesize"){
         const target=Number(field<HTMLInputElement>("[data-target-kb]")!.value)*1024;
         if(!target||target<10240) throw new Error("目標容量は10KB以上で指定してください。");

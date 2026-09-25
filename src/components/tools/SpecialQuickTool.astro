@@ -1,0 +1,240 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card special-tool" data-special-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />入力内容は外部サーバーへ送信しません。</div></div>
+
+    {meta.mode === "pii-mask" && <>
+      <div class="field">
+        <label for="mask-source">マスキングする文章・ログ</label>
+        <textarea id="mask-source" class="textarea tall" data-source placeholder={"例:\n山田太郎 user@example.com 090-1234-5678\n接続元 192.168.10.25"}></textarea>
+      </div>
+      <div class="mask-options">
+        <label><input type="checkbox" data-mask="email" checked /> メールアドレス</label>
+        <label><input type="checkbox" data-mask="phone" checked /> 電話番号</label>
+        <label><input type="checkbox" data-mask="ip" checked /> IPv4</label>
+        <label><input type="checkbox" data-mask="number12" checked /> 12桁番号</label>
+      </div>
+      <div class="field">
+        <label for="custom-mask">追加で伏字にする語句（改行区切り）</label>
+        <textarea id="custom-mask" class="textarea compact" data-custom placeholder={"山田太郎\n株式会社サンプル"}></textarea>
+      </div>
+    </>}
+
+    {meta.mode === "work-hours" && <>
+      <div class="settings-grid">
+        <div class="field"><label for="work-start">出勤時刻</label><input id="work-start" data-start type="time" value="09:00" /></div>
+        <div class="field"><label for="work-end">退勤時刻</label><input id="work-end" data-end type="time" value="18:00" /></div>
+        <div class="field"><label for="work-break">休憩（分）</label><input id="work-break" data-break type="number" min="0" max="1440" step="1" value="60" /></div>
+        <div class="field"><label for="work-standard">所定労働時間（時間/日）</label><input id="work-standard" data-standard type="number" min="0" max="24" step="0.25" value="8" /></div>
+        <div class="field"><label for="work-days">月の勤務日数（任意）</label><input id="work-days" data-days type="number" min="1" max="31" step="1" value="20" /></div>
+      </div>
+      <p class="inline-note">会社の就業規則や法定労働時間の判定ではなく、入力した所定時間との差を計算します。</p>
+    </>}
+
+    {meta.mode === "tournament" && <>
+      <div class="settings-grid">
+        <div class="field span-two">
+          <label for="tournament-players">参加者・チーム（1行1件）</label>
+          <textarea id="tournament-players" class="textarea tall" data-players placeholder={"チームA\nチームB\nチームC\nチームD"}></textarea>
+        </div>
+        <label class="checkbox-row"><input type="checkbox" data-shuffle checked /> 組み合わせをランダムにする</label>
+      </div>
+    </>}
+
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>{meta.mode === "tournament" ? "組み合わせを作る" : "処理する"}</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      {meta.mode !== "tournament" && <button class="button button-secondary" type="button" data-copy>結果をコピー</button>}
+    </div>
+    <ErrorMessage /><SuccessMessage />
+
+    {meta.mode !== "tournament" && <div class="field result-field">
+      <label for="special-result">結果</label>
+      <textarea id="special-result" class="textarea tall" data-result readonly></textarea>
+    </div>}
+    {meta.mode === "tournament" && <>
+      <p class="inline-note" data-info></p>
+      <div class="bracket" data-bracket hidden></div>
+      <div class="actions" data-bracket-actions hidden>
+        <button class="button button-secondary" type="button" data-copy-bracket>組み合わせをコピー</button>
+      </div>
+    </>}
+  </section>
+</ToolLayout>
+
+<script>
+  const root=document.querySelector<HTMLElement>("[data-special-tool]")!;
+  const mode=root.dataset.mode!;
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!;
+  const clear=root.querySelector<HTMLButtonElement>("[data-clear]")!;
+  const copy=root.querySelector<HTMLButtonElement>("[data-copy]");
+  const result=root.querySelector<HTMLTextAreaElement>("[data-result]");
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!;
+  const successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;};
+  const pad=(n:number)=>String(n).padStart(2,"0");
+  const parseTime=(value:string)=>{
+    const match=value.match(/^(\d{2}):(\d{2})$/);
+    if(!match) throw new Error("出勤・退勤時刻を入力してください。");
+    return Number(match[1])*60+Number(match[2]);
+  };
+  const formatMinutes=(minutes:number)=>{
+    const sign=minutes<0?"-":"";
+    const abs=Math.abs(Math.round(minutes));
+    return sign+Math.floor(abs/60)+"時間"+pad(abs%60)+"分";
+  };
+  const escapeRegExp=(value:string)=>value.replace(/[.*+?^\x24{}()|[\]\\]/g,"\\$&");
+  const secureShuffle=<T,>(input:T[])=>{
+    const out=[...input];
+    for(let i=out.length-1;i>0;i--){
+      const values=new Uint32Array(1);crypto.getRandomValues(values);
+      const j=values[0]%(i+1);[out[i],out[j]]=[out[j],out[i]];
+    }
+    return out;
+  };
+  const maskEmail=(email:string)=>{
+    const at=email.indexOf("@");if(at<1)return "[EMAIL]";
+    const local=email.slice(0,at),domain=email.slice(at+1);
+    const shown=local.length<=2?local[0]:local[0]+"***"+local.slice(-1);
+    return shown+"@"+domain;
+  };
+  const maskPhone=(phone:string)=>{
+    const digits=phone.replace(/\D/g,"");
+    const last=digits.slice(-4);
+    return "***-****-"+last;
+  };
+  const maskIPv4=(ip:string)=>{
+    const parts=ip.split(".");return parts.length===4?parts[0]+"."+parts[1]+".xxx.xxx":"[IP]";
+  };
+
+  function processMask(){
+    const source=root.querySelector<HTMLTextAreaElement>("[data-source]")!;
+    if(!source.value.trim())throw new Error("マスキングする文章を入力してください。");
+    let out=source.value,count=0;
+    const enabled=(key:string)=>root.querySelector<HTMLInputElement>('[data-mask="'+key+'"]')?.checked;
+    if(enabled("email"))out=out.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,m=>{count++;return maskEmail(m);});
+    if(enabled("phone"))out=out.replace(/(?<!\d)0\d{1,4}[-\s]?\d{1,4}[-\s]?\d{3,4}(?!\d)/g,m=>{count++;return maskPhone(m);});
+    if(enabled("ip"))out=out.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g,m=>{
+      if(!m.split(".").every(x=>Number(x)<=255))return m;count++;return maskIPv4(m);
+    });
+    if(enabled("number12"))out=out.replace(/(?<!\d)\d{12}(?!\d)/g,m=>{count++;return "********"+m.slice(-4);});
+    const custom=root.querySelector<HTMLTextAreaElement>("[data-custom]")!.value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean).sort((a,b)=>b.length-a.length);
+    for(const term of custom){const re=new RegExp(escapeRegExp(term),"g");out=out.replace(re,()=>{count++;return "［伏字］";});}
+    result!.value=out;
+    setMsg(successBox,count+"か所をマスキングしました。");
+  }
+
+  function processWork(){
+    const start=parseTime(root.querySelector<HTMLInputElement>("[data-start]")!.value);
+    const endRaw=parseTime(root.querySelector<HTMLInputElement>("[data-end]")!.value);
+    const breakMinutes=Number(root.querySelector<HTMLInputElement>("[data-break]")!.value);
+    const standardHours=Number(root.querySelector<HTMLInputElement>("[data-standard]")!.value);
+    const days=Number(root.querySelector<HTMLInputElement>("[data-days]")!.value);
+    if(!Number.isFinite(breakMinutes)||breakMinutes<0||!Number.isFinite(standardHours)||standardHours<0)throw new Error("休憩時間と所定労働時間を確認してください。");
+    let end=endRaw;if(end<start)end+=1440;
+    const span=end-start;
+    if(breakMinutes>span)throw new Error("休憩時間が勤務時間を超えています。");
+    const actual=span-breakMinutes;
+    const standard=Math.round(standardHours*60);
+    const overtime=actual-standard;
+    const lines=[
+      "拘束時間: "+formatMinutes(span),
+      "実働時間: "+formatMinutes(actual),
+      "所定時間との差: "+formatMinutes(overtime),
+    ];
+    if(Number.isInteger(days)&&days>0&&days<=31){
+      lines.push("月"+days+"日換算の実働: "+formatMinutes(actual*days));
+      lines.push("月"+days+"日換算の所定時間との差: "+formatMinutes(overtime*days));
+    }
+    if(endRaw<start)lines.push("※退勤時刻は翌日として計算");
+    result!.value=lines.join("\n");
+    setMsg(successBox,"計算しました。");
+  }
+
+  function buildTournament(){
+    const players=root.querySelector<HTMLTextAreaElement>("[data-players]")!.value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean);
+    if(players.length<2)throw new Error("参加者・チームを2件以上入力してください。");
+    if(players.length>64)throw new Error("64件以下で入力してください。");
+    if(new Set(players).size!==players.length)throw new Error("同じ名前が重複しています。");
+    const shuffled=root.querySelector<HTMLInputElement>("[data-shuffle]")!.checked?secureShuffle(players):players;
+    let size=1;while(size<shuffled.length)size*=2;
+    const byeCount=size-shuffled.length;
+    const seeded:string[]=[];let playerIndex=0;
+    for(let match=0;match<size/2;match++){
+      if(match<byeCount){seeded.push(shuffled[playerIndex++],"BYE");}
+      else{seeded.push(shuffled[playerIndex++],shuffled[playerIndex++]);}
+    }
+    const rounds:number=Math.log2(size);
+    const bracket=root.querySelector<HTMLElement>("[data-bracket]")!;
+    bracket.innerHTML="";
+    const textLines:string[]=[];
+    let matchNo=1;
+    for(let r=0;r<rounds;r++){
+      const col=document.createElement("section");col.className="bracket-round";
+      const title=document.createElement("h3");title.textContent=r===rounds-1?"決勝":r===rounds-2?"準決勝":"Round "+(r+1);col.appendChild(title);
+      const matches=size/(2**(r+1));
+      for(let m=0;m<matches;m++){
+        const card=document.createElement("div");card.className="match-card";
+        const label=document.createElement("span");label.className="match-label";label.textContent="Match "+matchNo++;
+        const a=document.createElement("div");const b=document.createElement("div");
+        if(r===0){a.textContent=seeded[m*2];b.textContent=seeded[m*2+1];textLines.push(label.textContent+": "+a.textContent+" vs "+b.textContent);}
+        else{a.textContent="前ラウンド勝者";b.textContent="前ラウンド勝者";}
+        card.append(label,a,b);col.appendChild(card);
+      }
+      bracket.appendChild(col);
+    }
+    bracket.dataset.copyText=textLines.join("\n");
+    bracket.hidden=false;
+    root.querySelector<HTMLElement>("[data-bracket-actions]")!.hidden=false;
+    root.querySelector<HTMLElement>("[data-info]")!.textContent=players.length+"件 / "+rounds+"ラウンド";
+    setMsg(successBox,"トーナメント表を作成しました。");
+  }
+
+  run.addEventListener("click",()=>{
+    setMsg(errorBox);setMsg(successBox);
+    try{
+      if(mode==="pii-mask")processMask();
+      else if(mode==="work-hours")processWork();
+      else if(mode==="tournament")buildTournament();
+    }catch(error){setMsg(errorBox,error instanceof Error?error.message:"処理に失敗しました。");}
+  });
+  copy?.addEventListener("click",async()=>{if(!result?.value)return;try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"コピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}});
+  root.querySelector<HTMLButtonElement>("[data-copy-bracket]")?.addEventListener("click",async()=>{
+    const text=root.querySelector<HTMLElement>("[data-bracket]")?.dataset.copyText??"";
+    if(!text)return;try{await navigator.clipboard.writeText(text);setMsg(successBox,"組み合わせをコピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}
+  });
+  clear.addEventListener("click",()=>{
+    root.querySelectorAll<HTMLInputElement>("input[type=text],input[type=number],input[type=time]").forEach(el=>{if(!["work-start","work-end","work-break","work-standard","work-days"].includes(el.id))el.value="";});
+    root.querySelectorAll<HTMLTextAreaElement>("textarea").forEach(el=>el.value="");
+    if(result)result.value="";
+    const bracket=root.querySelector<HTMLElement>("[data-bracket]");if(bracket){bracket.innerHTML="";bracket.hidden=true;}
+    const actions=root.querySelector<HTMLElement>("[data-bracket-actions]");if(actions)actions.hidden=true;
+    const info=root.querySelector<HTMLElement>("[data-info]");if(info)info.textContent="";
+    setMsg(errorBox);setMsg(successBox);
+  });
+</script>
+
+<style>
+  .special-tool{display:grid;gap:18px}
+  .tall{min-height:170px}
+  .compact{min-height:92px}
+  .mask-options{display:flex;flex-wrap:wrap;gap:10px 18px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-subtle,#f8fafc)}
+  .mask-options label,.checkbox-row{display:flex;align-items:center;gap:8px;font-weight:700}
+  .span-two{grid-column:1/-1}
+  .result-field{margin-top:4px}
+  .bracket{display:flex;gap:18px;overflow-x:auto;padding:8px 2px 18px;align-items:stretch}
+  .bracket-round{min-width:210px;display:flex;flex-direction:column;gap:14px}
+  .bracket-round h3{margin:0 0 2px;font-size:14px;color:var(--text-muted)}
+  .match-card{border:1px solid var(--border);border-radius:14px;background:var(--surface,#fff);padding:10px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+  .match-card div{padding:9px 10px;border-radius:9px;background:var(--surface-subtle,#f8fafc);margin-top:7px;font-weight:700}
+  .match-label{font-size:11px;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+  @media(max-width:640px){.span-two{grid-column:auto}.bracket-round{min-width:185px}}
+</style>

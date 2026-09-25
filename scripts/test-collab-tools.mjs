@@ -170,7 +170,63 @@ try{
     await ownerCtx.close();
   }
 
-  console.log("Extended tool E2E OK: survey / lottery / availability / packing / checklist / ranking / team / seating / travel expense.");
+
+  console.log('TEST privacy mask');
+  {
+    const page=await browser.newPage();await page.goto(BASE+"/text/privacy-mask/");
+    await page.locator("[data-source]").fill("user@example.com 090-1234-5678 192.168.10.25");
+    await page.getByRole("button",{name:"処理する"}).click();
+    const value=await page.locator("[data-result]").inputValue();
+    assert(value.includes("u***r@example.com"),"privacy mask email");
+    assert(value.includes("***-****-5678"),"privacy mask phone");
+    assert(value.includes("192.168.xxx.xxx"),"privacy mask ip");
+    await page.close();
+  }
+
+  console.log('TEST work hours');
+  {
+    const page=await browser.newPage();await page.goto(BASE+"/calculator/work-hours/");
+    await page.getByRole("button",{name:"処理する"}).click();
+    const value=await page.locator("[data-result]").inputValue();
+    assert(value.includes("実働時間: 8時間00分"),"work hours actual");
+    assert(value.includes("所定時間との差: 0時間00分"),"work hours overtime");
+    await page.close();
+  }
+
+  console.log('TEST tournament');
+  {
+    const page=await browser.newPage();await page.goto(BASE+"/tournament/");
+    await page.locator("[data-players]").fill("A\nB\nC\nD\nE");
+    await page.locator("[data-shuffle]").uncheck();
+    await page.getByRole("button",{name:"組み合わせを作る"}).click();
+    assert(await page.locator(".bracket-round").count()===3,"tournament rounds");
+    assert(await page.locator(".match-card").count()===7,"tournament matches");
+    assert(await page.locator(".match-card").filter({hasText:"BYE"}).count()===3,"tournament byes");
+    await page.close();
+  }
+
+  console.log('TEST image privacy tools');
+  for (const path of ["/image/remove-exif/","/image/id-photo/"]) {
+    const page=await browser.newPage();await page.goto(BASE+path);
+    await page.locator("[data-file]").evaluate((input)=>{
+      const canvas=document.createElement("canvas");canvas.width=640;canvas.height=800;
+      const ctx=canvas.getContext("2d");ctx.fillStyle="#dde6ef";ctx.fillRect(0,0,640,800);
+      return new Promise((resolve,reject)=>canvas.toBlob((blob)=>{
+        if(!blob)return reject(new Error("image blob"));
+        const file=new File([blob],"test.png",{type:"image/png"});
+        const transfer=new DataTransfer();transfer.items.add(file);
+        input.files=transfer.files;input.dispatchEvent(new Event("change",{bubbles:true}));resolve();
+      },"image/png"));
+    });
+    await page.getByRole("button",{name:"処理する"}).click();
+    await page.locator("[data-result]:not([hidden])").waitFor();
+    assert((await page.locator("[data-result-info]").textContent())?.includes("→"),"image privacy result "+path);
+    if(path.includes("id-photo"))assert((await page.locator("[data-result-info]").textContent())?.includes("354×472px"),"id photo dimensions");
+    await page.close();
+  }
+
+  console.log("Extended tool E2E OK: survey / lottery / availability / packing / checklist / ranking / team / seating / travel expense / privacy mask / work hours / tournament / image privacy.");
+
 } finally {
   await browser?.close().catch(()=>{});
   try{if(worker.pid)process.kill(-worker.pid,"SIGTERM")}catch{}

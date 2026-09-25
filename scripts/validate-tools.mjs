@@ -8,8 +8,8 @@ const source = await fs.readFile(extraPath, "utf8");
 const entries = [...source.matchAll(/\{\s*id:\s*"([^"]+)",\s*mode:\s*"([^"]+)",\s*family:\s*"([^"]+)",\s*category:\s*"([^"]+)",\s*categoryKey:\s*"([^"]+)",\s*\n?\s*href:\s*"([^"]+)"/g)]
   .map((m) => ({ id:m[1], mode:m[2], family:m[3], category:m[4], categoryKey:m[5], href:m[6] }));
 
-const allowedFamilies = new Set(["image","csv","text","pdf","qr","video","developer","utility","utilityplus","csvmore","generalmore"]);
-const allowedCategories = new Set(["image","csv","json","text","pdf","qr","video","japanese","developer","date","calculator"]);
+const allowedFamilies = new Set(["image","csv","text","pdf","qr","video","developer","utility","utilityplus","csvmore","generalmore","special"]);
+const allowedCategories = new Set(["image","csv","json","text","pdf","qr","video","japanese","developer","date","calculator","share"]);
 
 const errors = [];
 const seenIds = new Set();
