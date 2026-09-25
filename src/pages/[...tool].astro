@@ -19,6 +19,7 @@ import GameQuickTool from "../components/tools/GameQuickTool.astro";
 import PlatformerGame from "../components/tools/PlatformerGame.astro";
 import ArcadeMiniGames from "../components/tools/ArcadeMiniGames.astro";
 import QuickMiniGames from "../components/tools/QuickMiniGames.astro";
+import SimulationGames from "../components/tools/SimulationGames.astro";
 
 export function getStaticPaths() {
   return extraTools.map((meta) => ({
@@ -47,6 +48,7 @@ const Component =
   meta.mode === "lumo-sky-run" ? PlatformerGame :
   ["meteor-drift","flash-matrix"].includes(meta.mode) ? ArcadeMiniGames :
   ["neon-snake","reaction-zero","orbit-catch"].includes(meta.mode) ? QuickMiniGames :
+  ["convenience-store-sim","football-club-sim","investment-sim"].includes(meta.mode) ? SimulationGames :
   meta.family === "game" ? GameQuickTool :
   DeveloperQuickTool;
 ---

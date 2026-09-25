@@ -34,7 +34,7 @@ const others = [
 <script>
   const panel = document.querySelector<HTMLElement>("[data-game-next]");
   if (panel) {
-    const gameRoot = document.querySelector<HTMLElement>("[data-number-chain], [data-platformer], [data-arcade], [data-quick-game]");
+    const gameRoot = document.querySelector<HTMLElement>("[data-number-chain], [data-platformer], [data-arcade], [data-quick-game], [data-sim-game]");
     if (gameRoot) {
       const reveal = () => {
         const state = gameRoot.dataset.state;

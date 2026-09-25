@@ -22,7 +22,7 @@ const { gameId, gameName } = Astro.props;
   if (common) {
     const gameId = common.dataset.gameId ?? "";
     const gameRoot = document.querySelector<HTMLElement>(
-      "[data-number-chain], [data-platformer], [data-arcade], [data-quick-game]"
+      "[data-number-chain], [data-platformer], [data-arcade], [data-quick-game], [data-sim-game]"
     );
     const fullscreenButton = common.querySelector<HTMLButtonElement>("[data-game-fullscreen]");
     const retryButton = common.querySelector<HTMLButtonElement>("[data-game-retry]");
@@ -106,6 +106,6 @@ const { gameId, gameName } = Astro.props;
   .game-common-link:hover,.game-common-button:hover{border-color:#93c5fd;color:#0b5bd3}
   .game-common-status{margin-right:auto;padding:5px 9px;border-radius:999px;background:#e0f2fe;color:#075985;font-size:10px;font-weight:900;white-space:nowrap}
   .game-common-actions{display:flex;gap:6px}
-  :global(:fullscreen [data-number-chain]),:global(:fullscreen [data-platformer]),:global(:fullscreen [data-arcade]),:global(:fullscreen [data-quick-game]){width:100vw!important;height:100vh!important;max-width:none!important;margin:0!important;border-radius:0!important}
+  :global(:fullscreen [data-number-chain]),:global(:fullscreen [data-platformer]),:global(:fullscreen [data-arcade]),:global(:fullscreen [data-quick-game]),:global(:fullscreen [data-sim-game]){width:100vw!important;height:100vh!important;max-width:none!important;margin:0!important;border-radius:0!important}
   @media(max-width:640px){.game-common-ui{position:sticky;top:6px;z-index:18;flex-wrap:wrap;margin-bottom:9px;background:rgba(248,250,252,.95);backdrop-filter:blur(10px)}.game-common-status{margin-left:auto;margin-right:0}.game-common-actions{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.game-common-link,.game-common-button{min-height:36px;padding:0 6px;font-size:10px}}
 </style>
