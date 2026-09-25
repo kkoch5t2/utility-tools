@@ -32,7 +32,7 @@ test("全ツールをPC・スマホで表示監査する", async ({ browser, req
         await expect(page.locator("[data-create-form]"), `${viewport.name}: ${path}`).toBeVisible();
       } else {
         await expect(page.locator(".tool-heading h1"), `${viewport.name}: ${path}`).toBeVisible();
-        await expect(page.locator(".tool-card, .game-card, .platformer-shell, .arcade-shell, .quick-game").first(), `${viewport.name}: ${path}`).toBeVisible();
+        await expect(page.locator(".tool-card, .game-card, .platformer-shell, .arcade-shell, .quick-game, .sim-shell").first(), `${viewport.name}: ${path}`).toBeVisible();
       }
 
       const overflow = await page.evaluate(() => ({

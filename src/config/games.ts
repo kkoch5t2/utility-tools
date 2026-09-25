@@ -84,6 +84,36 @@ export const gameMeta: GameMeta[] = [
     tagline: "回る光を黄色の中心で止めろ。",
     thumbnail: "/game-art/orbit-catch.jpg",
   },
+  {
+    id: "game-convenience-store-sim",
+    href: "/game/convenience-store-simulator/",
+    name: "コンビニ経営シミュレーション",
+    genre: "経営シミュレーション",
+    playTime: "5〜15分",
+    control: "タップ / クリック",
+    tagline: "仕入れて、値付けして、30日後の繁盛店を目指せ。",
+    thumbnail: "/game-art/convenience-store-simulator.svg",
+  },
+  {
+    id: "game-football-club-sim",
+    href: "/game/football-club-manager/",
+    name: "サッカークラブ経営シミュレーション",
+    genre: "スポーツ経営",
+    playTime: "5〜15分",
+    control: "タップ / クリック",
+    tagline: "補強と戦術で、架空クラブをリーグ上位へ。",
+    thumbnail: "/game-art/football-club-manager.svg",
+  },
+  {
+    id: "game-investment-sim",
+    href: "/game/investment-simulator/",
+    name: "投資シミュレーションゲーム",
+    genre: "資産運用ゲーム",
+    playTime: "5〜10分",
+    control: "タップ / クリック",
+    tagline: "架空市場を読み、100万円を36か月運用。",
+    thumbnail: "/game-art/investment-simulator.svg",
+  },
 ];
 
 export const gameMetaByHref = Object.fromEntries(gameMeta.map((game) => [game.href, game])) as Record<string, GameMeta>;

@@ -56,7 +56,7 @@ test("ゲームカテゴリページと端末ベストスコア表示が動く",
 
   await page.goto("/category/game/");
   await expect(page.getByRole("heading", { name: "無料ブラウザゲーム" })).toBeVisible();
-  await expect(page.locator(".game-hub-card")).toHaveCount(7);
+  await expect(page.locator(".game-hub-card")).toHaveCount(10);
   await expect(page.locator(".game-hub-card").filter({ hasText: "ナンバーチェイン" })).toContainText("ナンバーチェイン");
   await expect(page.locator(".game-hub-card").filter({ hasText: "Lumo's Sky Run" })).toContainText("Lumo's Sky Run");
   await expect(page.locator(".game-hub-card").filter({ hasText: "Meteor Drift" })).toContainText("Meteor Drift");
@@ -114,7 +114,7 @@ test("Lumo's Sky Runのスマホ操作とベストタイム表示が動く", asy
   expect(controlSelect).toBe("none");
 
   await page.goto("/category/game/");
-  await expect(page.locator(".game-hub-card")).toHaveCount(7);
+  await expect(page.locator(".game-hub-card")).toHaveCount(10);
   await expect(page.locator(".game-hub-card").filter({ hasText: "Lumo's Sky Run" })).toBeVisible();
 });
 
@@ -159,10 +159,10 @@ test("Flash Matrixの正解シーケンスを入力すると次ラウンドへ�
   await expect(page.locator("[data-score]")).not.toHaveText("0");
 });
 
-test("ブラウザゲーム目的別ページに7ゲームが表示される", async ({ page }) => {
+test("ブラウザゲーム目的別ページに10ゲームが表示される", async ({ page }) => {
   await page.goto("/use-case/browser-games/");
   await expect(page.getByRole("heading", { name: "ブラウザでゲームを遊ぶ" })).toBeVisible();
-  await expect(page.locator(".usecase-card")).toHaveCount(7);
+  await expect(page.locator(".usecase-card")).toHaveCount(10);
   await expect(page.locator(".usecase-card").filter({ hasText: "Meteor Drift" })).toBeVisible();
   await expect(page.locator(".usecase-card").filter({ hasText: "Flash Matrix" })).toBeVisible();
   await expect(page.locator(".usecase-card").filter({ hasText: "Neon Snake" })).toBeVisible();
@@ -218,8 +218,8 @@ test("GAME専用ハブでサムネ・最近遊んだゲーム・ジャンル絞�
   });
   await page.goto("/category/game/");
   await expect(page.locator(".game-hub-hero")).toBeVisible();
-  await expect(page.locator(".game-hub-card")).toHaveCount(7);
-  await expect(page.locator(".game-hub-card img")).toHaveCount(7);
+  await expect(page.locator(".game-hub-card")).toHaveCount(10);
+  await expect(page.locator(".game-hub-card img")).toHaveCount(10);
   await expect(page.locator("[data-recent-games]")).toBeVisible();
   await expect(page.locator("[data-recent-game-grid] a")).toHaveCount(2);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -230,7 +230,7 @@ test("GAME専用ハブでサムネ・最近遊んだゲーム・ジャンル絞�
   await expect(page.locator(".game-hub-card:not([hidden])")).toContainText("Reaction Zero");
 
   await page.locator('[data-game-filter="all"]').click();
-  await expect(page.locator(".game-hub-card:not([hidden])")).toHaveCount(7);
+  await expect(page.locator(".game-hub-card:not([hidden])")).toHaveCount(10);
 });
 
 test("各ゲームページが内容の分かる個別アイキャッチを使う", async ({ page }) => {
@@ -254,6 +254,59 @@ test("ゲーム終了後に次に遊ぶ3ゲームが表示される", async ({ p
   await expect(page.locator('[data-game-next] a[href="/category/game/"]')).toBeVisible();
 });
 
+
+
+
+test("3つのシミュレーションゲームが開始して1ターン進められる", async ({ page }) => {
+  await page.goto("/game/convenience-store-simulator/");
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "running");
+  await page.locator("[data-open]").click();
+  await expect(page.locator("[data-day]")).toHaveText("2 / 30");
+
+  await page.goto("/game/football-club-manager/");
+  await page.locator("[data-start]").click();
+  await page.locator("[data-match]").click();
+  await expect(page.locator("[data-week]")).toHaveText("2 / 12");
+  await expect(page.locator("[data-result]")).toContainText(/WIN|DRAW|LOSE/);
+
+  await page.goto("/game/investment-simulator/");
+  await page.locator("[data-start]").click();
+  await page.locator('[data-buy="nova"]').click();
+  await expect(page.locator('[data-holding="nova"]')).toHaveText("5口");
+  await page.locator("[data-next-month]").click();
+  await expect(page.locator("[data-month]")).toHaveText("2 / 36");
+});
+
+test("3つのシミュレーションゲームを最終ターンまで完走できる", async ({ page }) => {
+  await page.goto("/game/convenience-store-simulator/");
+  await page.locator("[data-start]").click();
+  for (let i = 0; i < 30; i++) await page.locator("[data-open]").click();
+  await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
+  await expect(page.locator("[data-result]")).toContainText("30日終了");
+
+  await page.goto("/game/football-club-manager/");
+  await page.locator("[data-start]").click();
+  for (let i = 0; i < 12; i++) await page.locator("[data-match]").click();
+  await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
+  await expect(page.locator("[data-result]")).toContainText("シーズン終了");
+
+  await page.goto("/game/investment-simulator/");
+  await page.locator("[data-start]").click();
+  for (let i = 0; i < 36; i++) await page.locator("[data-next-month]").click();
+  await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
+  await expect(page.locator("[data-result]")).toContainText("36か月終了");
+});
+
+test("シミュレーションゲームはスマホで横にはみ出さない", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const href of ["/game/convenience-store-simulator/","/game/football-club-manager/","/game/investment-simulator/"]) {
+    await page.goto(href);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+    await expect(page.locator("[data-game-retry]")).toBeVisible();
+  }
+});
 
 test("ホーム上部からGAMEカテゴリへ移動できる", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
