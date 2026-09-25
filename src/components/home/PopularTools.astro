@@ -13,7 +13,8 @@ const ranked = popularData.items
     const tool = tools.find((candidate) => candidate.href === item.path);
     return tool ? { ...tool, rank: index + 1 } : null;
   })
-  .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  .filter((item): item is NonNullable<typeof item> => Boolean(item))
+  .slice(0, 3);
 ---
 
 <section class="popular-tools" aria-labelledby="popular-tools-title">
