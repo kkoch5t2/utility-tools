@@ -19,7 +19,7 @@ export const gameMeta: GameMeta[] = [
     playTime: "3〜8分",
     control: "キーボード / タッチ",
     tagline: "走って、跳んで、空中遺跡を駆け抜けろ。",
-    thumbnail: "/og/game-lumo-sky-run.png",
+    thumbnail: "/game-art/lumo-sky-run.jpg",
     featured: true,
   },
   {
@@ -30,7 +30,7 @@ export const gameMeta: GameMeta[] = [
     playTime: "45秒",
     control: "ドラッグ / キーボード",
     tagline: "隕石をかわして、45秒の宇宙サバイバル。",
-    thumbnail: "/og/game-meteor-drift.png",
+    thumbnail: "/game-art/meteor-drift.jpg",
     featured: true,
   },
   {
@@ -41,7 +41,7 @@ export const gameMeta: GameMeta[] = [
     playTime: "1〜3分",
     control: "スワイプ / キーボード",
     tagline: "食べて伸びる。ぶつかるまで終われない。",
-    thumbnail: "/og/game-neon-snake.png",
+    thumbnail: "/game-art/neon-snake.jpg",
     featured: true,
   },
   {
@@ -52,7 +52,7 @@ export const gameMeta: GameMeta[] = [
     playTime: "60秒",
     control: "ドラッグ",
     tagline: "数字をつないで合計10。コンボで一気に稼げ。",
-    thumbnail: "/og/game-number-chain-10.png",
+    thumbnail: "/game-art/number-chain-10.jpg",
   },
   {
     id: "game-flash-matrix",
@@ -62,7 +62,7 @@ export const gameMeta: GameMeta[] = [
     playTime: "1〜5分",
     control: "タップ",
     tagline: "光った順番、どこまで覚えられる？",
-    thumbnail: "/og/game-flash-matrix.png",
+    thumbnail: "/game-art/flash-matrix.jpg",
   },
   {
     id: "game-reaction-zero",
@@ -72,7 +72,7 @@ export const gameMeta: GameMeta[] = [
     playTime: "30秒",
     control: "タップ",
     tagline: "光った瞬間に押せ。反応速度をミリ秒で測定。",
-    thumbnail: "/og/game-reaction-zero.png",
+    thumbnail: "/game-art/reaction-zero.jpg",
   },
   {
     id: "game-orbit-catch",
@@ -82,7 +82,7 @@ export const gameMeta: GameMeta[] = [
     playTime: "30〜60秒",
     control: "1タップ",
     tagline: "回る光を黄色の中心で止めろ。",
-    thumbnail: "/og/game-orbit-catch.png",
+    thumbnail: "/game-art/orbit-catch.jpg",
   },
 ];
 

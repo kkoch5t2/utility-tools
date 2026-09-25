@@ -17,6 +17,10 @@
       {
         "name": "SHARED_TOOLS",
         "class_name": "SharedToolRoom"
+      },
+      {
+        "name": "GAME_METRICS",
+        "class_name": "GameMetrics"
       }
     ]
   },
@@ -28,6 +32,10 @@
     {
       "tag": "v2",
       "new_sqlite_classes": ["SharedToolRoom"]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": ["GameMetrics"]
     }
   ]
 }

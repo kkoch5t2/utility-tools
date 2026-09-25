@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import IssueReport from "../feedback/IssueReport.astro";
 import RelatedTools from "../tools/RelatedTools.astro";
 import GameRecommendations from "../tools/GameRecommendations.astro";
+import GameCommonUI from "../tools/GameCommonUI.astro";
 import { tools } from "../../config/tools";
 import { siteConfig } from "../../config/site";
 import { prioritySeoContent } from "../../config/seo-content";
@@ -101,6 +102,7 @@ const faqJson = {
         hidden
       ></span>
     )}
+    {categoryKey === "game" && gameInfo && <GameCommonUI gameId={gameInfo.id} gameName={gameInfo.name} />}
     <slot />
     {categoryKey === "game" && <GameRecommendations currentHref={currentHref} />}
     <section class="content-section tool-guide" aria-labelledby="tool-guide-title">
