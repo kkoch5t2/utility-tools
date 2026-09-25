@@ -15,6 +15,14 @@ const ranked = popularData.items
   })
   .filter((item): item is NonNullable<typeof item> => Boolean(item))
   .slice(0, 5);
+
+const topThree = ranked.slice(0, 3);
+const rest = ranked.slice(3);
+const medalMeta = {
+  1: { label: "GOLD", className: "gold" },
+  2: { label: "SILVER", className: "silver" },
+  3: { label: "BRONZE", className: "bronze" },
+} as const;
 ---
 
 <section class="popular-tools" aria-labelledby="popular-tools-title">
@@ -27,18 +35,43 @@ const ranked = popularData.items
   </div>
 
   {ranked.length > 0 ? (
-    <div class="popular-grid">
-      {ranked.map((tool) => (
-        <a class="popular-card" href={tool.href}>
-          <span class="rank">{tool.rank}</span>
-          <span class="popular-copy">
-            <strong>{tool.name}</strong>
-            <small>{tool.category.toUpperCase()}</small>
-          </span>
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-      ))}
-    </div>
+    <>
+      <div class="podium-grid">
+        {topThree.map((tool) => {
+          const medal = medalMeta[tool.rank as 1 | 2 | 3];
+          return (
+            <a class={`podium-card ${medal.className}`} href={tool.href}>
+              <div class="medal-row">
+                <span class="medal-rank" aria-label={`${tool.rank}位`}>
+                  <b>{tool.rank}</b>
+                </span>
+                <span class="medal-label">{medal.label}</span>
+              </div>
+              <span class="podium-copy">
+                <strong>{tool.name}</strong>
+                <small>{tool.category.toUpperCase()}</small>
+              </span>
+              <span class="podium-arrow" aria-hidden="true">→</span>
+            </a>
+          );
+        })}
+      </div>
+
+      {rest.length > 0 && (
+        <div class="popular-rest">
+          {rest.map((tool) => (
+            <a class="popular-card" href={tool.href}>
+              <span class="rank">{tool.rank}</span>
+              <span class="popular-copy">
+                <strong>{tool.name}</strong>
+                <small>{tool.category.toUpperCase()}</small>
+              </span>
+              <span class="arrow" aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </>
   ) : (
     <div class="popular-empty">
       <strong>ランキング集計中</strong>
@@ -53,11 +86,31 @@ const ranked = popularData.items
   .popular-heading h2 { margin: 0; font-size: 24px; }
   .popular-heading > span { color: var(--muted); font-size: 12px; font-weight: 700; }
   .eyebrow { margin: 0 0 3px; color: var(--accent); font-size: 10px; font-weight: 900; letter-spacing: .14em; }
-  .popular-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+
+  .podium-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+  .podium-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; gap: 12px 10px; min-width: 0; min-height: 142px; padding: 17px; overflow: hidden; border: 1px solid var(--medal-border); border-radius: 16px; background: linear-gradient(145deg, var(--medal-bg-start), var(--medal-bg-end)); color: var(--text); text-decoration: none; box-shadow: 0 7px 22px rgba(15, 23, 42, .055); transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+  .podium-card::after { content: ""; position: absolute; width: 110px; height: 110px; right: -45px; top: -55px; border-radius: 50%; background: var(--medal-glow); opacity: .7; pointer-events: none; }
+  .podium-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(15, 23, 42, .09); }
+  .podium-card.gold { --medal-border: #d7b450; --medal-bg-start: #fffaf0; --medal-bg-end: #fff5d6; --medal-accent: #8a6500; --medal-chip: #f2c94c; --medal-glow: rgba(242, 201, 76, .35); }
+  .podium-card.silver { --medal-border: #b9c2ce; --medal-bg-start: #fbfcfd; --medal-bg-end: #eff2f6; --medal-accent: #586575; --medal-chip: #c6ced8; --medal-glow: rgba(174, 184, 196, .28); }
+  .podium-card.bronze { --medal-border: #ca9976; --medal-bg-start: #fff9f5; --medal-bg-end: #f8e8dc; --medal-accent: #8a5130; --medal-chip: #d79669; --medal-glow: rgba(199, 132, 84, .25); }
+
+  .medal-row { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .medal-rank { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px; background: var(--medal-chip); color: #202733; box-shadow: inset 0 0 0 1px rgba(255,255,255,.45), 0 3px 9px rgba(15,23,42,.08); }
+  .medal-rank b { font-size: 17px; line-height: 1; }
+  .medal-label { color: var(--medal-accent); font-size: 10px; font-weight: 950; letter-spacing: .12em; }
+
+  .podium-copy { grid-column: 1 / -1; display: flex; min-width: 0; flex-direction: column; gap: 3px; align-self: end; }
+  .podium-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; line-height: 1.35; }
+  .podium-copy small { color: var(--medal-accent); font-size: 10px; font-weight: 900; letter-spacing: .045em; }
+  .podium-arrow { position: absolute; right: 16px; bottom: 16px; color: var(--medal-accent); font-size: 18px; font-weight: 900; }
+
+  .popular-rest { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .popular-empty { display: flex; align-items: baseline; gap: 10px; padding: 15px 16px; border: 1px dashed var(--line); border-radius: 13px; background: var(--surface-muted); }
   .popular-empty strong { flex: 0 0 auto; font-size: 14px; }
   .popular-empty span { color: var(--muted); font-size: 13px; }
-  .popular-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--text); text-decoration: none; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+
+  .popular-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--text); text-decoration: none; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
   .popular-card:hover { transform: translateY(-2px); border-color: #b8c8dc; box-shadow: 0 8px 20px rgba(15, 23, 42, .06); }
   .rank { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px; background: var(--surface-muted); color: var(--accent); font-size: 13px; font-weight: 900; }
   .popular-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
@@ -67,7 +120,10 @@ const ranked = popularData.items
 
   @media (max-width: 760px) {
     .popular-tools { margin-bottom: 32px; }
-    .popular-grid { grid-template-columns: 1fr; }
+    .podium-grid, .popular-rest { grid-template-columns: 1fr; }
+    .podium-card { min-height: 106px; padding: 14px; }
+    .podium-copy { grid-column: 1; padding-right: 34px; }
+    .podium-arrow { bottom: 14px; right: 14px; }
     .popular-empty { align-items: flex-start; flex-direction: column; gap: 3px; }
     .popular-card { padding: 12px 13px; }
   }
