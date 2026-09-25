@@ -197,6 +197,7 @@ test("Orbit CatchでSTOPすると試行回数が進む", async ({ page }) => {
 
 
 test("GAME専用ハブでサムネ・最近遊んだゲーム・ジャンル絞り込みが動く", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     localStorage.setItem("utility-tools:recent", JSON.stringify([
       { id: "game-neon-snake", href: "/game/neon-snake/", name: "Neon Snake", category: "game" },
@@ -209,6 +210,8 @@ test("GAME専用ハブでサムネ・最近遊んだゲーム・ジャンル絞�
   await expect(page.locator(".game-hub-card img")).toHaveCount(7);
   await expect(page.locator("[data-recent-games]")).toBeVisible();
   await expect(page.locator("[data-recent-game-grid] a")).toHaveCount(2);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
 
   await page.locator('[data-game-filter="反応速度"]').click();
   await expect(page.locator(".game-hub-card:not([hidden])")).toHaveCount(1);
