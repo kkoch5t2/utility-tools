@@ -1,5 +1,5 @@
-export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special" | "security";
-export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share" | "security";
+export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special" | "security" | "japan";
+export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share" | "security" | "japan";
 
 export type ExtraToolMeta = {
   id: string;
@@ -1174,6 +1174,48 @@ export const extraTools: ExtraToolMeta[] = [
     title: "秘密情報チェック｜APIキー・JWT・秘密鍵らしい文字列を検出",
     description: "公開前の文章・設定・ログからAWS Access Key ID、GitHub/Slackトークン、JWT、Bearerトークン、PEM秘密鍵などの代表的なパターンを簡易検出します。",
     faqs: [["検出した秘密情報は送信されますか？", "いいえ。文字列パターンの確認はブラウザ内だけで行います。"], ["検出されなければ公開して安全ですか？", "いいえ。対応していない形式や文脈依存の秘密情報もあるため、最終確認は必要です。"], privacyFaq],
+  },
+  {
+    id: "japan-postal-code", mode: "postal-code", family: "japan", category: "日本向け", categoryKey: "japan",
+    href: "/japan/postal-code/", name: "郵便番号整形",
+    title: "郵便番号整形｜7桁を123-4567形式へ変換",
+    description: "全角数字やハイフン混じりの日本の郵便番号を7桁へ正規化し、123-4567形式と数字のみの両方を表示します。",
+    faqs: [["住所検索もできますか？", "このツールは郵便番号の整形専用です。住所データベースへの問い合わせは行いません。"], ["全角数字にも対応しますか？", "はい。全角数字を半角へ正規化して処理します。"], privacyFaq],
+  },
+  {
+    id: "japan-phone-number", mode: "phone-number", family: "japan", category: "日本向け", categoryKey: "japan",
+    href: "/japan/phone-number/", name: "日本の電話番号整形・正規化",
+    title: "日本の電話番号整形｜携帯・050・フリーダイヤル・+81を正規化",
+    description: "日本の電話番号を数字のみ・国内表記・+81の国際表記へ正規化します。携帯、050、0120、0570、0800、03、06の代表的な区切りに対応します。",
+    faqs: [["すべての固定電話を自動でハイフン区切りできますか？", "いいえ。市外局番の長さは地域ごとに異なるため、誤分割を避けて03・06以外は数字のみ表示にします。"], ["+81形式にも対応しますか？", "はい。+81から始まる番号は国内の0始まりへ戻してから整形します。"], privacyFaq],
+  },
+  {
+    id: "japan-address-normalize", mode: "address-normalize", family: "japan", category: "日本向け", categoryKey: "japan",
+    href: "/japan/address-normalize/", name: "日本住所表記の正規化",
+    title: "住所正規化｜全角数字・ハイフン・空白をまとめて整形",
+    description: "日本語住所の全角英数字を半角へ正規化し、ハイフン類や余分な空白を揃えてコピペしやすい表記へ整えます。",
+    faqs: [["丁目・番地を自動判定して変換しますか？", "いいえ。住所データベースは使わず、文字種・ハイフン・空白の正規化だけを行います。"], ["建物名も残りますか？", "はい。入力文字列の内容は削除せず、表記だけを正規化します。"], privacyFaq],
+  },
+  {
+    id: "japan-prefecture-code", mode: "prefecture-code", family: "japan", category: "日本向け", categoryKey: "japan",
+    href: "/japan/prefecture-code/", name: "都道府県コード変換",
+    title: "都道府県コード変換｜01北海道〜47沖縄を相互変換",
+    description: "01〜47の都道府県コードから都道府県名を、都道府県名から2桁コードをすぐ確認できます。",
+    faqs: [["東京都は何番ですか？", "13です。"], ["都・道・府・県を省略しても使えますか？", "はい。東京、大阪、北海道などでも検索できます。"], privacyFaq],
+  },
+  {
+    id: "japan-corporate-number", mode: "corporate-number", family: "japan", category: "日本向け", categoryKey: "japan",
+    href: "/japan/corporate-number/", name: "法人番号チェックデジット確認",
+    title: "法人番号チェック｜13桁検証・12桁からチェックデジット計算",
+    description: "日本の13桁法人番号のチェックデジットを検証し、12桁の基礎番号から正しいチェックデジット付き法人番号も計算します。",
+    faqs: [["法人の実在確認もできますか？", "いいえ。このツールは番号の桁数とチェックデジットだけを確認します。実在確認は国税庁法人番号公表サイトで行ってください。"], ["チェックデジットの算式は？", "基礎番号を右端から数え、奇数桁を1倍・偶数桁を2倍して合計し、9から9で割った余りを引く国税庁の算式を使います。"], privacyFaq],
+  },
+  {
+    id: "japan-school-year", mode: "school-year", family: "japan", category: "日本向け", categoryKey: "japan",
+    href: "/japan/school-year/", name: "入学・卒業年度計算",
+    title: "入学・卒業年度計算｜生年月日から小中高・大学の学歴年を早見",
+    description: "生年月日から小学校・中学校・高校・4年制大学の入学・卒業年度を、西暦と和暦でまとめて計算します。",
+    faqs: [["4月1日生まれはどの学年になりますか？", "4月1日生まれは前日の3月31日に満年齢へ達する扱いのため、翌日の4月2日以降生まれより一つ上の学年になります。"], ["浪人・留年にも対応しますか？", "現在は留年・浪人・休学なし、高校3年・4年制大学の標準進行で計算します。"], privacyFaq],
   },
 ];
 

@@ -73,6 +73,15 @@ export const useCasePages: readonly UseCasePage[] = [
     toolIds: ["fullwidth-halfwidth","kana-converter","kana-normalize","punctuation-normalize","space-normalize","unicode-normalize","japanese-char-count"],
   },
   {
+    slug: "japan-office-life",
+    label: "日本の事務・生活データを整える",
+    title: "日本向け便利ツール集｜郵便番号・電話番号・法人番号・学歴年",
+    description: "郵便番号、電話番号、住所、都道府県コード、法人番号、入学・卒業年度など、日本の事務や生活で使う値を手早く整形・確認できる無料ツールをまとめています。",
+    intro: "履歴書、申請書、顧客データ、法人情報など、日本独自の形式をその場で整えたいときに使えるツール集です。",
+    bullets: ["郵便番号・電話番号・住所表記を整えたい", "都道府県コードや法人番号を確認したい", "履歴書向けに入学・卒業年度や和暦を確認したい"],
+    toolIds: ["japan-postal-code","japan-phone-number","japan-address-normalize","japan-prefecture-code","japan-corporate-number","japan-school-year","wareki","tax-calculator","id-photo-maker"],
+  },
+  {
     slug: "date-calculation",
     label: "日付・期間を計算する",
     title: "日付計算の無料ツール集｜日数差・年齢・営業日・曜日・週番号",
