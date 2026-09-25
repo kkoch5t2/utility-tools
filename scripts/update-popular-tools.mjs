@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 const API = "https://api.cloudflare.com/client/v4";
 const HOST = "utility-tools-jp.com";
 const DAYS = 7;
-const LIMIT = 5;
+const LIMIT = 50;
 const token = process.env.CLOUDFLARE_API_TOKEN;
 
 if (!token) throw new Error("CLOUDFLARE_API_TOKEN is not configured.");
@@ -70,7 +70,7 @@ for (const accountId of accountIds) {
   }
 }
 
-const toolPattern = /^(?:\/(schedule|poll|attendance|split-bill|survey|team-divider|lottery-order|availability-match|packing-list|shared-checklist|seat-shuffle|travel-expense|candidate-ranking)\/?|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator)\/[a-z0-9-]+\/?)$/;
+const toolPattern = /^(?:\/(schedule|poll|attendance|split-bill|survey|team-divider|lottery-order|availability-match|packing-list|shared-checklist|seat-shuffle|travel-expense|candidate-ranking)\/?|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator|security|japan|office|game)\/[a-z0-9-]+\/?)$/;
 const totals = new Map();
 
 for (const row of rows) {
