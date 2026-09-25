@@ -293,10 +293,27 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
   await expect(page.locator("[data-league-table] tr")).toHaveCount(8);
+  await expect(page.locator("[data-squad-table] tr")).toHaveCount(18);
+  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
+  await expect(page.locator("[data-player-detail]")).toContainText("PAC");
+
   await page.selectOption("[data-formation]", "343");
+  await expect(page.locator("[data-lineup-slot]")).toHaveCount(11);
   await page.selectOption("[data-tactic]", "press");
-  await page.locator('[data-buy-player="0"]').click();
-  await expect(page.locator("[data-attack]")).not.toHaveText("68.0");
+
+  await page.locator('[data-buy-player="sato"]').click();
+  await expect(page.locator("[data-squad-table]")).toContainText("R. Sato");
+  await expect(page.locator("[data-squad-count]")).toHaveText("19 players");
+
+  await page.locator("[data-lineup-slot]").last().selectOption("sato");
+  await expect(page.locator("[data-pitch-lineup]")).toContainText("Sato");
+  await expect(page.locator("[data-player-detail]")).toContainText("R. Sato");
+
+  await page.selectOption("[data-market-filter]", "GK");
+  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(2);
+  await page.selectOption("[data-market-filter]", "ALL");
+  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
+
   await page.locator("[data-match]").click();
   await expect(page.locator("[data-match-feed] div")).toHaveCount(4);
   await expect(page.locator("[data-league-table]")).toContainText("Harbor City FC");
