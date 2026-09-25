@@ -6,7 +6,7 @@ test("ナンバーチェインを開始してヒント経路で得点できる",
   await expect(page.locator("[data-board] [data-cell]")).toHaveCount(36);
 
   await page.locator("[data-start]").click();
-  await expect(page.locator("[data-time]")).toHaveText(/60|59/);
+  await expect(page.locator("[data-time]")).toHaveText(/70|69/);
   await expect(page.locator("[data-hint]")).toBeEnabled();
 
   await page.locator("[data-hint]").click();
@@ -35,6 +35,18 @@ test("ナンバーチェインを開始してヒント経路で得点できる",
 
   await expect(page.locator("[data-score]")).not.toHaveText("0");
   await expect(page.locator("[data-status]")).toContainText("成功");
+});
+
+test("共通ゲームUIで状態表示とリトライが動く", async ({ page }) => {
+  await page.goto("/game/number-chain-10/");
+  await expect(page.locator("[data-game-status]")).toHaveText("準備OK");
+  await expect(page.locator("[data-game-retry]")).toBeVisible();
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-game-status]")).toHaveText("プレイ中");
+  await page.waitForTimeout(250);
+  await page.locator("[data-game-retry]").click();
+  await expect(page.locator("[data-number-chain]")).toHaveAttribute("data-state", "running");
+  await expect(page.locator("[data-time]")).toHaveText(/70|69/);
 });
 
 test("ゲームカテゴリページと端末ベストスコア表示が動く", async ({ page }) => {

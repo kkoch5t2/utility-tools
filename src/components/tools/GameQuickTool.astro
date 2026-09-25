@@ -9,7 +9,7 @@ const { meta } = Astro.props;
   <section class="game-card" data-number-chain data-state="ready">
     <div class="game-hero">
       <div>
-        <p class="game-kicker">60 SECOND PUZZLE</p>
+        <p class="game-kicker">70 SECOND PUZZLE</p>
         <h2>数字をなぞって、合計10。</h2>
         <p>上下左右・斜めにつながる数字を指でなぞって、合計が10になったら指を離す。連続成功でコンボ倍率が上がります。</p>
       </div>
@@ -18,12 +18,12 @@ const { meta } = Astro.props;
 
     <div class="game-stats" aria-label="ゲーム状況">
       <div><span>SCORE</span><strong data-score>0</strong></div>
-      <div><span>TIME</span><strong data-time>60</strong></div>
+      <div><span>TIME</span><strong data-time>70</strong></div>
       <div><span>COMBO</span><strong data-combo>×1</strong></div>
       <div><span>BEST</span><strong data-best>0</strong></div>
     </div>
 
-    <div class="game-status" data-status aria-live="polite">「ゲーム開始」を押すと60秒スタート。</div>
+    <div class="game-status" data-status aria-live="polite">「ゲーム開始」を押すと70秒スタート。</div>
 
     <div class="game-board-wrap">
       <div class="game-board" data-board role="grid" aria-label="6×6の数字パズル盤"></div>
@@ -40,14 +40,14 @@ const { meta } = Astro.props;
 
     <div class="game-actions">
       <button class="button button-primary game-start" type="button" data-start>ゲーム開始</button>
-      <button class="button button-secondary" type="button" data-hint disabled>ヒント <span data-hints>3</span></button>
+      <button class="button button-secondary" type="button" data-hint disabled>ヒント <span data-hints>4</span></button>
       <button class="button button-secondary" type="button" data-shuffle disabled>シャッフル -100</button>
     </div>
 
     <div class="game-rules">
       <div><strong>1</strong><span>隣り合う数字をなぞる</span></div>
       <div><strong>2</strong><span>合計10で指を離す</span></div>
-      <div><strong>3</strong><span>3秒以内の連続成功でコンボ</span></div>
+      <div><strong>3</strong><span>3.5秒以内の連続成功でコンボ</span></div>
     </div>
   </section>
 </ToolLayout>
@@ -70,14 +70,14 @@ const { meta } = Astro.props;
 
   const SIZE = 6;
   const TARGET = 10;
-  const DURATION = 60_000;
+  const DURATION = 70_000;
   const BEST_KEY = "utility-tools:number-chain-10:best";
 
   let board: number[][] = [];
   let score = 0;
   let best = 0;
   let combo = 1;
-  let hints = 3;
+  let hints = 4;
   let active = false;
   let dragging = false;
   let selected: number[] = [];
@@ -238,7 +238,7 @@ const { meta } = Astro.props;
 
     if (selectedSum === TARGET && selected.length >= 2) {
       const now = performance.now();
-      combo = lastClearAt && now - lastClearAt <= 3000 ? Math.min(combo + 1, 9) : 1;
+      combo = lastClearAt && now - lastClearAt <= 3500 ? Math.min(combo + 1, 9) : 1;
       lastClearAt = now;
       const base = 80 + selected.length * 60;
       const gained = base * combo;
@@ -331,7 +331,7 @@ const { meta } = Astro.props;
     clearHint();
     score = 0;
     combo = 1;
-    hints = 3;
+    hints = 4;
     lastClearAt = 0;
     active = true;
     dragging = false;
@@ -341,7 +341,7 @@ const { meta } = Astro.props;
     resetSelection();
     renderBoard();
     updateStats();
-    timeEl.textContent = "60";
+    timeEl.textContent = "70";
     timeEl.classList.remove("is-danger");
     statusEl.textContent = "スタート！ 数字をなぞって合計10を作ろう。";
     startButton.textContent = "最初から";
