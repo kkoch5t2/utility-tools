@@ -13,6 +13,10 @@
       {
         "name": "SCHEDULES",
         "class_name": "ScheduleRoom"
+      },
+      {
+        "name": "SHARED_TOOLS",
+        "class_name": "SharedToolRoom"
       }
     ]
   },
@@ -20,6 +24,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["ScheduleRoom"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["SharedToolRoom"]
     }
   ]
 }

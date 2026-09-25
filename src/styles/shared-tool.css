@@ -1,0 +1,40 @@
+.shared-page{padding-top:32px;max-width:1040px}
+.shared-page [hidden]{display:none!important}
+.shared-heading{max-width:820px;margin:26px 0 28px}
+.shared-heading h1{margin:5px 0 10px;font-size:clamp(32px,5vw,48px);letter-spacing:-.035em;line-height:1.15}
+.shared-heading>p:not(.eyebrow){margin:0;color:var(--muted);font-size:16px;line-height:1.75}
+.shared-card{padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.shared-field{display:grid;gap:7px;margin-bottom:18px}
+.shared-field label{font-size:13px;font-weight:800}
+.shared-field label span{color:var(--accent);font-size:11px}
+.shared-field input,.shared-field textarea,.shared-field select{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit}
+.shared-field input,.shared-field select{height:44px;padding:0 12px}.shared-field textarea{padding:11px 12px;resize:vertical;line-height:1.65}
+.shared-field small{color:var(--muted);font-size:11px}
+.shared-field input:focus,.shared-field textarea:focus,.shared-field select:focus{outline:2px solid color-mix(in srgb,var(--accent) 28%,transparent);border-color:var(--accent)}
+.shared-storage{margin:4px 0 18px;padding:13px 15px;border:1px solid #cbdcf4;border-radius:11px;background:#f2f7ff}
+.shared-storage strong{font-size:12px;color:#234b80}.shared-storage p{margin:4px 0 0;color:#58708f;font-size:11px;line-height:1.6}
+.shared-error{margin:0 0 12px;padding:10px 12px;border-radius:9px;background:#fff0f0;color:#b42318;font-size:12px}
+.shared-submit{width:100%;min-height:46px}
+.shared-loading{display:grid;place-items:center;min-height:260px;color:var(--muted);font-size:13px}
+.shared-loader{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:shared-spin .7s linear infinite}
+@keyframes shared-spin{to{transform:rotate(360deg)}}
+.shared-created{display:flex;align-items:center;gap:10px;margin:24px 0 12px;padding:12px 15px;border:1px solid #b8dfc2;border-radius:12px;background:#effbf2;color:#236b35;font-size:12px}
+.shared-created strong{font-size:13px}
+.shared-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.shared-meta span{padding:5px 9px;border-radius:999px;background:var(--surface-muted);color:var(--muted);font-size:11px;font-weight:700}
+.shared-sharebox{margin-bottom:16px;padding:16px;border:1px solid #c9dcf7;border-radius:14px;background:#f5f9ff}
+.shared-sharebox>div:first-child{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}.shared-sharebox strong{font-size:13px}.shared-sharebox span{color:var(--muted);font-size:11px}
+.shared-share-row{display:flex;gap:8px}.shared-share-row input{width:100%;height:42px;padding:0 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:12px}.shared-share-row button{flex:0 0 auto}
+.shared-copy{margin:7px 0 0;color:#237a3b;font-size:11px;font-weight:800}.shared-privacy{margin:8px 0 0;color:#687a91;font-size:10px;line-height:1.55}
+.shared-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.8fr);gap:16px;align-items:start}
+.shared-section-title{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}.shared-section-title h2{margin:2px 0 0;font-size:21px}
+.shared-text-button,.shared-danger{border:0;background:transparent;cursor:pointer;font:inherit}.shared-text-button{padding:4px;color:var(--accent);font-size:11px;font-weight:800}.shared-danger{color:#b42318;font-size:11px;font-weight:800}
+.shared-actions{display:flex;gap:8px;flex-wrap:wrap}.shared-actions .button-primary{flex:1;min-width:160px}
+.shared-empty{margin:12px 0 0;color:var(--muted);font-size:12px}
+.shared-footer-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px 0 10px}
+.shared-info{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin:52px 0 18px}.shared-info-block{padding:20px;border:1px solid var(--line);border-radius:15px;background:var(--surface)}
+.shared-info-block h2{margin:3px 0 14px;font-size:21px}.shared-howto{display:grid;gap:10px}.shared-howto>div{display:grid;gap:3px;padding:12px;border-radius:11px;background:var(--surface-muted)}
+.shared-howto strong{font-size:13px}.shared-howto span{color:var(--muted);font-size:11px;line-height:1.6}
+.shared-faq details{border-top:1px solid var(--line)}.shared-faq details:last-child{border-bottom:1px solid var(--line)}.shared-faq summary{padding:11px 0;cursor:pointer;font-size:12px;font-weight:800}.shared-faq details p{margin:0 0 12px;color:var(--muted);font-size:11px;line-height:1.7}
+.shared-not-found{text-align:center;padding:80px 20px}.shared-not-found h2{font-size:28px}.shared-not-found p{color:var(--muted);margin-bottom:20px}
+@media(max-width:800px){.shared-grid,.shared-info{grid-template-columns:1fr}.shared-share-row{flex-direction:column}.shared-share-row button{width:100%}}
+@media(max-width:520px){.shared-page{padding-top:22px}.shared-card{padding:16px}.shared-created{align-items:flex-start;flex-direction:column;gap:2px}.shared-footer-actions{align-items:flex-start;flex-direction:column}.shared-footer-actions .button{width:100%;text-align:center}}

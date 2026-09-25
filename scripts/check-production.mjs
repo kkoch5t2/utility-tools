@@ -39,8 +39,8 @@ console.log(`Checked ${urls.length} production URLs.`);
 try {
   const healthResponse = await fetchWithTimeout(base + "/api/health");
   const health = await healthResponse.json().catch(() => null);
-  if (!healthResponse.ok || health?.ok !== true || health?.service !== "schedule") {
-    failures.push(`${base}/api/health - invalid schedule API health response`);
+  if (!healthResponse.ok || health?.ok !== true || health?.service !== "shared-tools") {
+    failures.push(`${base}/api/health - invalid shared tools API health response`);
   }
 } catch (error) {
   failures.push(`${base}/api/health - ${error instanceof Error ? error.message : String(error)}`);

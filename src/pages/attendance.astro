@@ -1,0 +1,69 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="出欠確認ツール｜参加・未定・不参加をURL共有で集計";
+const description="イベントの出欠を参加・未定・不参加で集め、人数とコメントを自動集計できる無料ツールです。登録不要で共有URLだけで使えます。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"出欠確認ツール",url:siteConfig.url+"/attendance/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="出欠確認ツール｜無料Web便利ツール集">
+  <div class="shell shared-page">
+    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span aria-current="page">出欠確認</span></nav>
+    <div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+
+    <section data-create hidden>
+      <header class="shared-heading"><p class="eyebrow">ATTENDANCE</p><h1>出欠確認</h1><p>日時が決まったイベントの参加・未定・不参加を、共有URLだけで集められます。</p></header>
+      <div class="shared-card">
+        <form data-create-form>
+          <div class="shared-field"><label for="attendance-title">イベント名 <span>必須</span></label><input id="attendance-title" name="title" maxlength="100" required placeholder="例：10月チーム飲み会" /></div>
+          <div class="shared-field"><label for="attendance-date">日時</label><input id="attendance-date" name="eventDate" maxlength="100" placeholder="例：10/3(金) 19:00〜" /></div>
+          <div class="shared-field"><label for="attendance-place">場所</label><input id="attendance-place" name="place" maxlength="120" placeholder="例：東京駅周辺" /></div>
+          <div class="shared-field"><label for="attendance-description">補足</label><textarea id="attendance-description" name="description" rows="3" maxlength="800" placeholder="会費や集合場所など"></textarea></div>
+          <div class="shared-storage"><strong>回答データを最大90日保存します</strong><p>イベント情報・回答者名・出欠・コメントを共有のためCloudflare上に保存します。</p></div>
+          <p class="shared-error" data-create-error hidden></p>
+          <button class="button button-primary shared-submit" type="submit" data-create-button>出欠確認を作成</button>
+        </form>
+      </div>
+    </section>
+
+    <section data-event hidden>
+      <div class="shared-created" data-created hidden><strong>出欠確認を作成しました</strong><span>共有URLを参加者へ送ってください。</span></div>
+      <header class="shared-heading"><p class="eyebrow">ATTENDANCE</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-date hidden></span><span data-place hidden></span><span data-expiry></span></div></header>
+      <div class="shared-sharebox"><div><strong>共有URL</strong><span>URLを知っている人が回答できます</span></div><div class="shared-share-row"><input data-share-url readonly /><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+
+      <div class="attendance-counts"><div class="yes"><strong data-count-yes>0</strong><span>参加</span></div><div class="maybe"><strong data-count-maybe>0</strong><span>未定</span></div><div class="no"><strong data-count-no>0</strong><span>不参加</span></div></div>
+
+      <div class="shared-grid">
+        <section class="shared-card">
+          <div class="shared-section-title"><div><p class="eyebrow">ANSWER</p><h2 data-response-heading>回答する</h2></div></div>
+          <form data-response-form>
+            <div class="shared-field"><label for="attendance-name">名前 <span>必須</span></label><input id="attendance-name" data-name maxlength="50" required placeholder="例：山田" /></div>
+            <div class="attendance-status">
+              <label class="yes"><input type="radio" name="attendance-status" value="yes"><span>○ 参加</span></label>
+              <label class="maybe"><input type="radio" name="attendance-status" value="maybe"><span>△ 未定</span></label>
+              <label class="no"><input type="radio" name="attendance-status" value="no"><span>× 不参加</span></label>
+            </div>
+            <div class="shared-field"><label for="attendance-comment">コメント</label><textarea id="attendance-comment" data-comment rows="2" maxlength="500" placeholder="20時から参加、途中退出など"></textarea></div>
+            <p class="shared-error" data-response-error hidden></p>
+            <div class="shared-actions"><button class="button button-primary" type="submit" data-response-submit>回答を送信</button><button class="button button-secondary" type="button" data-response-delete hidden>自分の回答を削除</button></div>
+          </form>
+        </section>
+        <aside class="shared-card"><p class="eyebrow">MEMBERS</p><h2 class="side-title">回答一覧</h2><div class="attendance-list" data-list></div><p class="shared-empty" data-empty>まだ回答はありません。</p></aside>
+      </div>
+      <div class="shared-footer-actions"><a class="button button-secondary" href="/attendance/">新しい出欠確認を作る</a><button class="shared-danger" type="button" data-delete hidden>この出欠確認を削除</button></div>
+    </section>
+
+    <section class="shared-not-found" data-not-found hidden><h2>出欠確認が見つかりません</h2><p>URLが違うか、保存期限を過ぎた可能性があります。</p><a class="button button-primary" href="/attendance/">新しく作成する</a></section>
+
+    <section class="shared-info"><div class="shared-info-block"><p class="eyebrow">HOW TO USE</p><h2>使い方</h2><div class="shared-howto"><div><strong>1. イベントを作る</strong><span>日時・場所を入力。</span></div><div><strong>2. URL共有</strong><span>参加者へリンクを送る。</span></div><div><strong>3. 人数確認</strong><span>参加・未定・不参加を自動集計。</span></div></div></div><div class="shared-info-block shared-faq"><p class="eyebrow">FAQ</p><h2>よくある質問</h2><details><summary>回答を後から変えられますか？</summary><p>同じ端末・ブラウザなら自分の回答を編集できます。</p></details><details><summary>回答者名は誰に見えますか？</summary><p>共有URLを知っている人には回答者名・出欠・コメントが表示されます。</p></details></div></section>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(appJson)} />
+  <script src="../scripts/attendance.ts"></script>
+</BaseLayout>
+<style>
+.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.side-title{margin:3px 0 14px;font-size:21px}
+.attendance-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.attendance-counts>div{display:grid;place-items:center;padding:14px;border-radius:13px;background:var(--surface);border:1px solid var(--line)}.attendance-counts strong{font-size:26px}.attendance-counts span{font-size:11px;font-weight:800}.attendance-counts .yes strong{color:#218543}.attendance-counts .maybe strong{color:#ad6b08}.attendance-counts .no strong{color:#b42318}
+.attendance-status{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}.attendance-status label{position:relative}.attendance-status input{position:absolute;opacity:0}.attendance-status span{display:grid;place-items:center;height:48px;border:1px solid var(--line);border-radius:11px;font-size:13px;font-weight:800;cursor:pointer}.attendance-status .yes input:checked+span{background:#ecf9f0;border-color:#35a85b;color:#218543}.attendance-status .maybe input:checked+span{background:#fff7e8;border-color:#e9a23b;color:#ad6b08}.attendance-status .no input:checked+span{background:#fff0f0;border-color:#df5c5c;color:#b42318}
+.attendance-list{display:grid;gap:8px}.attendance-person{padding:11px;border:1px solid var(--line);border-radius:10px}.attendance-person-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;font-weight:800}.attendance-person p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.5}.attendance-person .yes{color:#218543}.attendance-person .maybe{color:#ad6b08}.attendance-person .no{color:#b42318}
+@media(max-width:520px){.attendance-status{grid-template-columns:1fr}.attendance-counts strong{font-size:22px}}
+</style>

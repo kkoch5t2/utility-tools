@@ -90,6 +90,15 @@ export const useCasePages: readonly UseCasePage[] = [
     bullets: ["動画容量や解像度を小さくしたい", "必要な部分だけ切り抜いたり回転したい", "動画からMP3・WebM・GIFを作りたい"],
     toolIds: ["video-compress","video-trim","video-mute","video-resize","video-rotate","video-speed","video-to-mp3","video-to-webm","video-to-gif"],
   },
+  {
+    slug: "group-coordination",
+    label: "みんなで調整・共有する",
+    title: "共有・調整の無料ツール集｜日程調整・匿名投票・出欠・割り勘",
+    description: "日程調整、匿名投票、出欠確認、割り勘・立替精算など、複数人でURLを共有して使える無料ツールをまとめています。",
+    intro: "飲み会、旅行、イベント、チーム活動など、複数人で決める・集める・精算する作業をURL共有だけで進められます。",
+    bullets: ["候補日や出欠をみんなから集めたい", "店や行き先を匿名投票で決めたい", "旅行や飲み会の立替をまとめて精算したい"],
+    toolIds: ["schedule-coordination","anonymous-poll","attendance-check","shared-split-bill"],
+  },
 ] as const;
 
 export const useCasePageBySlug = new Map(useCasePages.map((page) => [page.slug, page]));

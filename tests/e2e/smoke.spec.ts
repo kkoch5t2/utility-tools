@@ -180,7 +180,7 @@ test("最近使ったツールを端末内履歴から表示・削除できる",
 test("目的別ページから関連ツールを探せる", async ({ page }) => {
   await page.goto("/use-case/");
   await expect(page.getByRole("heading", { name: "やりたいことから探す" })).toBeVisible();
-  await expect(page.locator(".purpose-card")).toHaveCount(9);
+  await expect(page.locator(".purpose-card")).toHaveCount(10);
 
   await page.goto("/use-case/video-edit/");
   await expect(page.getByRole("heading", { name: "動画を軽く・編集する" })).toBeVisible();
