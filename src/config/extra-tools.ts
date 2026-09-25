@@ -1,5 +1,5 @@
-export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special";
-export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share";
+export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special" | "security";
+export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share" | "security";
 
 export type ExtraToolMeta = {
   id: string;
@@ -1125,6 +1125,55 @@ export const extraTools: ExtraToolMeta[] = [
     title: "証明写真サイズ作成｜履歴書・パスポート用にトリミング",
     description: "写真を中央基準でトリミングし、履歴書30×40mmやパスポート35×45mm相当の画像サイズへブラウザ内で整えます。",
     faqs: [["履歴書用は何mmですか？", "このツールでは一般的な履歴書写真の縦40mm×横30mmをプリセットにしています。"], ["顔位置も自動調整されますか？", "いいえ。中央基準のトリミングです。公的書類へ使う場合は各提出先の最新要件と顔位置を必ず確認してください。"], privacyFaq],
+  },
+  {
+    id: "security-password-strength", mode: "password-strength", family: "security", category: "セキュリティ", categoryKey: "security",
+    href: "/security/password-strength/", name: "パスワード強度チェッカー",
+    title: "パスワード強度チェッカー｜長さ・文字種・弱いパターンを確認",
+    description: "パスワードを送信せず、長さ・文字種・よくある単語や連続文字から簡易的な強度と改善ポイントを確認します。",
+    faqs: [["入力したパスワードは送信されますか？", "いいえ。判定はブラウザ内だけで行います。"], ["安全性を完全に判定できますか？", "いいえ。簡易評価です。使い回しを避け、可能ならパスワードマネージャーや多要素認証も利用してください。"], privacyFaq],
+  },
+  {
+    id: "security-log-mask", mode: "log-mask", family: "security", category: "セキュリティ", categoryKey: "security",
+    href: "/security/log-mask/", name: "ログ個人情報・トークン伏字化",
+    title: "ログマスキング｜IP・メール・電話・Bearerトークンを伏字化",
+    description: "共有前のログからメールアドレス、電話番号、IPv4、Bearer/APIトークン、Cookie値をブラウザ内で伏字化します。",
+    faqs: [["何を伏字化できますか？", "メール、電話番号、IPv4、Bearer/APIトークン、Cookie値に対応します。"], ["すべての秘密情報を検出できますか？", "いいえ。ログ形式は多様なので、共有前に結果を目視確認してください。"], privacyFaq],
+  },
+  {
+    id: "security-url-privacy", mode: "url-privacy", family: "security", category: "セキュリティ", categoryKey: "security",
+    href: "/security/url-privacy/", name: "URL追跡・危険パラメータ確認",
+    title: "URLパラメータ確認｜UTM・追跡ID・認証情報らしい値をチェック",
+    description: "URL内のUTMやgclid等の追跡パラメータ、token・session・email等の注意が必要なパラメータ名を確認し、追跡値を除いたURLも作ります。",
+    faqs: [["URLへトークンを含めるのは危険ですか？", "URLは履歴・ログ・Refererなどへ残る場合があるため、認証情報や個人情報を含める設計は慎重に扱う必要があります。"], ["追跡パラメータだけ削除できますか？", "はい。代表的なUTM・広告計測パラメータを除いたURLを表示します。"], privacyFaq],
+  },
+  {
+    id: "security-file-hash-compare", mode: "hash-compare", family: "security", category: "セキュリティ", categoryKey: "security",
+    href: "/security/file-hash-compare/", name: "ファイルSHA-256比較",
+    title: "ファイルハッシュ比較｜2ファイルのSHA-256一致を確認",
+    description: "2つのファイルをアップロードせずブラウザ内でSHA-256計算し、内容が完全に同一か比較します。",
+    faqs: [["ファイル名が違っても比較できますか？", "はい。ファイル名ではなく内容から計算したSHA-256を比較します。"], ["大きなファイルも使えますか？", "端末のメモリ内で処理するため、非常に大きいファイルではブラウザ負荷が高くなる場合があります。"], privacyFaq],
+  },
+  {
+    id: "security-image-metadata-check", mode: "image-metadata-check", family: "security", category: "セキュリティ", categoryKey: "security",
+    href: "/security/image-metadata-check/", name: "画像EXIF・メタデータ確認",
+    title: "画像EXIF確認｜位置情報・EXIF・XMPの有無をブラウザでチェック",
+    description: "JPG・PNG・WebPにEXIFやGPS参照、XMP・テキスト系メタデータが含まれていないかをブラウザ内で簡易確認します。",
+    faqs: [["GPS位置情報そのものを表示しますか？", "このツールは位置情報の具体値ではなく、JPEGのGPS参照などメタデータの存在を簡易確認します。"], ["削除もできますか？", "EXIF・画像メタデータ削除ツールで、元メタデータを引き継がない画像として再出力できます。"], privacyFaq],
+  },
+  {
+    id: "security-pdf-metadata", mode: "pdf-metadata", family: "security", category: "セキュリティ", categoryKey: "security",
+    href: "/security/pdf-metadata/", name: "PDFメタデータ確認・削除",
+    title: "PDFメタデータ確認・削除｜作成者・タイトル等をブラウザで確認",
+    description: "PDFのタイトル、作成者、件名、キーワード、Creator / Producer、作成・更新日時を確認し、元メタデータを引き継がないPDFを作れます。",
+    faqs: [["PDFの本文は変わりますか？", "削除保存ではページを新しいPDFへコピーし、元の文書メタデータを引き継がない形で出力します。"], ["完全に痕跡がなくなりますか？", "文書プロパティの削除を目的とした簡易ツールです。PDF内部の本文・注釈・埋め込みファイルなど別領域に情報が含まれる可能性はあります。"], privacyFaq],
+  },
+  {
+    id: "security-secret-scan", mode: "secret-scan", family: "security", category: "セキュリティ", categoryKey: "security",
+    href: "/security/secret-scan/", name: "APIキー・秘密情報チェック",
+    title: "秘密情報チェック｜APIキー・JWT・秘密鍵らしい文字列を検出",
+    description: "公開前の文章・設定・ログからAWS Access Key ID、GitHub/Slackトークン、JWT、Bearerトークン、PEM秘密鍵などの代表的なパターンを簡易検出します。",
+    faqs: [["検出した秘密情報は送信されますか？", "いいえ。文字列パターンの確認はブラウザ内だけで行います。"], ["検出されなければ公開して安全ですか？", "いいえ。対応していない形式や文脈依存の秘密情報もあるため、最終確認は必要です。"], privacyFaq],
   },
 ];
 

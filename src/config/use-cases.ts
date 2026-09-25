@@ -91,6 +91,15 @@ export const useCasePages: readonly UseCasePage[] = [
     toolIds: ["video-compress","video-trim","video-mute","video-resize","video-rotate","video-speed","video-to-mp3","video-to-webm","video-to-gif"],
   },
   {
+    slug: "privacy-security",
+    label: "公開前に個人情報・秘密情報を確認する",
+    title: "個人情報・セキュリティ確認の無料ツール集｜ログ・URL・EXIF・PDF",
+    description: "ログのマスキング、URLの追跡・機密パラメータ確認、画像EXIF、PDFメタデータ、秘密情報チェックなどをブラウザ内で行える無料ツールをまとめています。",
+    intro: "ログや画像、PDF、URL、設定ファイルを外部へ共有する前に、残したくない情報が含まれていないか確認・除去する用途向けです。",
+    bullets: ["ログや文章から個人情報・トークンを伏字化したい", "画像やPDFのメタデータを公開前に確認したい", "URLや設定ファイルに秘密情報が残っていないか確認したい"],
+    toolIds: ["security-password-strength","privacy-mask","security-log-mask","security-url-privacy","security-file-hash-compare","security-image-metadata-check","remove-image-metadata","security-pdf-metadata","security-secret-scan"],
+  },
+  {
     slug: "group-coordination",
     label: "みんなで調整・共有する",
     title: "共有・調整の無料ツール集｜日程調整・匿名投票・出欠・割り勘",

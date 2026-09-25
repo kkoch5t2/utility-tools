@@ -26,7 +26,8 @@ const relatedCategoryKeys: Record<CategoryMeta["key"], CategoryMeta["key"][]> = 
   japanese: ["text", "date", "developer"],
   date: ["calculator", "share", "japanese"],
   calculator: ["date", "share", "developer"],
-  developer: ["json", "text", "csv"],
+  developer: ["security", "json", "text"],
+  security: ["developer", "text", "pdf"],
   share: ["date", "calculator", "text"],
 };
 const relatedCategories = relatedCategoryKeys[category.key]

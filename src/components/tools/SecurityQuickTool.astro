@@ -1,0 +1,117 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import ErrorMessage from "../feedback/ErrorMessage.astro";
+import SuccessMessage from "../feedback/SuccessMessage.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  <section class="tool-card security-tool" data-security-tool data-mode={meta.mode}>
+    <div class="privacy-note"><span>🔒</span><div><strong>ブラウザ内だけで処理</strong><br />入力した文字列やファイルは外部サーバーへ送信しません。</div></div>
+    {meta.mode === "password-strength" && <>
+      <div class="field"><label for="security-password">確認するパスワード</label><input id="security-password" data-password type="password" autocomplete="new-password" placeholder="パスワードを入力" /></div>
+      <label class="checkbox-row"><input type="checkbox" data-show-password /> 入力内容を表示</label>
+      <div class="strength-meter" aria-hidden="true"><span data-strength-bar></span></div>
+      <p class="inline-note" data-strength-label>入力すると強度を確認できます。</p>
+    </>}
+    {meta.mode === "log-mask" && <>
+      <div class="field"><label for="security-log">伏字化するログ</label><textarea id="security-log" class="textarea tall" data-source placeholder={"例:\nuser@example.com 192.168.1.25 Authorization: Bearer abcdef..."}></textarea></div>
+      <div class="mask-options"><label><input type="checkbox" data-mask="email" checked /> メール</label><label><input type="checkbox" data-mask="phone" checked /> 電話</label><label><input type="checkbox" data-mask="ip" checked /> IPv4</label><label><input type="checkbox" data-mask="bearer" checked /> Bearer/APIトークン</label><label><input type="checkbox" data-mask="cookie" checked /> Cookie値</label></div>
+    </>}
+    {meta.mode === "url-privacy" && <>
+      <div class="field"><label for="security-url">確認するURL</label><input id="security-url" data-url type="url" placeholder="https://example.com/?utm_source=x&token=..." /></div>
+      <p class="inline-note">追跡パラメータと、URLへ載せない方がよい認証・個人情報系パラメータを確認します。</p>
+    </>}
+    {meta.mode === "hash-compare" && <div class="settings-grid"><div class="field"><label for="hash-file-a">ファイルA</label><input id="hash-file-a" data-file-a type="file" /></div><div class="field"><label for="hash-file-b">ファイルB</label><input id="hash-file-b" data-file-b type="file" /></div></div>}
+    {meta.mode === "image-metadata-check" && <>
+      <div class="field"><label for="image-meta-file">画像を選択</label><input id="image-meta-file" data-file type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" /></div>
+      <p class="inline-note">JPEGのEXIF/GPS参照、PNGのeXIf・テキストチャンク、WebPのEXIF/XMPチャンクの有無を確認します。</p>
+    </>}
+    {meta.mode === "pdf-metadata" && <>
+      <div class="field"><label for="pdf-meta-file">PDFを選択</label><input id="pdf-meta-file" data-file type="file" accept=".pdf,application/pdf" /></div>
+      <p class="inline-note">タイトル、作成者、件名、キーワード、Creator / Producer、作成・更新日時を確認できます。</p>
+    </>}
+    {meta.mode === "secret-scan" && <>
+      <div class="field"><label for="secret-source">公開前に確認する文章・設定・ログ</label><textarea id="secret-source" class="textarea tall" data-source placeholder={"例:\nAuthorization: Bearer ...\nAWS_ACCESS_KEY_ID=...\n-----BEGIN PRIVATE KEY-----"}></textarea></div>
+      <p class="inline-note">代表的な秘密情報らしい文字列を検出します。実際の有効性は検証しません。</p>
+    </>}
+    <div class="actions">
+      <button class="button button-primary" type="button" data-run>{meta.mode === "password-strength" ? "強度を確認" : "確認する"}</button>
+      <button class="button button-secondary" type="button" data-clear>クリア</button>
+      <button class="button button-secondary" type="button" data-copy>結果をコピー</button>
+      {meta.mode === "pdf-metadata" && <button class="button button-secondary" type="button" data-remove-pdf hidden>個人メタデータを削除して保存</button>}
+    </div>
+    <ErrorMessage /><SuccessMessage />
+    <div class="field result-field"><label for="security-result">結果</label><textarea id="security-result" class="textarea tall" data-result readonly></textarea></div>
+  </section>
+</ToolLayout>
+<script>
+  import { downloadBlob } from "../../core/download/download-file";
+  const root=document.querySelector<HTMLElement>("[data-security-tool]")!, mode=root.dataset.mode!;
+  const run=root.querySelector<HTMLButtonElement>("[data-run]")!, clear=root.querySelector<HTMLButtonElement>("[data-clear]")!, copy=root.querySelector<HTMLButtonElement>("[data-copy]")!, result=root.querySelector<HTMLTextAreaElement>("[data-result]")!;
+  const errorBox=root.querySelector<HTMLElement>("[data-error-box]")!, successBox=root.querySelector<HTMLElement>("[data-success-box]")!;
+  const setMsg=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg;}, hex=(buffer:ArrayBuffer)=>Array.from(new Uint8Array(buffer)).map(v=>v.toString(16).padStart(2,"0")).join("");
+  const mask=(value:string)=>value.length<=8?"***":value.slice(0,4)+"…"+value.slice(-4), printable=(value:string|undefined|null)=>value?.trim()?value.trim():"（なし）";
+  function passwordStrength(){
+    const value=root.querySelector<HTMLInputElement>("[data-password]")!.value;if(!value)throw new Error("パスワードを入力してください。");
+    let score=Math.min(60,value.length*4);const classes=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(re=>re.test(value)).length;score+=classes*8;
+    const lower=value.toLowerCase(), common=["password","qwerty","123456","letmein","admin","welcome","iloveyou"];
+    if(common.some(x=>lower.includes(x)))score-=35;if(/(.)\1{2,}/.test(value))score-=15;if(/(?:1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|qwer)/i.test(value))score-=12;if(value.length<12)score-=12;score=Math.max(0,Math.min(100,score));
+    const label=score>=80?"強い":score>=60?"やや強い":score>=40?"普通":score>=20?"弱い":"非常に弱い", suggestions:string[]=[];
+    if(value.length<14)suggestions.push("14文字以上にすると推測耐性を上げやすくなります。");if(classes<3)suggestions.push("英大文字・小文字・数字・記号を組み合わせてください。");if(common.some(x=>lower.includes(x)))suggestions.push("よく使われる単語・文字列を避けてください。");if(/(.)\1{2,}/.test(value))suggestions.push("同じ文字の3回以上の連続を避けてください。");if(!suggestions.length)suggestions.push("使い回しを避け、サービスごとに異なる値を使ってください。");
+    result.value=["評価: "+label,"スコア: "+score+" / 100","長さ: "+value.length+"文字","文字種: "+classes+" / 4","",...suggestions.map(x=>"・"+x)].join("\n");
+    const bar=root.querySelector<HTMLElement>("[data-strength-bar]");if(bar)bar.style.width=score+"%";const meter=root.querySelector<HTMLElement>("[data-strength-label]");if(meter)meter.textContent="評価: "+label+"（"+score+"/100）";
+  }
+  function logMask(){
+    const source=root.querySelector<HTMLTextAreaElement>("[data-source]")!;if(!source.value.trim())throw new Error("ログを入力してください。");const enabled=(key:string)=>root.querySelector<HTMLInputElement>('[data-mask="'+key+'"]')?.checked;let out=source.value,count=0;
+    if(enabled("email"))out=out.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,m=>{count++;const [a,b]=m.split("@");return a.slice(0,1)+"***@"+b;});
+    if(enabled("phone"))out=out.replace(/(?<!\d)0\d{1,4}[-\s]?\d{1,4}[-\s]?\d{3,4}(?!\d)/g,m=>{count++;return "***-****-"+m.replace(/\D/g,"").slice(-4);});
+    if(enabled("ip"))out=out.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g,m=>{const p=m.split(".");if(!p.every(x=>Number(x)<=255))return m;count++;return p[0]+"."+p[1]+".xxx.xxx";});
+    if(enabled("bearer"))out=out.replace(/\b(Bearer\s+)([A-Za-z0-9._~+/=-]{8,})/gi,(_,p,v)=>{count++;return p+mask(v);}).replace(/\b((?:api[_-]?key|token|secret|authorization)\s*[:=]\s*)([^\s,;]{8,})/gi,(_,p,v)=>{count++;return p+mask(v);});
+    if(enabled("cookie"))out=out.replace(/\b((?:cookie|set-cookie)\s*:\s*)([^\r\n]+)/gi,(_,p)=>{count++;return p+"[MASKED]";});result.value=out;setMsg(successBox,count+"か所を伏字化しました。");
+  }
+  function urlPrivacy(){
+    const input=root.querySelector<HTMLInputElement>("[data-url]")!;let url:URL;try{url=new URL(input.value.trim());}catch{throw new Error("有効なURLを入力してください。");}if(!/^https?:$/.test(url.protocol))throw new Error("http / https URLを入力してください。");
+    const tracking=new Set(["gclid","dclid","fbclid","msclkid","yclid","mc_cid","mc_eid","_hsenc","_hsmi"]), sensitive=/^(?:token|access_token|id_token|refresh_token|session|sessionid|sid|auth|authorization|api[_-]?key|apikey|secret|password|passwd|email|mail|phone|tel)$/i;
+    const trackKeys:string[]=[],secretKeys:string[]=[];for(const [key] of url.searchParams){if(key.toLowerCase().startsWith("utm_")||tracking.has(key.toLowerCase()))trackKeys.push(key);if(sensitive.test(key))secretKeys.push(key);}
+    const clean=new URL(url.toString());[...clean.searchParams.keys()].forEach(key=>{if(key.toLowerCase().startsWith("utm_")||tracking.has(key.toLowerCase()))clean.searchParams.delete(key);});
+    result.value=["ホスト: "+url.host,"HTTPS: "+(url.protocol==="https:"?"はい":"いいえ"),"追跡パラメータ: "+(trackKeys.length?trackKeys.join(", "):"なし"),"注意が必要なパラメータ名: "+(secretKeys.length?secretKeys.join(", "):"なし"),"","追跡パラメータ除去URL:",clean.toString(),"",secretKeys.length?"※認証情報・個人情報らしい値がURLに含まれる可能性があります。URLは履歴・ログ・Referer等へ残り得るため確認してください。":"機密情報らしいパラメータ名は検出されませんでした。"].join("\n");
+  }
+  async function hashCompare(){
+    const a=root.querySelector<HTMLInputElement>("[data-file-a]")!.files?.[0],b=root.querySelector<HTMLInputElement>("[data-file-b]")!.files?.[0];if(!a||!b)throw new Error("比較する2ファイルを選択してください。");
+    const [ha,hb]=await Promise.all([crypto.subtle.digest("SHA-256",await a.arrayBuffer()),crypto.subtle.digest("SHA-256",await b.arrayBuffer())]),ah=hex(ha),bh=hex(hb),same=ah===bh;
+    result.value=["判定: "+(same?"同一内容です":"内容が異なります"),"","ファイルA: "+a.name,"SHA-256: "+ah,"","ファイルB: "+b.name,"SHA-256: "+bh].join("\n");setMsg(successBox,same?"SHA-256が一致しました。":"SHA-256は一致しません。");
+  }
+  function asciiAt(bytes:Uint8Array,start:number,length:number){return String.fromCharCode(...bytes.slice(start,start+length));}
+  function jpegExif(bytes:Uint8Array){let exif=false,gps=false;for(let i=2;i+4<bytes.length;){if(bytes[i]!==0xff){i++;continue;}const marker=bytes[i+1];if(marker===0xd9||marker===0xda)break;const len=(bytes[i+2]<<8)|bytes[i+3];if(len<2||i+2+len>bytes.length)break;
+    if(marker===0xe1&&asciiAt(bytes,i+4,6)==="Exif\0\0"){exif=true;const t=i+10;if(t+8<bytes.length){const little=asciiAt(bytes,t,2)==="II",u16=(p:number)=>little?(bytes[p]|bytes[p+1]<<8):(bytes[p]<<8|bytes[p+1]),u32=(p:number)=>little?(bytes[p]|bytes[p+1]<<8|bytes[p+2]<<16|bytes[p+3]<<24)>>>0:((bytes[p]<<24|bytes[p+1]<<16|bytes[p+2]<<8|bytes[p+3])>>>0),off=u32(t+4),ifd=t+off;if(ifd+2<bytes.length){const n=u16(ifd);for(let e=0;e<n;e++){const p=ifd+2+e*12;if(p+12>bytes.length)break;if(u16(p)===0x8825)gps=true;}}}}i+=2+len;}return {exif,gps};}
+  async function imageMetadata(){
+    const file=root.querySelector<HTMLInputElement>("[data-file]")!.files?.[0];if(!file)throw new Error("画像を選択してください。");const bytes=new Uint8Array(await file.arrayBuffer());let details:string[]=[];
+    if(file.type==="image/jpeg"||/\.jpe?g$/i.test(file.name)){const x=jpegExif(bytes);details=["EXIF: "+(x.exif?"あり":"なし"),"GPS参照: "+(x.gps?"あり":"検出なし")];}
+    else if(file.type==="image/png"||/\.png$/i.test(file.name)){const text=new TextDecoder("latin1").decode(bytes);details=["eXIfチャンク: "+(text.includes("eXIf")?"あり":"なし"),"テキスト系チャンク: "+(text.includes("tEXt")||text.includes("iTXt")||text.includes("zTXt")?"あり":"検出なし")];}
+    else if(file.type==="image/webp"||/\.webp$/i.test(file.name)){const text=new TextDecoder("latin1").decode(bytes);details=["EXIFチャンク: "+(text.includes("EXIF")?"あり":"なし"),"XMPチャンク: "+(text.includes("XMP ")?"あり":"なし")];}else throw new Error("JPG・PNG・WebP画像を選択してください。");
+    result.value=["ファイル: "+file.name,"種類: "+(file.type||"不明"),"容量: "+file.size.toLocaleString()+" bytes","",...details,"","※簡易検査です。EXIF削除ツールで再出力すると元画像の付加メタデータを引き継がず保存できます。"].join("\n");
+  }
+  async function pdfMetadata(){
+    const file=root.querySelector<HTMLInputElement>("[data-file]")!.files?.[0];if(!file)throw new Error("PDFを選択してください。");const { PDFDocument }=await import("pdf-lib"),doc=await PDFDocument.load(await file.arrayBuffer(),{updateMetadata:false}),date=(v:Date|undefined)=>v?v.toISOString():"（なし）";
+    result.value=["ファイル: "+file.name,"ページ数: "+doc.getPageCount(),"タイトル: "+printable(doc.getTitle()),"作成者: "+printable(doc.getAuthor()),"件名: "+printable(doc.getSubject()),"キーワード: "+printable(doc.getKeywords()),"Creator: "+printable(doc.getCreator()),"Producer: "+printable(doc.getProducer()),"作成日時: "+date(doc.getCreationDate()),"更新日時: "+date(doc.getModificationDate())].join("\n");root.querySelector<HTMLButtonElement>("[data-remove-pdf]")!.hidden=false;
+  }
+  function secretScan(){
+    const source=root.querySelector<HTMLTextAreaElement>("[data-source]")!;if(!source.value.trim())throw new Error("確認する文章を入力してください。");
+    const patterns=[["PEM秘密鍵",/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g],["AWS Access Key ID",/\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/g],["GitHubトークン",/\bgh[pousr]_[A-Za-z0-9_]{20,255}\b/g],["Slackトークン",/\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g],["JWT",/\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\b/g],["Bearerトークン",/\bBearer\s+[A-Za-z0-9._~+/=-]{12,}/gi],["秘密値らしい代入",/\b(?:api[_-]?key|secret|password|passwd|token)\s*[:=]\s*["']?([^\s"',;]{8,})/gi]] as const;
+    const findings:string[]=[];source.value.split(/\r?\n/).forEach((line,index)=>patterns.forEach(([name,re])=>{re.lastIndex=0;for(const m of line.matchAll(re))findings.push("・"+name+" / "+(index+1)+"行目 / "+mask(m[0]));}));
+    result.value=findings.length?["要確認: "+findings.length+"件","",...findings,"","※文字列パターンによる簡易検出です。有効な秘密情報かどうかは判定していません。"].join("\n"):"代表的な秘密情報パターンは検出されませんでした。\n\n※検出なしでも安全性を保証するものではありません。";
+  }
+  run.addEventListener("click",async()=>{setMsg(errorBox);setMsg(successBox);run.disabled=true;try{if(mode==="password-strength")passwordStrength();else if(mode==="log-mask")logMask();else if(mode==="url-privacy")urlPrivacy();else if(mode==="hash-compare")await hashCompare();else if(mode==="image-metadata-check")await imageMetadata();else if(mode==="pdf-metadata")await pdfMetadata();else if(mode==="secret-scan")secretScan();}catch(e){setMsg(errorBox,e instanceof Error?e.message:"処理に失敗しました。");}finally{run.disabled=false;}});
+  root.querySelector<HTMLInputElement>("[data-show-password]")?.addEventListener("change",e=>{root.querySelector<HTMLInputElement>("[data-password]")!.type=(e.currentTarget as HTMLInputElement).checked?"text":"password";});
+  root.querySelector<HTMLButtonElement>("[data-remove-pdf]")?.addEventListener("click",async()=>{setMsg(errorBox);setMsg(successBox);try{const file=root.querySelector<HTMLInputElement>("[data-file]")!.files?.[0];if(!file)throw new Error("PDFを選択してください。");const { PDFDocument }=await import("pdf-lib"),src=await PDFDocument.load(await file.arrayBuffer(),{updateMetadata:false}),out=await PDFDocument.create(),pages=await out.copyPages(src,src.getPageIndices());pages.forEach(p=>out.addPage(p));const bytes=await out.save();downloadBlob(new Blob([bytes.buffer as ArrayBuffer],{type:"application/pdf"}),file.name.replace(/\.pdf$/i,"")+"-metadata-removed.pdf");setMsg(successBox,"元PDFの文書メタデータを引き継がない新しいPDFを保存しました。");}catch(e){setMsg(errorBox,e instanceof Error?e.message:"PDFの保存に失敗しました。");}});
+  copy.addEventListener("click",async()=>{if(!result.value)return;try{await navigator.clipboard.writeText(result.value);setMsg(successBox,"結果をコピーしました。");}catch{setMsg(errorBox,"コピーできませんでした。");}});
+  clear.addEventListener("click",()=>{root.querySelectorAll<HTMLInputElement>("input[type=text],input[type=password],input[type=url],input[type=file]").forEach(el=>el.value="");root.querySelectorAll<HTMLTextAreaElement>("textarea").forEach(el=>el.value="");result.value="";const remove=root.querySelector<HTMLButtonElement>("[data-remove-pdf]");if(remove)remove.hidden=true;const bar=root.querySelector<HTMLElement>("[data-strength-bar]");if(bar)bar.style.width="0%";const label=root.querySelector<HTMLElement>("[data-strength-label]");if(label)label.textContent="入力すると強度を確認できます。";setMsg(errorBox);setMsg(successBox);});
+</script>
+<style>
+  .security-tool{display:grid;gap:18px}.tall{min-height:180px}.result-field{margin-top:2px}.checkbox-row{display:flex;align-items:center;gap:8px;font-weight:700}
+  .mask-options{display:flex;flex-wrap:wrap;gap:10px 18px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-subtle,#f8fafc)}.mask-options label{display:flex;align-items:center;gap:8px;font-weight:700}
+  .strength-meter{height:12px;overflow:hidden;border-radius:999px;background:#e5e7eb}.strength-meter span{display:block;width:0;height:100%;background:linear-gradient(90deg,#ef4444,#f59e0b,#16a34a);transition:width .2s ease}
+</style>
