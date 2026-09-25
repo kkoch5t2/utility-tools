@@ -2,13 +2,15 @@ import type { APIRoute } from "astro";
 import { tools } from "../config/tools";
 import { categoryMeta } from "../config/categories";
 import { siteConfig } from "../config/site";
+import { useCasePages } from "../config/use-cases";
 
-const staticPaths = ["/", "/privacy/"];
+const staticPaths = ["/", "/privacy/", "/use-case/"];
 
 export const GET: APIRoute = () => {
   const urls = [
     ...staticPaths,
     ...categoryMeta.map((category) => `/category/${category.key}/`),
+    ...useCasePages.map((page) => `/use-case/${page.slug}/`),
     ...tools.filter((tool) => tool.status === "available").map((tool) => tool.href),
   ];
 

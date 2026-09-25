@@ -6,9 +6,21 @@ import type { ExtraToolMeta } from "../../config/extra-tools";
 import "../../styles/tool.css";
 interface Props { meta: ExtraToolMeta; }
 const { meta } = Astro.props;
+const mode = meta.mode;
+const actionLabel: Record<string,string> = {
+  compress: "動画を圧縮",
+  "to-mp3": "MP3に変換",
+  trim: "動画を切り抜く",
+  mute: "音声を削除",
+  resize: "動画をリサイズ",
+  rotate: "動画を回転",
+  speed: "再生速度を変更",
+  "to-webm": "WebMに変換",
+  "to-gif": "GIFに変換",
+};
 ---
 <ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
-  <section class="tool-card" data-video-tool data-mode={meta.mode}>
+  <section class="tool-card" data-video-tool data-mode={mode}>
     <div class="privacy-note">
       <span>🔒</span>
       <div><strong>動画は外部へ送信されません</strong><br />処理はブラウザ内で実行します。初回処理時のみFFmpegエンジン（約31MB）を読み込みます。</div>
@@ -18,8 +30,9 @@ const { meta } = Astro.props;
       <input id="video-file" data-file type="file" accept="video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v" />
     </div>
     <p class="inline-note" data-file-info>最大500MB。端末性能によって処理できるサイズは異なります。</p>
+
     <div class="settings-grid">
-      {meta.mode === "compress" ? (
+      {mode === "compress" && (
         <div class="field">
           <label for="video-quality">圧縮レベル</label>
           <select id="video-quality" data-quality>
@@ -28,7 +41,8 @@ const { meta } = Astro.props;
             <option value="32">容量優先</option>
           </select>
         </div>
-      ) : (
+      )}
+      {mode === "to-mp3" && (
         <div class="field">
           <label for="audio-bitrate">MP3音質</label>
           <select id="audio-bitrate" data-bitrate>
@@ -39,9 +53,54 @@ const { meta } = Astro.props;
           </select>
         </div>
       )}
+      {mode === "trim" && <>
+        <div class="field"><label for="trim-start">開始位置（秒）</label><input id="trim-start" data-start type="number" min="0" step="0.1" value="0" /></div>
+        <div class="field"><label for="trim-duration">切り出す長さ（秒）</label><input id="trim-duration" data-duration type="number" min="0.1" step="0.1" value="10" /></div>
+      </>}
+      {mode === "resize" && (
+        <div class="field">
+          <label for="video-width">横幅</label>
+          <select id="video-width" data-width>
+            <option value="1920">1920px</option><option value="1280" selected>1280px</option>
+            <option value="854">854px</option><option value="640">640px</option><option value="480">480px</option>
+          </select>
+        </div>
+      )}
+      {mode === "rotate" && (
+        <div class="field">
+          <label for="video-rotate">回転方向</label>
+          <select id="video-rotate" data-rotate>
+            <option value="cw">右へ90°</option><option value="ccw">左へ90°</option><option value="180">180°</option>
+          </select>
+        </div>
+      )}
+      {mode === "speed" && (
+        <div class="field">
+          <label for="video-speed">再生速度</label>
+          <select id="video-speed" data-speed>
+            <option value="0.5">0.5倍</option><option value="0.75">0.75倍</option>
+            <option value="1.25">1.25倍</option><option value="1.5">1.5倍</option><option value="2" selected>2倍</option>
+          </select>
+        </div>
+      )}
+      {mode === "to-webm" && (
+        <div class="field">
+          <label for="webm-quality">画質</label>
+          <select id="webm-quality" data-webm-quality>
+            <option value="28">高画質</option><option value="32" selected>標準</option><option value="36">容量優先</option>
+          </select>
+        </div>
+      )}
+      {mode === "to-gif" && <>
+        <div class="field"><label for="gif-start">開始位置（秒）</label><input id="gif-start" data-gif-start type="number" min="0" step="0.1" value="0" /></div>
+        <div class="field"><label for="gif-duration">長さ（最大15秒）</label><input id="gif-duration" data-gif-duration type="number" min="0.5" max="15" step="0.5" value="5" /></div>
+        <div class="field"><label for="gif-width">横幅</label><select id="gif-width" data-gif-width><option value="640">640px</option><option value="480" selected>480px</option><option value="320">320px</option></select></div>
+        <div class="field"><label for="gif-fps">FPS</label><select id="gif-fps" data-gif-fps><option value="8">8</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option></select></div>
+      </>}
     </div>
+
     <div class="actions">
-      <button class="button button-primary" type="button" data-run disabled>{meta.mode === "compress" ? "動画を圧縮" : "MP3に変換"}</button>
+      <button class="button button-primary" type="button" data-run disabled>{actionLabel[mode] ?? "処理する"}</button>
       <button class="button button-secondary" type="button" data-clear>クリア</button>
       <button class="button button-secondary" type="button" data-cancel hidden>中止</button>
     </div>
@@ -57,7 +116,6 @@ const { meta } = Astro.props;
     </section>
   </section>
 </ToolLayout>
-
 <script>
   import { downloadBlob } from "../../core/download/download-file";
 
@@ -91,9 +149,10 @@ const { meta } = Astro.props;
   const formatBytes = (n: number) => n < 1024 * 1024 ? (n / 1024).toFixed(1) + " KB" : (n / 1024 / 1024).toFixed(1) + " MB";
   const baseName = (name: string) => name.replace(/\.[^.]+$/, "");
   const extension = (name: string) => (name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+  const value = (selector: string) => root.querySelector<HTMLInputElement | HTMLSelectElement>(selector)?.value ?? "";
 
-  function setProgress(value: number, label?: string) {
-    const safe = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+  function setProgress(progress: number, label?: string) {
+    const safe = Math.max(0, Math.min(1, Number.isFinite(progress) ? progress : 0));
     progressEl.value = safe;
     progressPercent.textContent = Math.round(safe * 100) + "%";
     if (label) progressLabel.textContent = label;
@@ -118,6 +177,11 @@ const { meta } = Astro.props;
     loaded = true;
   }
 
+  async function exec(args: string[]) {
+    const code = await ffmpeg.exec(args);
+    if (code !== 0) throw new Error("動画の変換に失敗しました。入力形式や設定を確認してください。");
+  }
+
   fileInput.addEventListener("change", () => {
     setMsg(errorBox); setMsg(successBox); result.hidden = true; outputBlob = null;
     const file = fileInput.files?.[0];
@@ -132,7 +196,6 @@ const { meta } = Astro.props;
     info.textContent = file.name + " / " + formatBytes(file.size);
     run.disabled = false;
   });
-
   run.addEventListener("click", async () => {
     const file = fileInput.files?.[0];
     if (!file) return;
@@ -141,7 +204,8 @@ const { meta } = Astro.props;
     run.disabled = true; clear.disabled = true; cancel.hidden = false;
     setProgress(0, "準備中...");
     const inputName = "input." + extension(file.name);
-    const outputFile = mode === "compress" ? "output.mp4" : "output.mp3";
+    let outputFile = "output.mp4";
+    let mime = "video/mp4";
 
     try {
       await loadEngine();
@@ -150,31 +214,66 @@ const { meta } = Astro.props;
       await ffmpeg.writeFile(inputName, await fetchFileFn!(file));
 
       if (mode === "compress") {
-        const crf = root.querySelector<HTMLSelectElement>("[data-quality]")!.value;
-        await ffmpeg.exec([
-          "-i", inputName,
-          "-map", "0:v:0", "-map", "0:a?",
-          "-c:v", "libx264", "-preset", "veryfast", "-crf", crf,
-          "-c:a", "aac", "-b:a", "128k",
-          "-movflags", "+faststart",
-          outputFile,
-        ]);
+        const crf = value("[data-quality]");
+        await exec(["-i", inputName, "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-preset", "veryfast", "-crf", crf, "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputFile]);
         outputName = baseName(file.name) + "-compressed.mp4";
-      } else {
-        const bitrate = root.querySelector<HTMLSelectElement>("[data-bitrate]")!.value;
-        await ffmpeg.exec(["-i", inputName, "-vn", "-c:a", "libmp3lame", "-b:a", bitrate + "k", outputFile]);
+      } else if (mode === "to-mp3") {
+        outputFile = "output.mp3"; mime = "audio/mpeg";
+        await exec(["-i", inputName, "-vn", "-c:a", "libmp3lame", "-b:a", value("[data-bitrate]") + "k", outputFile]);
         outputName = baseName(file.name) + ".mp3";
+      } else if (mode === "trim") {
+        const start = Number(value("[data-start]"));
+        const duration = Number(value("[data-duration]"));
+        if (!Number.isFinite(start) || start < 0 || !Number.isFinite(duration) || duration <= 0) throw new Error("開始位置と長さを正しく入力してください。");
+        await exec(["-ss", String(start), "-i", inputName, "-t", String(duration), "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-movflags", "+faststart", outputFile]);
+        outputName = baseName(file.name) + "-trimmed.mp4";
+      } else if (mode === "mute") {
+        await exec(["-i", inputName, "-map", "0:v:0", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-an", "-movflags", "+faststart", outputFile]);
+        outputName = baseName(file.name) + "-muted.mp4";
+      } else if (mode === "resize") {
+        const width = value("[data-width]");
+        await exec(["-i", inputName, "-map", "0:v:0", "-map", "0:a?", "-vf", "scale=" + width + ":-2", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-movflags", "+faststart", outputFile]);
+        outputName = baseName(file.name) + "-" + width + "px.mp4";
+      } else if (mode === "rotate") {
+        const direction = value("[data-rotate]");
+        const filter = direction === "cw" ? "transpose=1" : direction === "ccw" ? "transpose=2" : "transpose=2,transpose=2";
+        await exec(["-i", inputName, "-map", "0:v:0", "-map", "0:a?", "-vf", filter, "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-movflags", "+faststart", outputFile]);
+        outputName = baseName(file.name) + "-rotated.mp4";
+      } else if (mode === "speed") {
+        const speed = Number(value("[data-speed]"));
+        if (!speed || speed < 0.5 || speed > 2) throw new Error("再生速度を選択してください。");
+        let code = await ffmpeg.exec(["-i", inputName, "-filter_complex", "[0:v]setpts=PTS/" + speed + "[v];[0:a]atempo=" + speed + "[a]", "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-movflags", "+faststart", outputFile]);
+        if (code !== 0) {
+          try { await ffmpeg.deleteFile(outputFile); } catch {}
+          await exec(["-i", inputName, "-vf", "setpts=PTS/" + speed, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-movflags", "+faststart", outputFile]);
+        }
+        outputName = baseName(file.name) + "-" + speed + "x.mp4";
+      } else if (mode === "to-webm") {
+        outputFile = "output.webm"; mime = "video/webm";
+        await exec(["-i", inputName, "-map", "0:v:0", "-map", "0:a?", "-c:v", "libvpx", "-deadline", "realtime", "-cpu-used", "5", "-crf", value("[data-webm-quality]"), "-b:v", "0", "-c:a", "libvorbis", outputFile]);
+        outputName = baseName(file.name) + ".webm";
+      } else if (mode === "to-gif") {
+        outputFile = "output.gif"; mime = "image/gif";
+        const start = Number(value("[data-gif-start]"));
+        const duration = Number(value("[data-gif-duration]"));
+        if (!Number.isFinite(start) || start < 0 || !Number.isFinite(duration) || duration < 0.5 || duration > 15) throw new Error("GIFの開始位置と長さを確認してください。長さは0.5〜15秒です。");
+        const width = value("[data-gif-width]");
+        const fps = value("[data-gif-fps]");
+        await exec(["-ss", String(start), "-t", String(duration), "-i", inputName, "-vf", "fps=" + fps + ",scale=" + width + ":-1:flags=lanczos", "-loop", "0", outputFile]);
+        outputName = baseName(file.name) + ".gif";
+      } else {
+        throw new Error("未対応の処理です。");
       }
 
       if (cancelled) return;
       const data = await ffmpeg.readFile(outputFile);
       if (typeof data === "string") throw new Error("出力ファイルを取得できませんでした。");
       const buffer = new Uint8Array(data).slice().buffer as ArrayBuffer;
-      outputBlob = new Blob([buffer], { type: mode === "compress" ? "video/mp4" : "audio/mpeg" });
+      outputBlob = new Blob([buffer], { type: mime });
       const reduction = mode === "compress" ? Math.max(0, 100 - outputBlob.size / file.size * 100) : null;
       resultInfo.textContent = mode === "compress"
         ? formatBytes(file.size) + " → " + formatBytes(outputBlob.size) + "（約" + reduction!.toFixed(0) + "%削減）"
-        : "MP3を作成しました（" + formatBytes(outputBlob.size) + "）";
+        : outputName + " / " + formatBytes(outputBlob.size);
       result.hidden = false;
       setProgress(1, "完了");
       setMsg(successBox, "処理が完了しました。");
@@ -187,7 +286,6 @@ const { meta } = Astro.props;
       cancel.hidden = true;
     }
   });
-
   cancel.addEventListener("click", () => {
     cancelled = true;
     try { ffmpeg?.terminate(); } catch {}
@@ -205,4 +303,3 @@ const { meta } = Astro.props;
     setMsg(errorBox); setMsg(successBox); setProgress(0, "準備中...");
   });
 </script>
-
