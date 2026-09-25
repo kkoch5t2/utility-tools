@@ -14,6 +14,7 @@ import DeveloperQuickTool from "../components/tools/DeveloperQuickTool.astro";
 import SpecialQuickTool from "../components/tools/SpecialQuickTool.astro";
 import SecurityQuickTool from "../components/tools/SecurityQuickTool.astro";
 import JapanQuickTool from "../components/tools/JapanQuickTool.astro";
+import OfficeQuickTool from "../components/tools/OfficeQuickTool.astro";
 
 export function getStaticPaths() {
   return extraTools.map((meta) => ({
@@ -38,6 +39,7 @@ const Component =
   meta.family === "special" ? SpecialQuickTool :
   meta.family === "security" ? SecurityQuickTool :
   meta.family === "japan" ? JapanQuickTool :
+  meta.family === "office" ? OfficeQuickTool :
   DeveloperQuickTool;
 ---
 <Component meta={meta} />
