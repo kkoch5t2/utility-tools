@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T13:42:42.373Z",
+  "generatedAt": "2026-09-25T13:51:11.393Z",
   "periodDays": 7,
   "items": [
     {
@@ -16,6 +16,30 @@
     },
     {
       "path": "/video/to-mp3/"
+    },
+    {
+      "path": "/image/target-filesize/"
+    },
+    {
+      "path": "/csv/merge/"
+    },
+    {
+      "path": "/video/compress/"
+    },
+    {
+      "path": "/pdf/merge/"
+    },
+    {
+      "path": "/text/pad-lines/"
+    },
+    {
+      "path": "/developer/regex-escape/"
+    },
+    {
+      "path": "/developer/base64/"
+    },
+    {
+      "path": "/developer/unix-time/"
     }
   ]
 }
