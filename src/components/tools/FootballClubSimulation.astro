@@ -18,7 +18,7 @@ const { meta } = Astro.props;
 
   <div class="sim-intro" data-intro>
     <div><h3>「誰を獲るか」だけでなく「どこで使うか」</h3><p>選手にはPAC・SHO・PAS・DRI・DEF・PHYの個別能力とポジション適性があります。高OVRでも不慣れな位置では能力を出し切れません。補強後はスタメンへ組み込んで初めて戦力になります。</p><div class="sim-actions"><button class="button button-primary" type="button" data-start>新シーズン開始</button><button class="button button-secondary" type="button" data-continue hidden>保存データから続ける</button></div></div>
-    <ul><li>18人の初期スカッド＋20人の移籍候補</li><li>11枠すべて自分でスタメン配置可能</li><li>4フォーメーションで必要ポジションが変化</li><li>個人能力・年齢・適性・移籍金を比較して補強</li></ul>
+    <ul><li>18人の初期スカッド＋20人の移籍候補</li><li>新シーズンごとに名前・国籍・年齢・能力・価格を再生成</li><li>11枠すべて自分でスタメン配置可能</li><li>4フォーメーションで必要ポジションが変化</li><li>個人能力・年齢・適性・移籍金を比較して補強</li></ul>
   </div>
 
   <div class="sim-play" data-play hidden>
@@ -92,8 +92,8 @@ const { meta } = Astro.props;
 <script>
 type Player={id:string;name:string;nation:string;age:number;pos:string[];ovr:number;pac:number;sho:number;pas:number;dri:number;def:number;phy:number;price:number};
 const root=document.querySelector<HTMLElement>('[data-mode="football-club-sim"]')!,intro=root.querySelector<HTMLElement>("[data-intro]")!,play=root.querySelector<HTMLElement>("[data-play]")!;
-const KEY="utility-tools:sim:football-club-sim:v2",BEST="utility-tools:sim:football-club-sim:best",yen=(n:number)=>"¥"+Math.round(n).toLocaleString("ja-JP"),clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n)),ri=(a:number,b:number)=>Math.floor(a+Math.random()*(b-a+1));
-const initialSquad:Player[]=[
+const KEY="utility-tools:sim:football-club-sim:v3",BEST="utility-tools:sim:football-club-sim:best",yen=(n:number)=>"¥"+Math.round(n).toLocaleString("ja-JP"),clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n)),ri=(a:number,b:number)=>Math.floor(a+Math.random()*(b-a+1));
+const squadTemplates:Player[]=[
 {id:"arai",name:"Ken Arai",nation:"🇯🇵",age:29,pos:["GK"],ovr:69,pac:42,sho:12,pas:61,dri:46,def:18,phy:70,price:0},
 {id:"kudo",name:"Daichi Kudo",nation:"🇯🇵",age:24,pos:["LB","LWB"],ovr:67,pac:75,sho:42,pas:65,dri:68,def:66,phy:64,price:0},
 {id:"vale",name:"Marcus Vale",nation:"🇬🇧",age:28,pos:["CB"],ovr:69,pac:61,sho:28,pas:57,dri:50,def:73,phy:76,price:0},
@@ -113,7 +113,7 @@ const initialSquad:Player[]=[
 {id:"bauer",name:"Finn Bauer",nation:"🇩🇪",age:25,pos:["ST","LW"],ovr:66,pac:72,sho:70,pas:53,dri:65,def:24,phy:69,price:0},
 {id:"chen",name:"Ming Chen",nation:"🇨🇳",age:20,pos:["RW","AM"],ovr:65,pac:79,sho:61,pas:63,dri:72,def:27,phy:52,price:0}
 ];
-const market:Player[]=[
+const marketTemplates:Player[]=[
 {id:"sato",name:"R. Sato",nation:"🇯🇵",age:23,pos:["ST","RW"],ovr:73,pac:79,sho:78,pas:62,dri:74,def:27,phy:70,price:80000000},
 {id:"costa",name:"L. Costa",nation:"🇵🇹",age:27,pos:["CM","AM"],ovr:75,pac:70,sho:69,pas:81,dri:79,def:58,phy:65,price:120000000},
 {id:"keller",name:"M. Keller",nation:"🇩🇪",age:28,pos:["CB"],ovr:76,pac:67,sho:31,pas:66,dri:57,def:82,phy:81,price:150000000},
@@ -135,6 +135,25 @@ const market:Player[]=[
 {id:"varga",name:"Bence Varga",nation:"🇭🇺",age:25,pos:["GK"],ovr:71,pac:40,sho:9,pas:64,dri:44,def:18,phy:74,price:55000000},
 {id:"tanaka",name:"Kei Tanaka",nation:"🇯🇵",age:22,pos:["CB","DM"],ovr:71,pac:69,sho:38,pas:67,dri:61,def:75,phy:75,price:68000000}
 ];
+const firstNames=["Ren","Haru","Sota","Kai","Leo","Noah","Luca","Mateo","Elias","Theo","Finn","Milan","Hugo","Niko","Emil","Rui","Jun","Kei","Toma","Yuki","Alex","Oscar","Bruno","Dario","Samir","Louis","Marco","Daniel","Jin","Aiden","Riku","Kota"];
+const lastNames=["Arai","Kudo","Mori","Tanaka","Sato","Kobayashi","Ito","Seo","Park","Vale","Finch","Marin","Ward","Bauer","Costa","Keller","Navarro","Diaz","Okafor","Leclerc","Petrov","Reyes","Ferreira","Hansen","Rossi","Silva","Mendes","Lund","Bennett","Varga","Nwosu","Adebayo","Moretti","Dubois","Santos","Kim","Garcia","Fischer","Novak","Andersen"];
+const nations=["🇯🇵","🇰🇷","🇬🇧","🇪🇸","🇵🇹","🇩🇪","🇫🇷","🇮🇹","🇧🇷","🇦🇷","🇳🇬","🇬🇭","🇩🇰","🇸🇪","🇷🇸","🇲🇽","🇺🇸","🇨🇦","🇦🇺","🇭🇺"];
+function seeded(seed:number){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function newSeasonSeed(){try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]||Date.now()}catch{return Date.now()+Math.floor(Math.random()*1e7)}}
+function buildSeasonPlayers(seed:number){
+ const rnd=seeded(seed),used=new Set<string>();
+ const rr=(a:number,b:number)=>Math.floor(a+rnd()*(b-a+1)),pick=<T,>(a:T[])=>a[Math.floor(rnd()*a.length)];
+ const make=(templates:Player[],prefix:string,isMarket:boolean)=>templates.map((t,i)=>{
+   let name="";do{name=pick(firstNames)+" "+pick(lastNames)}while(used.has(name));used.add(name);
+   const ovr=clamp(t.ovr+rr(-2,2),58,82),age=clamp(t.age+rr(-3,3),18,34);
+   const vary=(v:number)=>clamp(v+rr(-4,4),8,94);
+   const ageFactor=age<=21?1.08:age>=30?.82:1;
+   const qualityFactor=.82+(ovr-65)*.045;
+   const price=isMarket?Math.max(30000000,Math.round((t.price||65000000)*qualityFactor*ageFactor*(.9+rnd()*.2)/1000000)*1000000):0;
+   return{id:prefix+i,name,nation:pick(nations),age,pos:[...t.pos],ovr,pac:vary(t.pac),sho:vary(t.sho),pas:vary(t.pas),dri:vary(t.dri),def:vary(t.def),phy:vary(t.phy),price};
+ });
+ return{squad:make(squadTemplates,"s",false),market:make(marketTemplates,"m",true)};
+}
 const formations:any={
  "433":[["GK",7,44],["LB",23,12],["CB",23,35],["CB",23,59],["RB",23,82],["CM",49,22],["CM",49,49],["CM",49,76],["LW",78,14],["ST",83,49],["RW",78,84]],
  "4231":[["GK",7,44],["LB",23,12],["CB",23,35],["CB",23,59],["RB",23,82],["DM",45,34],["DM",45,64],["LW",66,15],["AM",63,49],["RW",66,83],["ST",84,49]],
@@ -145,15 +164,15 @@ const teams=[{name:"Harbor City FC",ovr:68},{name:"Northbridge United",ovr:69},{
 const q=(x:string)=>root.querySelector<HTMLElement>(x)!,qb=(x:string)=>root.querySelector<HTMLButtonElement>(x)!,qs=(x:string)=>root.querySelector<HTMLSelectElement>(x)!;
 const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch{return null}},save=(x:any)=>{try{localStorage.setItem(KEY,JSON.stringify(x))}catch{}},clear=()=>{try{localStorage.removeItem(KEY)}catch{}},readBest=()=>{try{return Number(localStorage.getItem(BEST)||0)||0}catch{return 0}},saveBest=(n:number)=>{if(n>readBest())try{localStorage.setItem(BEST,String(Math.round(n)))}catch{}};
 const tableFresh=()=>teams.map((t,i)=>({name:t.name,ovr:t.ovr,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0,id:i}));
-const initialLineup=["arai","kudo","vale","seo","finch","marin","ishii","ward","ramires","ito","park"];
-const fresh=()=>({week:1,budget:5e8,fitness:86,morale:70,fans:18000,squad:initialSquad.map(p=>({...p})),lineup:[...initialLineup],formation:"433",facilities:{training:false,recovery:false,academy:false,stadium:false},marketBought:[],table:tableFresh(),log:[],feed:[],lastIncome:0,form:[],injuryWeeks:0,selectedPlayer:"ito"});
+const initialLineup=["s0","s1","s2","s3","s4","s5","s6","s7","s8","s9","s10"];
+const fresh=()=>{const seasonId=newSeasonSeed(),players=buildSeasonPlayers(seasonId);return{seasonId,week:1,budget:5e8,fitness:86,morale:70,fans:18000,squad:players.squad,market:players.market,lineup:[...initialLineup],formation:"433",facilities:{training:false,recovery:false,academy:false,stadium:false},marketBought:[],table:tableFresh(),log:[],feed:[],lastIncome:0,form:[],injuryWeeks:0,selectedPlayer:"s9"}};
 let s:any=fresh();
 
 function positionGroup(pos:string){if(pos==="GK")return"GK";if(["LB","CB","RB","LWB","RWB"].includes(pos))return"DF";if(["DM","CM","AM","LM","RM"].includes(pos))return"MF";return"FW"}
 function compatibility(p:Player,slot:string){if(p.pos.includes(slot))return 1;const sg=positionGroup(slot),groups=p.pos.map(positionGroup);if(sg==="GK"||groups.includes("GK"))return .55;if(groups.includes(sg))return .9;if((["LWB","RWB"].includes(slot)&&groups.includes("MF"))||(["LM","RM"].includes(slot)&&groups.includes("DF")))return .82;return .7}
 function rawRoleRating(p:Player,slot:string){if(slot==="GK")return p.ovr;const g=positionGroup(slot);if(slot==="ST")return p.pac*.12+p.sho*.43+p.pas*.09+p.dri*.16+p.def*.02+p.phy*.18;if(["LW","RW"].includes(slot))return p.pac*.27+p.sho*.22+p.pas*.18+p.dri*.24+p.def*.02+p.phy*.07;if(slot==="AM")return p.pac*.13+p.sho*.18+p.pas*.31+p.dri*.28+p.def*.03+p.phy*.07;if(["DM"].includes(slot))return p.pac*.06+p.sho*.04+p.pas*.27+p.dri*.11+p.def*.33+p.phy*.19;if(["CM","LM","RM"].includes(slot))return p.pac*.11+p.sho*.1+p.pas*.32+p.dri*.21+p.def*.15+p.phy*.11;if(["LB","RB","LWB","RWB"].includes(slot))return p.pac*.18+p.sho*.03+p.pas*.17+p.dri*.11+p.def*.34+p.phy*.17;if(g==="DF")return p.pac*.06+p.sho*.01+p.pas*.08+p.dri*.03+p.def*.5+p.phy*.32;return p.ovr}
 function slotRating(p:Player,slot:string){return rawRoleRating(p,slot)*compatibility(p,slot)}
-function playerById(id:string){return s.squad.find((p:Player)=>p.id===id)||market.find(p=>p.id===id)}
+function playerById(id:string){return s.squad.find((p:Player)=>p.id===id)||s.market.find((p:Player)=>p.id===id)}
 function slots(){return formations[s.formation] as [string,number,number][]}
 function autoLineup(){const used=new Set<string>(),out:string[]=[];for(const [slot] of slots()){const candidates=[...s.squad].filter((p:Player)=>!used.has(p.id)).sort((a:Player,b:Player)=>slotRating(b,slot)-slotRating(a,slot));const pick=candidates[0];out.push(pick.id);used.add(pick.id)}s.lineup=out}
 function lineStats(){let attack:number[]=[],mid:number[]=[],def:number[]=[],fit=0;slots().forEach(([slot],i)=>{const p=playerById(s.lineup[i]);if(!p)return;const r=slotRating(p,slot);fit+=compatibility(p,slot);const g=positionGroup(slot);if(g==="FW")attack.push(r);else if(g==="MF")mid.push(r);else def.push(r)});const avg=(a:number[])=>a.length?a.reduce((x,y)=>x+y,0)/a.length:50;const a=avg(attack),m=avg(mid),d=avg(def);return{attack:a*.8+m*.2,mid:m*.75+(a+d)*.125,def:d*.82+m*.18,ovr:(a+m+d)/3,fit:fit/11*100}}
@@ -174,8 +193,8 @@ function renderLineupEditor(){
 }
 function marketGroup(p:Player){const gs=new Set(p.pos.map(positionGroup));if(gs.has("GK"))return"GK";if(gs.has("DF"))return"DF";if(gs.has("MF"))return"MF";return"FW"}
 function renderMarket(){
- const filter=qs("[data-market-filter]").value,sort=qs("[data-market-sort]").value;let list=market.filter(p=>filter==="ALL"||marketGroup(p)===filter);list=[...list].sort((a,b)=>sort==="price"?a.price-b.price:sort==="age"?a.age-b.age:b.ovr-a.ovr);
- q("[data-transfer-market]").innerHTML=list.map(p=>{const bought=s.marketBought.includes(p.id),afford=s.budget>=p.price;return`<article class="market-player-card"><button class="market-profile-open" type="button" data-profile="${p.id}"><span>${p.nation}</span><div><strong>${p.name}</strong><small>${p.pos.join(" / ")} ・ ${p.age}歳</small></div><em>${p.ovr}<small>OVR</small></em></button><div class="market-mini-stats"><span>PAC <b>${p.pac}</b></span><span>SHO <b>${p.sho}</b></span><span>PAS <b>${p.pas}</b></span><span>DRI <b>${p.dri}</b></span><span>DEF <b>${p.def}</b></span><span>PHY <b>${p.phy}</b></span></div><button class="market-buy" type="button" data-buy-player="${p.id}" ${bought||!afford?"disabled":""}>${bought?"獲得済み":yen(p.price)+"で獲得"}</button></article>`}).join("");
+ const filter=qs("[data-market-filter]").value,sort=qs("[data-market-sort]").value;let list=s.market.filter((p:Player)=>filter==="ALL"||marketGroup(p)===filter);list=[...list].sort((a,b)=>sort==="price"?a.price-b.price:sort==="age"?a.age-b.age:b.ovr-a.ovr);
+ q("[data-transfer-market]").innerHTML=list.map((p:Player)=>{const bought=s.marketBought.includes(p.id),afford=s.budget>=p.price;return`<article class="market-player-card"><button class="market-profile-open" type="button" data-profile="${p.id}"><span>${p.nation}</span><div><strong>${p.name}</strong><small>${p.pos.join(" / ")} ・ ${p.age}歳</small></div><em>${p.ovr}<small>OVR</small></em></button><div class="market-mini-stats"><span>PAC <b>${p.pac}</b></span><span>SHO <b>${p.sho}</b></span><span>PAS <b>${p.pas}</b></span><span>DRI <b>${p.dri}</b></span><span>DEF <b>${p.def}</b></span><span>PHY <b>${p.phy}</b></span></div><button class="market-buy" type="button" data-buy-player="${p.id}" ${bought||!afford?"disabled":""}>${bought?"獲得済み":yen(p.price)+"で獲得"}</button></article>`}).join("");
  root.querySelectorAll<HTMLButtonElement>("[data-buy-player]").forEach(b=>b.addEventListener("click",()=>buyPlayer(b.dataset.buyPlayer!)));
  bindProfileButtons();
 }
@@ -183,15 +202,15 @@ function renderSquad(){
  q("[data-squad-count]").textContent=s.squad.length+" players";q("[data-squad-table]").innerHTML=[...s.squad].sort((a:Player,b:Player)=>b.ovr-a.ovr).map((p:Player)=>`<tr><td><button type="button" class="player-name-button" data-profile="${p.id}">${p.nation} ${p.name}</button></td><td>${p.pos.join("/")}</td><td>${p.age}</td><td><b>${p.ovr}</b></td><td>${p.pac}</td><td>${p.sho}</td><td>${p.pas}</td><td>${p.dri}</td><td>${p.def}</td><td>${p.phy}</td><td>${s.lineup.includes(p.id)?"<span class='starting-badge'>XI</span>":""}</td></tr>`).join("");bindProfileButtons();
 }
 function bindProfileButtons(){root.querySelectorAll<HTMLButtonElement>("[data-profile]").forEach(b=>b.onclick=()=>{s.selectedPlayer=b.dataset.profile!;playerProfile(playerById(s.selectedPlayer));save(s)})}
-function buyPlayer(id:string){const p=market.find(x=>x.id===id);if(!p||s.marketBought.includes(id)||s.budget<p.price)return;s.budget-=p.price;s.squad.push({...p});s.marketBought.push(id);s.morale=clamp(s.morale+2,0,100);s.selectedPlayer=id;s.log.push("移籍成立："+p.name+" "+yen(p.price));save(s);render()}
+function buyPlayer(id:string){const p=s.market.find((x:Player)=>x.id===id);if(!p||s.marketBought.includes(id)||s.budget<p.price)return;s.budget-=p.price;s.squad.push({...p});s.marketBought.push(id);s.morale=clamp(s.morale+2,0,100);s.selectedPlayer=id;s.log.push("移籍成立："+p.name+" "+yen(p.price));save(s);render()}
 function render(){
- const row=s.table[0],rank=sortedTable().findIndex((x:any)=>x.id===0)+1,ls=lineStats(),best=readBest();q("[data-best]").textContent=best?best+" pt":"0 pt";q("[data-week]").textContent=Math.min(s.week,14)+" / 14";q("[data-home-away]").textContent=s.week<=14?(s.week<=7?"HOME":"AWAY"):"FINAL";q("[data-points]").textContent=row.pts+"";q("[data-rank]").textContent=s.week===1&&row.p===0?"順位 --":rank+"位";q("[data-budget]").textContent=yen(s.budget);q("[data-income]").textContent="前節収入 "+yen(s.lastIncome);q("[data-quality]").textContent=ls.ovr.toFixed(1);q("[data-chemistry]").textContent="適性 "+Math.round(ls.fit)+"%";q("[data-fans]").textContent=Math.round(s.fans).toLocaleString("ja-JP");q("[data-record]").textContent=`${row.w}勝 ${row.d}分 ${row.l}敗`;q("[data-attack]").textContent=ls.attack.toFixed(1);q("[data-midfield]").textContent=ls.mid.toFixed(1);q("[data-defense]").textContent=ls.def.toFixed(1);
+ const row=s.table[0],rank=sortedTable().findIndex((x:any)=>x.id===0)+1,ls=lineStats(),best=readBest();root.dataset.seasonId=String(s.seasonId);q("[data-best]").textContent=best?best+" pt":"0 pt";q("[data-week]").textContent=Math.min(s.week,14)+" / 14";q("[data-home-away]").textContent=s.week<=14?(s.week<=7?"HOME":"AWAY"):"FINAL";q("[data-points]").textContent=row.pts+"";q("[data-rank]").textContent=s.week===1&&row.p===0?"順位 --":rank+"位";q("[data-budget]").textContent=yen(s.budget);q("[data-income]").textContent="前節収入 "+yen(s.lastIncome);q("[data-quality]").textContent=ls.ovr.toFixed(1);q("[data-chemistry]").textContent="適性 "+Math.round(ls.fit)+"%";q("[data-fans]").textContent=Math.round(s.fans).toLocaleString("ja-JP");q("[data-record]").textContent=`${row.w}勝 ${row.d}分 ${row.l}敗`;q("[data-attack]").textContent=ls.attack.toFixed(1);q("[data-midfield]").textContent=ls.mid.toFixed(1);q("[data-defense]").textContent=ls.def.toFixed(1);
  (root.querySelector<HTMLProgressElement>("[data-fitness]")!).value=s.fitness;(root.querySelector<HTMLProgressElement>("[data-morale]")!).value=s.morale;q("[data-fitness-text]").textContent=Math.round(s.fitness)+"";q("[data-morale-text]").textContent=Math.round(s.morale)+"";
  const oi=s.week<=14?schedule[s.week-1]:1,opp=teams[oi];q("[data-opponent-badge]").textContent="vs "+opp.name;q("[data-opponent-level]").textContent="相手 OVR "+opp.ovr;q("[data-scout]").textContent=opp.ovr>=72?"相手分析：個の力が高い強敵。守備の安定かカウンターが有効。":opp.ovr<=66?"相手分析：格下。主導権を握って押し込みたい。":"相手分析：互角。スタメン適性とコンディションが重要。";
  const tbl=sortedTable();q("[data-league-table]").innerHTML=tbl.map((r:any,i:number)=>`<tr class="${r.id===0?"user-team":""}"><td>${i+1}</td><td>${r.name}</td><td>${r.p}</td><td>${r.gf-r.ga>=0?"+":""}${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("");q("[data-table-note]").textContent="第"+Math.min(14,s.week-1)+"節終了";let fc=0;Object.keys(facilityCosts).forEach(k=>{const b=qb(`[data-facility="${k}"]`);if(s.facilities[k]){fc++;b.disabled=true;b.textContent="完成"}else{b.disabled=s.budget<facilityCosts[k];b.textContent=yen(facilityCosts[k])}});q("[data-facility-count]").textContent=fc+" / 4";q("[data-injury]").textContent=s.injuryWeeks>0?"主力1名 負傷あと"+s.injuryWeeks+"節":"負傷者なし";q("[data-injury]").className="sim-pill "+(s.injuryWeeks>0?"bad":"good");q("[data-log]").innerHTML=s.log.slice(-6).reverse().map((x:string)=>"<li>"+x+"</li>").join("");q("[data-match-feed]").innerHTML=s.feed.length?s.feed.map((x:string)=>"<div>"+x+"</div>").join(""):"<div>キックオフすると試合の流れが表示されます。</div>";
  qs("[data-formation]").value=s.formation;renderPitch();renderLineupEditor();renderSquad();renderMarket();playerProfile(playerById(s.selectedPlayer)||s.squad[0]);
 }
-function start(load=false){s=load&&read()?read():fresh();if(!s.squad||!s.lineup){s=fresh()}intro.hidden=true;play.hidden=false;root.dataset.state="running";save(s);render()}
+function start(load=false){s=load&&read()?read():fresh();if(!s.squad||!s.lineup||!s.market||!s.seasonId){s=fresh()}intro.hidden=true;play.hidden=false;root.dataset.state="running";save(s);render()}
 qb("[data-start]").addEventListener("click",()=>start(false));const cont=qb("[data-continue]");cont.hidden=!read();cont.addEventListener("click",()=>start(true));qb("[data-restart]").addEventListener("click",()=>{clear();start(false)});
 qs("[data-formation]").addEventListener("change",()=>{s.formation=qs("[data-formation]").value;autoLineup();save(s);render()});qb("[data-auto-lineup]").addEventListener("click",()=>{autoLineup();save(s);render()});qs("[data-market-filter]").addEventListener("change",renderMarket);qs("[data-market-sort]").addEventListener("change",renderMarket);
 root.querySelectorAll<HTMLButtonElement>("[data-facility]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.facility!;if(s.facilities[k]||s.budget<facilityCosts[k])return;s.budget-=facilityCosts[k];s.facilities[k]=true;s.log.push("施設完成："+k);save(s);render()}));
