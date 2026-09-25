@@ -4,6 +4,7 @@ import PopularTools from "../components/home/PopularTools.astro";
 import { tools, type ToolDefinition } from "../config/tools";
 import { siteConfig } from "../config/site";
 import { useCasePages } from "../config/use-cases";
+import { gameMeta } from "../config/games";
 
 const categories: Array<{ key: "all" | ToolDefinition["category"]; label: string }> = [
   { key: "all", label: "すべて" },
@@ -27,6 +28,7 @@ const categories: Array<{ key: "all" | ToolDefinition["category"]; label: string
 
 const counts = new Map<string, number>();
 for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?? 0) + 1);
+const featuredGames = gameMeta.filter((game) => game.featured).slice(0, 3);
 ---
 <BaseLayout title={siteConfig.homeTitle} description={siteConfig.description}>
   <div class="shell home">
@@ -47,6 +49,28 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
     </section>
 
     <PopularTools />
+
+    <section class="home-games" aria-labelledby="home-games-title">
+      <div class="home-games-heading">
+        <div>
+          <p class="eyebrow">GAME</p>
+          <h2 id="home-games-title">ブラウザで遊ぶ</h2>
+        </div>
+        <a href="/category/game/">ゲーム一覧を見る →</a>
+      </div>
+      <p class="home-games-lead">インストール不要。短時間で遊べる無料ゲームです。</p>
+      <div class="home-games-grid">
+        {featuredGames.map((game) => (
+          <a href={game.href}>
+            <img src={game.thumbnail} alt="" width="1200" height="630" loading="lazy" />
+            <span>
+              <small>{game.genre} · {game.playTime}</small>
+              <strong>{game.name}</strong>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
 
     <section class="purpose-links" aria-labelledby="purpose-links-title">
       <div class="purpose-links-heading">
@@ -389,6 +413,19 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
   .recent-copy small { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
   .recent-arrow { color: var(--accent); font-weight: 900; }
 
+  .home-games { margin: 0 0 38px; padding: 18px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-muted); }
+  .home-games-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+  .home-games-heading h2 { margin: 0; font-size: 22px; }
+  .home-games-heading > a { font-size: 12px; font-weight: 800; text-decoration: none; }
+  .home-games-lead { margin: 6px 0 13px; color: var(--muted); font-size: 12px; }
+  .home-games-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .home-games-grid > a { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); text-decoration: none; }
+  .home-games-grid > a:hover { border-color: #b8c8dc; box-shadow: 0 6px 16px rgba(15,23,42,.05); }
+  .home-games-grid img { display: block; width: 112px; height: 72px; object-fit: cover; }
+  .home-games-grid span { display: flex; min-width: 0; flex-direction: column; gap: 2px; padding: 10px; }
+  .home-games-grid small { color: var(--muted); font-size: 9px; font-weight: 800; }
+  .home-games-grid strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+
   .purpose-links { margin: 0 0 42px; }
   .purpose-links-heading { display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:14px; }
   .purpose-links-heading h2 { margin:0;font-size:24px; }
@@ -562,7 +599,10 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
 
   @media (max-width: 760px) {
     .home { padding-top: 32px; }
-    .recent-grid, .purpose-links-grid { grid-template-columns: 1fr; }
+    .recent-grid, .purpose-links-grid, .home-games-grid { grid-template-columns: 1fr; }
+    .home-games { padding: 14px; }
+    .home-games-grid > a { grid-template-columns: 104px minmax(0,1fr); }
+    .home-games-grid img { width: 104px; height: 68px; }
     .tool-grid { grid-template-columns: 1fr; }
     .tool-search-row { align-items: stretch; }
     .tool-search { min-width: 0; }

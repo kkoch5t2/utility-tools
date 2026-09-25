@@ -241,3 +241,24 @@ test("ゲーム終了後に次に遊ぶ3ゲームが表示される", async ({ p
   await expect(page.locator("[data-game-next] .game-next-card")).toHaveCount(3);
   await expect(page.locator('[data-game-next] a[href="/category/game/"]')).toBeVisible();
 });
+
+
+test("ホームからGAMEカテゴリへ移動できる", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".home-games")).toBeVisible();
+  await expect(page.locator(".home-games-grid > a")).toHaveCount(3);
+  await expect(page.locator('.home-games-heading a[href="/category/game/"]')).toBeVisible();
+  await expect(page.locator(".home-games-grid").filter({ hasText: "Lumo's Sky Run" })).toBeVisible();
+});
+
+test("GAME一覧カードがPCで縦長にならない", async ({ page }) => {
+  await page.setViewportSize({ width: 1668, height: 1000 });
+  await page.goto("/category/game/");
+  const card = page.locator(".game-hub-card").first();
+  const image = card.locator(".game-card-image img");
+  const cardBox = await card.boundingBox();
+  const imageBox = await image.boundingBox();
+  expect(cardBox?.height ?? 999).toBeLessThan(260);
+  expect(imageBox?.height ?? 999).toBeLessThan(230);
+  expect(imageBox?.width ?? 0).toBeGreaterThan(180);
+});

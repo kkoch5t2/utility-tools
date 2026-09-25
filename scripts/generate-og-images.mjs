@@ -62,38 +62,5 @@ for (const [key, heading, subheading, tagline] of cards) {
   await page.close();
   console.log("generated", key + ".png");
 }
-const gameCards = [
-  ["game-lumo-sky-run", "Lumo's Sky Run", "RUN · JUMP · EXPLORE", "#22d3ee", "#2563eb", "ACTION"],
-  ["game-meteor-drift", "Meteor Drift", "DODGE THE STORM", "#38bdf8", "#1d4ed8", "SURVIVAL"],
-  ["game-neon-snake", "Neon Snake", "SWIPE · EAT · GROW", "#22c55e", "#0ea5e9", "ARCADE"],
-  ["game-number-chain-10", "10をつくれ！", "CHAIN NUMBERS TO TEN", "#facc15", "#f97316", "PUZZLE"],
-  ["game-flash-matrix", "Flash Matrix", "REMEMBER THE LIGHT", "#a78bfa", "#7c3aed", "MEMORY"],
-  ["game-reaction-zero", "Reaction Zero", "HOW FAST ARE YOU?", "#fb7185", "#0ea5e9", "REACTION"],
-  ["game-orbit-catch", "Orbit Catch", "STOP ON THE TARGET", "#fde047", "#06b6d4", "TIMING"],
-];
-
-for (const [key, heading, tagline, accent, accent2, genre] of gameCards) {
-  const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
-  await page.setContent(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
-    *{box-sizing:border-box}html,body{margin:0;width:1200px;height:630px}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:#020617;color:white}
-    .frame{position:relative;width:1200px;height:630px;overflow:hidden;padding:62px 72px;background:
-      radial-gradient(circle at 78% 28%,${accent}33,transparent 29%),
-      radial-gradient(circle at 90% 88%,${accent2}2b,transparent 28%),
-      linear-gradient(140deg,#020617,#0f172a 58%,#111827)}
-    .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.07) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(90deg,transparent 5%,black 56%,transparent)}
-    .brand{position:relative;display:flex;align-items:center;gap:14px;color:#cbd5e1;font-size:19px;font-weight:800}.brand img{width:42px;height:42px;border-radius:10px}
-    .genre{position:relative;display:inline-flex;margin-top:72px;padding:8px 13px;border:1px solid ${accent}66;border-radius:999px;background:${accent}17;color:${accent};font-size:14px;font-weight:950;letter-spacing:.14em}
-    h1{position:relative;max-width:850px;margin:18px 0 8px;font-size:72px;line-height:1;letter-spacing:-.045em}
-    .tag{position:relative;margin:0;color:#b8c7d9;font-size:25px;font-weight:800;letter-spacing:.04em}
-    .play{position:absolute;left:72px;bottom:62px;display:flex;align-items:center;gap:12px;color:#e2e8f0;font-size:16px;font-weight:800}.play b{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:${accent};color:#020617}
-    .orb{position:absolute;right:84px;top:115px;width:250px;height:250px;border:2px solid ${accent}66;border-radius:50%;box-shadow:0 0 90px ${accent}28,inset 0 0 55px ${accent2}22}
-    .orb:before,.orb:after{content:"";position:absolute;border-radius:50%;background:${accent};box-shadow:0 0 30px ${accent}}
-    .orb:before{width:28px;height:28px;top:12px;left:98px}.orb:after{width:15px;height:15px;right:32px;bottom:47px;background:${accent2};box-shadow:0 0 22px ${accent2}}
-    .line{position:absolute;right:38px;bottom:70px;width:380px;height:110px;border:2px solid ${accent2}44;border-left:0;border-bottom:0;border-radius:0 110px 0 0;transform:rotate(-9deg)}
-  </style></head><body><div class="frame"><div class="grid"></div><div class="brand"><img src="${logoSrc}" alt=""><span>無料Web便利ツール集 · GAME</span></div><div class="genre">${genre}</div><h1>${heading}</h1><p class="tag">${tagline}</p><div class="play"><b>▶</b><span>FREE · NO INSTALL</span></div><div class="orb"></div><div class="line"></div></div></body></html>`);
-  await page.screenshot({ path: path.join(outputDir, key + ".png"), type: "png" });
-  await page.close();
-  console.log("generated", key + ".png");
-}
+// Individual game OG images are maintained as gameplay-based static assets.
 await browser.close();
