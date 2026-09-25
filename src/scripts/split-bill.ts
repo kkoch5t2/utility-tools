@@ -6,6 +6,9 @@ type SavedExpense={expenseId:string;editToken:string};
 const qs=<T extends Element>(s:string)=>document.querySelector<T>(s);
 const loading=qs<HTMLElement>("[data-loading]")!,createView=qs<HTMLElement>("[data-create]")!,eventView=qs<HTMLElement>("[data-event]")!,notFound=qs<HTMLElement>("[data-not-found]")!;
 const params=new URLSearchParams(location.search),id=params.get("id")?.trim()??"";
+const toolPath=location.pathname.startsWith("/travel-expense")?"/travel-expense/":"/split-bill/";
+const createButtonLabel=toolPath==="/travel-expense/"?"旅行精算を作成":"割り勘を作成";
+const recentItem=toolPath==="/travel-expense/"?{id:"travel-expense-share",href:toolPath,name:"旅行費用分担",category:"share"}:{id:"shared-split-bill",href:toolPath,name:"割り勘・立替精算",category:"share"};
 let current:SplitData|null=null;
 let editingId="";
 const expenseKey=(id:string)=>"utility-tools:split:expenses:"+id,adminKey=(id:string)=>"utility-tools:split:admin:"+id;
@@ -13,7 +16,7 @@ const errors:Record<string,string>={title_required:"グループ名を入力し�
 const request=async(url:string,init?:RequestInit)=>{const r=await fetch(url,{...init,headers:{"content-type":"application/json",...(init?.headers??{})}});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(errors[j?.error]??"処理に失敗しました。");return j};
 const setError=(el:HTMLElement,msg="")=>{el.textContent=msg;el.hidden=!msg};
 const money=(n:number)=>Math.round(n).toLocaleString("ja-JP")+"円";
-try{const k="utility-tools:recent",item={id:"shared-split-bill",href:"/split-bill/",name:"割り勘・立替精算",category:"share"};const a=JSON.parse(localStorage.getItem(k)??"[]");localStorage.setItem(k,JSON.stringify([item,...(Array.isArray(a)?a.filter((x:any)=>x?.id!==item.id):[])].slice(0,6)))}catch{}
+try{const k="utility-tools:recent",item=recentItem;const a=JSON.parse(localStorage.getItem(k)??"[]");localStorage.setItem(k,JSON.stringify([item,...(Array.isArray(a)?a.filter((x:any)=>x?.id!==item.id):[])].slice(0,6)))}catch{}
 function savedExpenses():SavedExpense[]{try{const v=JSON.parse(localStorage.getItem(expenseKey(id))??"[]");return Array.isArray(v)?v:[]}catch{return[]}}
 function saveExpenseToken(item:SavedExpense){const arr=savedExpenses().filter(x=>x.expenseId!==item.expenseId);arr.push(item);localStorage.setItem(expenseKey(id),JSON.stringify(arr))}
 function removeExpenseToken(expenseId:string){localStorage.setItem(expenseKey(id),JSON.stringify(savedExpenses().filter(x=>x.expenseId!==expenseId)))}
@@ -21,7 +24,7 @@ function tokenFor(expenseId:string){return savedExpenses().find(x=>x.expenseId==
 function initCreate(){
   loading.hidden=true;createView.hidden=false;
   const form=qs<HTMLFormElement>("[data-create-form]")!,button=qs<HTMLButtonElement>("[data-create-button]")!,error=qs<HTMLElement>("[data-create-error]")!;
-  form.addEventListener("submit",async e=>{e.preventDefault();setError(error);const fd=new FormData(form);const participants=[...new Set(String(fd.get("participants")??"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];if(participants.length<2){setError(error,"参加者は2人以上必要です。");return}if(participants.length>20){setError(error,"参加者は20人以内にしてください。");return}button.disabled=true;button.textContent="作成中...";try{const r=await request("/api/split-bills",{method:"POST",body:JSON.stringify({title:String(fd.get("title")??""),description:String(fd.get("description")??""),participants})});localStorage.setItem(adminKey(r.id),r.adminToken);location.assign("/split-bill/?id="+encodeURIComponent(r.id)+"&created=1")}catch(err){setError(error,err instanceof Error?err.message:"作成に失敗しました。");button.disabled=false;button.textContent="割り勘を作成"}});
+  form.addEventListener("submit",async e=>{e.preventDefault();setError(error);const fd=new FormData(form);const participants=[...new Set(String(fd.get("participants")??"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];if(participants.length<2){setError(error,"参加者は2人以上必要です。");return}if(participants.length>20){setError(error,"参加者は20人以内にしてください。");return}button.disabled=true;button.textContent="作成中...";try{const r=await request("/api/split-bills",{method:"POST",body:JSON.stringify({title:String(fd.get("title")??""),description:String(fd.get("description")??""),participants})});localStorage.setItem(adminKey(r.id),r.adminToken);location.assign(toolPath+"?id="+encodeURIComponent(r.id)+"&created=1")}catch(err){setError(error,err instanceof Error?err.message:"作成に失敗しました。");button.disabled=false;button.textContent=createButtonLabel}});
 }
 function setupForm(expense?:Expense){
   if(!current)return;
@@ -43,7 +46,7 @@ function render(){
   const desc=qs<HTMLElement>("[data-description]")!;desc.textContent=current.description;desc.hidden=!current.description;
   qs<HTMLElement>("[data-total]")!.textContent="合計 "+money(current.total);
   qs<HTMLElement>("[data-expiry]")!.textContent="保存期限: "+new Date(current.expiresAt).toLocaleDateString("ja-JP");
-  qs<HTMLInputElement>("[data-share-url]")!.value=location.origin+"/split-bill/?id="+encodeURIComponent(current.id);
+  qs<HTMLInputElement>("[data-share-url]")!.value=location.origin+toolPath+"?id="+encodeURIComponent(current.id);
   qs<HTMLElement>("[data-created]")!.hidden=params.get("created")!=="1";
   qs<HTMLButtonElement>("[data-delete]")!.hidden=!localStorage.getItem(adminKey(current.id));
 
@@ -63,6 +66,6 @@ function wire(){
   qs<HTMLButtonElement>("[data-cancel-edit]")!.addEventListener("click",()=>{editingId="";setupForm()});
   qs<HTMLButtonElement>("[data-expense-delete]")!.addEventListener("click",async()=>{if(!editingId||!confirm("この支払いを削除しますか？"))return;const s=tokenFor(editingId);if(!s)return;await request("/api/split-bills/"+id+"/expenses/"+editingId,{method:"DELETE",headers:{authorization:"Bearer "+s.editToken}});removeExpenseToken(editingId);editingId="";await reload()});
   qs<HTMLButtonElement>("[data-copy]")!.addEventListener("click",async()=>{const input=qs<HTMLInputElement>("[data-share-url]")!,m=qs<HTMLElement>("[data-copy-message]")!;try{await navigator.clipboard.writeText(input.value);m.textContent="コピーしました。"}catch{input.select();m.textContent="URLを選択しました。コピーしてください。"}m.hidden=false;setTimeout(()=>m.hidden=true,1500)});
-  qs<HTMLButtonElement>("[data-delete]")!.addEventListener("click",async()=>{const token=localStorage.getItem(adminKey(id));if(!token||!confirm("この割り勘データを削除しますか？"))return;await request("/api/split-bills/"+id,{method:"DELETE",headers:{authorization:"Bearer "+token}});localStorage.removeItem(adminKey(id));localStorage.removeItem(expenseKey(id));location.assign("/split-bill/")});
+  qs<HTMLButtonElement>("[data-delete]")!.addEventListener("click",async()=>{const token=localStorage.getItem(adminKey(id));if(!token||!confirm("この割り勘データを削除しますか？"))return;await request("/api/split-bills/"+id,{method:"DELETE",headers:{authorization:"Bearer "+token}});localStorage.removeItem(adminKey(id));localStorage.removeItem(expenseKey(id));location.assign(toolPath)});
 }
 if(id){wire();reload().then(()=>{loading.hidden=true;eventView.hidden=false}).catch(()=>{loading.hidden=true;notFound.hidden=false})}else initCreate();

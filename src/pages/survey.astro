@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="簡易アンケート作成｜登録不要でURL共有";
+const description="単一選択・複数選択・5段階評価のアンケートを作り、URL共有だけで回答と集計ができる無料ツールです。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"簡易アンケート",url:siteConfig.url+"/survey/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="簡易アンケート｜無料Web便利ツール集">
+<div class="shell shared-page">
+<nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span aria-current="page">簡易アンケート</span></nav>
+<div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+<section data-create hidden><header class="shared-heading"><p class="eyebrow">SURVEY</p><h1>簡易アンケート</h1><p>単一選択・複数選択・5段階評価を組み合わせて、すぐ共有できます。</p></header><div class="shared-card"><form data-create-form>
+<div class="shared-field"><label for="survey-title">アンケート名 <span>必須</span></label><input id="survey-title" name="title" maxlength="100" required placeholder="例：社内イベントアンケート"></div>
+<div class="shared-field"><label for="survey-description">説明</label><textarea id="survey-description" name="description" rows="3" maxlength="800"></textarea></div>
+<div class="shared-field"><label for="survey-questions">質問 <span>必須</span></label><textarea id="survey-questions" name="questions" rows="14" placeholder="単一: 参加したい企画は？&#10;BBQ&#10;ボウリング&#10;カラオケ&#10;&#10;複数: 興味のあるテーマは？&#10;AI&#10;データ分析&#10;クラウド&#10;&#10;評価: 満足度を教えてください"></textarea><small>質問ごとに空行で区切り、先頭を「単一:」「複数:」「評価:」にします。最大10問。</small></div>
+<div class="shared-storage"><strong>回答は最大90日保存します</strong><p>匿名回答です。共有URLを知っている人は集計結果を閲覧できます。</p></div>
+<p class="shared-error" data-create-error hidden></p><button class="button button-primary shared-submit" type="submit" data-create-button>アンケートを作成</button>
+</form></div></section>
+<section data-event hidden>
+<div class="shared-created" data-created hidden><strong>アンケートを作成しました</strong><span>URLを回答者へ共有してください。</span></div>
+<header class="shared-heading"><p class="eyebrow">SURVEY</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-count>0件回答</span><span data-expiry></span></div></header>
+<div class="shared-sharebox"><div><strong>共有URL</strong><span>URLを知っている人が回答できます</span></div><div class="shared-share-row"><input data-share-url readonly><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+<div class="shared-grid"><section class="shared-card"><div class="shared-section-title"><div><p class="eyebrow">ANSWER</p><h2 data-answer-heading>回答する</h2></div></div><form data-answer-form><div class="survey-questions" data-questions></div><p class="shared-error" data-answer-error hidden></p><div class="shared-actions"><button class="button button-primary" type="submit" data-answer-submit>回答を送信</button><button class="button button-secondary" type="button" data-answer-delete hidden>回答を取り消す</button></div></form></section>
+<aside class="shared-card"><p class="eyebrow">RESULT</p><h2 class="side-title">集計結果</h2><div class="survey-results" data-results></div></aside></div>
+<div class="shared-footer-actions"><a class="button button-secondary" href="/survey/">新しいアンケートを作る</a><button class="shared-danger" type="button" data-delete hidden>このアンケートを削除</button></div>
+</section>
+<section class="shared-not-found" data-not-found hidden><h2>アンケートが見つかりません</h2><p>URLが違うか、保存期限を過ぎた可能性があります。</p><a class="button button-primary" href="/survey/">新しく作成する</a></section>
+</div>
+<script type="application/ld+json" set:html={JSON.stringify(appJson)} />
+<script src="../scripts/survey.ts"></script>
+</BaseLayout>
+<style>
+.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.side-title{margin:3px 0 14px;font-size:21px}.survey-questions,.survey-results{display:grid;gap:16px}.survey-question,.survey-result{padding:13px;border:1px solid var(--line);border-radius:11px}.survey-question h3,.survey-result h3{margin:0 0 10px;font-size:13px}.survey-option{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:12px}.survey-rating{display:flex;gap:7px;flex-wrap:wrap}.survey-rating label{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:9px}.survey-rating input{margin:0}.result-line{display:flex;justify-content:space-between;gap:8px;font-size:11px;margin-top:6px}.result-bar{height:6px;background:#e8eef6;border-radius:999px;overflow:hidden;margin-top:4px}.result-bar>span{display:block;height:100%;background:var(--accent)}.result-average{font-size:24px;font-weight:900;color:var(--accent)}
+</style>

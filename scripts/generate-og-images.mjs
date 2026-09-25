@@ -8,7 +8,7 @@ const logo = fs.readFileSync(path.resolve("public/utility-tools-logo-header-v2.p
 const logoSrc = "data:image/png;base64," + logo;
 
 const cards = [
-  ["default", "無料Web便利ツール集", "画像・CSV・JSON・PDF・動画など150種類以上", "必要なときに、すぐ使える。"],
+  ["default", "無料Web便利ツール集", "画像・CSV・JSON・PDF・動画・共有など170種類以上", "必要なときに、すぐ使える。"],
   ["image", "画像ツール", "圧縮・リサイズ・形式変換", "画像をブラウザ内で手軽に処理"],
   ["csv", "CSVツール", "分割・結合・変換・整形", "CSV作業をもっと手軽に"],
   ["json", "JSONツール", "整形・変換・抽出", "開発・データ処理を素早く"],

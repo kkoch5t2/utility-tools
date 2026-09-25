@@ -68,9 +68,9 @@ for (const tool of extraTools) {
   if (!categoryKeys.has(tool.categoryKey)) errors.push(`missing category landing page: ${tool.id} -> ${tool.categoryKey}`);
 }
 
-const baseToolIds = ["image-batch-converter", "csv-split", "remove-duplicate-lines", "schedule-coordination", "anonymous-poll", "attendance-check", "shared-split-bill"];
+const baseToolIds = ["image-batch-converter", "csv-split", "remove-duplicate-lines", "schedule-coordination", "anonymous-poll", "attendance-check", "shared-split-bill", "simple-survey", "random-team-divider", "shared-lottery-order", "availability-match", "packing-assignment", "shared-checklist", "seat-shuffle", "travel-expense-share", "candidate-ranking"];
 const toolIds = new Set([...extraTools.map((tool) => tool.id), ...baseToolIds]);
-const toolHrefs = new Set([...extraTools.map((tool) => tool.href), "/image/batch-converter/", "/csv/split/", "/text/remove-duplicates/", "/schedule/", "/poll/", "/attendance/", "/split-bill/"]);
+const toolHrefs = new Set([...extraTools.map((tool) => tool.href), "/image/batch-converter/", "/csv/split/", "/text/remove-duplicates/", "/schedule/", "/poll/", "/attendance/", "/split-bill/", "/survey/", "/team-divider/", "/lottery-order/", "/availability-match/", "/packing-list/", "/shared-checklist/", "/seat-shuffle/", "/travel-expense/", "/candidate-ranking/"]);
 
 const useCaseSlugs = new Set();
 for (const page of useCasePages) {

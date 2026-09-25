@@ -97,7 +97,7 @@ export const useCasePages: readonly UseCasePage[] = [
     description: "日程調整、匿名投票、出欠確認、割り勘・立替精算など、複数人でURLを共有して使える無料ツールをまとめています。",
     intro: "飲み会、旅行、イベント、チーム活動など、複数人で決める・集める・精算する作業をURL共有だけで進められます。",
     bullets: ["候補日や出欠をみんなから集めたい", "店や行き先を匿名投票で決めたい", "旅行や飲み会の立替をまとめて精算したい"],
-    toolIds: ["schedule-coordination","anonymous-poll","attendance-check","shared-split-bill"],
+    toolIds: ["schedule-coordination","anonymous-poll","attendance-check","shared-split-bill","simple-survey","random-team-divider","shared-lottery-order","availability-match","packing-assignment","shared-checklist","seat-shuffle","travel-expense-share","candidate-ranking"],
   },
 ] as const;
 

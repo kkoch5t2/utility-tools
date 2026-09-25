@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="空き時間マッチング｜候補時間を共有して共通時間を集計";
+const description="候補の日時・時間帯を共有し、各自が空いている時間を選ぶだけで共通の空き時間を自動集計できる無料ツールです。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"空き時間マッチング",url:siteConfig.url+"/availability-match/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="空き時間マッチング｜無料Web便利ツール集">
+<div class="shell shared-page">
+<nav class="breadcrumbs"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span>空き時間マッチング</span></nav>
+<div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+<section data-create hidden><header class="shared-heading"><p class="eyebrow">AVAILABILITY</p><h1>空き時間マッチング</h1><p>候補時間を並べて共有し、全員が空いている時間を見つけます。</p></header><div class="shared-card"><form data-create-form>
+<div class="shared-field"><label for="availability-title">予定名 <span>必須</span></label><input id="availability-title" name="title" maxlength="100" required placeholder="例：オンライン打ち合わせ"></div>
+<div class="shared-field"><label for="availability-description">補足</label><textarea id="availability-description" name="description" rows="3" maxlength="800"></textarea></div>
+<div class="shared-field"><label for="availability-slots">候補時間 <span>2件以上</span></label><textarea id="availability-slots" name="slots" rows="10" placeholder="10/5 19:00〜20:00&#10;10/5 20:00〜21:00&#10;10/6 19:00〜20:00"></textarea><small>1行に1候補。最大48件。</small></div>
+<div class="shared-storage"><strong>回答は最大90日保存します</strong><p>共有URLを知っている人は回答者名と空き時間を確認できます。</p></div>
+<p class="shared-error" data-create-error hidden></p><button class="button button-primary shared-submit" type="submit" data-create-button>候補時間を作成</button>
+</form></div></section>
+<section data-event hidden>
+<div class="shared-created" data-created hidden><strong>候補時間を作成しました</strong><span>URLを参加者へ共有してください。</span></div>
+<header class="shared-heading"><p class="eyebrow">AVAILABILITY</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-count>0人回答</span><span data-expiry></span></div></header>
+<div class="shared-sharebox"><div><strong>共有URL</strong><span>参加者が空いている時間を選べます</span></div><div class="shared-share-row"><input data-share-url readonly><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+<div class="shared-grid"><section class="shared-card"><p class="eyebrow">ANSWER</p><h2 class="side-title" data-answer-heading>空いている時間を選ぶ</h2><form data-answer-form><div class="shared-field"><label for="availability-name">名前</label><input id="availability-name" data-name maxlength="50"></div><div class="slot-checks" data-slots></div><p class="shared-error" data-answer-error hidden></p><div class="shared-actions"><button class="button button-primary" type="submit" data-answer-submit>回答を送信</button><button class="button button-secondary" type="button" data-answer-delete hidden>回答を削除</button></div></form></section>
+<aside class="shared-card"><p class="eyebrow">MATCH</p><h2 class="side-title">集計結果</h2><div class="slot-results" data-results></div></aside></div>
+<div class="shared-footer-actions"><a class="button button-secondary" href="/availability-match/">新しい候補を作る</a><button class="shared-danger" type="button" data-delete hidden>この候補を削除</button></div>
+</section>
+<section class="shared-not-found" data-not-found hidden><h2>候補時間が見つかりません</h2><a class="button button-primary" href="/availability-match/">新しく作成する</a></section>
+</div><script type="application/ld+json" set:html={JSON.stringify(appJson)} /><script src="../scripts/availability-match.ts"></script>
+</BaseLayout>
+<style>.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.side-title{margin:3px 0 14px;font-size:21px}.slot-checks{display:grid;gap:8px;margin-bottom:16px}.slot-check{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:12px}.slot-results{display:grid;gap:10px}.slot-result{padding:10px 11px;border:1px solid var(--line);border-radius:10px}.slot-result-head{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:800}.slot-result-bar{height:7px;margin-top:6px;border-radius:999px;background:#e8eef6;overflow:hidden}.slot-result-bar span{display:block;height:100%;background:var(--accent)}</style>

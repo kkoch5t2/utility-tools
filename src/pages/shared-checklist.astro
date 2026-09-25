@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="共有TODO・チェックリスト｜URL共有で共同チェック";
+const description="旅行準備・イベント準備・引っ越しなどのTODOを共有し、複数人でチェックできる無料の共有チェックリストです。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"共有TODO・チェックリスト",url:siteConfig.url+"/shared-checklist/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="共有TODO・チェックリスト｜無料Web便利ツール集">
+<div class="shell shared-page">
+<nav class="breadcrumbs"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span>共有TODO</span></nav>
+<div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+<section data-create hidden><header class="shared-heading"><p class="eyebrow">CHECKLIST</p><h1>共有TODO・チェックリスト</h1><p>やることを共有して、みんなで完了チェックできます。</p></header><div class="shared-card"><form data-create-form>
+<div class="shared-field"><label for="check-title">リスト名 <span>必須</span></label><input id="check-title" name="title" maxlength="100" required placeholder="例：旅行前の準備"></div>
+<div class="shared-field"><label for="check-description">補足</label><textarea id="check-description" name="description" rows="3" maxlength="800"></textarea></div>
+<div class="shared-field"><label for="check-tasks">最初のTODO <span>必須</span></label><textarea id="check-tasks" name="tasks" rows="9" placeholder="ホテル予約&#10;新幹線予約&#10;Wi-Fi受取&#10;持ち物確認"></textarea><small>1行に1件。あとから追加できます。</small></div>
+<div class="shared-storage"><strong>リストは最大90日保存します</strong><p>共有URLを知っている人はTODOの追加・チェックができます。</p></div>
+<p class="shared-error" data-create-error hidden></p><button class="button button-primary shared-submit" type="submit">チェックリストを作成</button>
+</form></div></section>
+<section data-event hidden>
+<div class="shared-created" data-created hidden><strong>チェックリストを作成しました</strong><span>URLをメンバーへ共有してください。</span></div>
+<header class="shared-heading"><p class="eyebrow">CHECKLIST</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-progress>0 / 0 完了</span><span data-expiry></span></div></header>
+<div class="shared-sharebox"><div><strong>共有URL</strong><span>URLを知っている人が共同編集できます</span></div><div class="shared-share-row"><input data-share-url readonly><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+<section class="shared-card"><form class="add-task" data-add-form><input data-new-task maxlength="100" placeholder="TODOを追加"><button class="button button-primary" type="submit">追加</button></form><p class="shared-error" data-error hidden></p><div class="check-list" data-list></div></section>
+<div class="shared-footer-actions"><a class="button button-secondary" href="/shared-checklist/">新しいリストを作る</a><button class="shared-danger" type="button" data-delete hidden>このリストを削除</button></div>
+</section>
+<section class="shared-not-found" data-not-found hidden><h2>チェックリストが見つかりません</h2><a class="button button-primary" href="/shared-checklist/">新しく作成する</a></section>
+</div><script type="application/ld+json" set:html={JSON.stringify(appJson)} /><script src="../scripts/shared-checklist.ts"></script>
+</BaseLayout>
+<style>.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.add-task{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:14px}.add-task input{min-width:0;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font:inherit}.check-list{display:grid;gap:8px}.check-row{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--line);border-radius:10px}.check-row input{width:18px;height:18px}.check-row span{flex:1;font-size:12px}.check-row.is-done span{text-decoration:line-through;color:var(--muted)}.check-row button{border:0;background:transparent;color:#b42318;font-size:11px;font-weight:800;cursor:pointer}@media(max-width:520px){.add-task{grid-template-columns:1fr}.add-task button{width:100%}}</style>

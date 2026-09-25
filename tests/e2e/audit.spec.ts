@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const TOOL_PATH = /^(?:\/(schedule|poll|attendance|split-bill)\/|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator)\/)/;
+const TOOL_PATH = /^(?:\/(schedule|poll|attendance|split-bill|survey|team-divider|lottery-order|availability-match|packing-list|shared-checklist|seat-shuffle|travel-expense|candidate-ranking)\/|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator)\/)/;
 
 test("全ツールをPC・スマホで表示監査する", async ({ browser, request }) => {
   const sitemapResponse = await request.get("/sitemap.xml");
@@ -10,7 +10,7 @@ test("全ツールをPC・スマホで表示監査する", async ({ browser, req
     .map((match) => match[1])
     .filter((path) => TOOL_PATH.test(path));
 
-  expect(toolPaths.length).toBeGreaterThanOrEqual(161);
+  expect(toolPaths.length).toBeGreaterThanOrEqual(170);
 
   const viewports = [
     { name: "desktop", width: 1365, height: 768 },
@@ -26,7 +26,7 @@ test("全ツールをPC・スマホで表示監査する", async ({ browser, req
 
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
       expect(response?.ok(), `${viewport.name}: ${path}`).toBeTruthy();
-      if (["/schedule/", "/poll/", "/attendance/", "/split-bill/"].includes(path)) {
+      if (["/schedule/", "/poll/", "/attendance/", "/split-bill/", "/survey/", "/lottery-order/", "/availability-match/", "/packing-list/", "/shared-checklist/", "/travel-expense/", "/candidate-ranking/"].includes(path)) {
         await expect(page.locator("h1"), `${viewport.name}: ${path}`).toBeVisible();
         await expect(page.locator("[data-create-form]"), `${viewport.name}: ${path}`).toBeVisible();
       } else {

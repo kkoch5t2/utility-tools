@@ -1,0 +1,76 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="旅行費用分担ツール｜旅費の立替・精算を共有";
+const description="旅行中の宿泊費・交通費・食費などの立替を共有し、誰が誰にいくら払えば精算できるかを自動計算する無料ツールです。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"旅行費用分担ツール",url:siteConfig.url+"/travel-expense/",applicationCategory:"FinanceApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="旅行費用分担ツール｜無料Web便利ツール集">
+  <div class="shell shared-page">
+    <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span aria-current="page">旅行費用分担</span></nav>
+    <div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+
+    <section data-create hidden>
+      <header class="shared-heading"><p class="eyebrow">TRAVEL EXPENSE</p><h1>旅行費用分担</h1><p>宿泊費・交通費・食費など、旅行中の立替を共有して最後にまとめて精算します。</p></header>
+      <div class="shared-card">
+        <form data-create-form>
+          <div class="shared-field"><label for="split-title">グループ名 <span>必須</span></label><input id="split-title" name="title" maxlength="100" required placeholder="例：沖縄3泊4日" /></div>
+          <div class="shared-field"><label for="split-description">メモ</label><textarea id="split-description" name="description" rows="3" maxlength="800" placeholder="旅程や精算ルールなど"></textarea></div>
+          <div class="shared-field"><label for="split-members">参加者 <span>2人以上</span></label><textarea id="split-members" name="participants" rows="7" required placeholder="1行に1人ずつ入力&#10;田中&#10;鈴木&#10;佐藤"></textarea><small>最大20人。作成後の参加者変更はできません。</small></div>
+          <div class="shared-storage"><strong>精算データを最大90日保存します</strong><p>参加者名・支払い金額・メモ・負担対象を共有のためCloudflare上に保存します。</p></div>
+          <p class="shared-error" data-create-error hidden></p>
+          <button class="button button-primary shared-submit" type="submit" data-create-button>旅行精算を作成</button>
+        </form>
+      </div>
+    </section>
+
+    <section data-event hidden>
+      <div class="shared-created" data-created hidden><strong>旅行精算を作成しました</strong><span>共有URLをメンバーへ送って、立替を追加してもらえます。</span></div>
+      <header class="shared-heading"><p class="eyebrow">TRAVEL EXPENSE</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-total>合計 0円</span><span data-expiry></span></div></header>
+      <div class="shared-sharebox"><div><strong>共有URL</strong><span>URLを知っている人が支払いを追加できます</span></div><div class="shared-share-row"><input data-share-url readonly /><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-privacy">共有URLを知っている人には参加者名・金額・支払い内容が表示されます。</p><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+
+      <section class="settlement-panel shared-card">
+        <div class="shared-section-title"><div><p class="eyebrow">SETTLEMENT</p><h2>精算するなら</h2></div></div>
+        <div class="settlement-list" data-settlements></div><p class="shared-empty" data-settlement-empty>支払いを追加すると精算方法を表示します。</p>
+      </section>
+
+      <div class="shared-grid split-layout">
+        <section class="shared-card">
+          <div class="shared-section-title"><div><p class="eyebrow">EXPENSE</p><h2 data-expense-heading>支払いを追加</h2></div><button class="shared-text-button" type="button" data-cancel-edit hidden>編集をやめる</button></div>
+          <form data-expense-form>
+            <div class="shared-field"><label for="split-payer">支払った人 <span>必須</span></label><select id="split-payer" data-payer></select></div>
+            <div class="shared-field"><label for="split-amount">金額 <span>必須</span></label><input id="split-amount" data-amount type="number" min="1" max="100000000" step="1" inputmode="numeric" placeholder="例：12000" /></div>
+            <div class="shared-field"><label for="split-memo">内容</label><input id="split-memo" data-memo maxlength="120" placeholder="例：ホテル代" /></div>
+            <div class="shared-field"><label>負担する人 <span>1人以上</span></label><div class="member-checks" data-members></div><button class="mini-action" type="button" data-all-members>全員を選択</button></div>
+            <p class="shared-error" data-expense-error hidden></p>
+            <div class="shared-actions"><button class="button button-primary" type="submit" data-expense-submit>支払いを追加</button><button class="button button-secondary" type="button" data-expense-delete hidden>この支払いを削除</button></div>
+          </form>
+        </section>
+
+        <aside class="shared-card"><p class="eyebrow">BALANCE</p><h2 class="side-title">現在の差額</h2><div class="balance-list" data-balances></div></aside>
+      </div>
+
+      <section class="shared-card expense-section">
+        <div class="shared-section-title"><div><p class="eyebrow">HISTORY</p><h2>支払い履歴 <span data-expense-count>0</span></h2></div></div>
+        <div class="expense-list" data-expenses></div><p class="shared-empty" data-expense-empty>まだ支払いはありません。</p>
+      </section>
+
+      <div class="shared-footer-actions"><a class="button button-secondary" href="/travel-expense/">新しい旅行精算を作る</a><button class="shared-danger" type="button" data-delete hidden>この旅行精算を削除</button></div>
+    </section>
+
+    <section class="shared-not-found" data-not-found hidden><h2>旅行精算データが見つかりません</h2><p>URLが違うか、保存期限を過ぎた可能性があります。</p><a class="button button-primary" href="/travel-expense/">新しく作成する</a></section>
+
+    <section class="shared-info"><div class="shared-info-block"><p class="eyebrow">HOW TO USE</p><h2>使い方</h2><div class="shared-howto"><div><strong>1. メンバー登録</strong><span>旅行の参加者を登録。</span></div><div><strong>2. 立替を記録</strong><span>支払った人・金額・負担メンバーを入力。</span></div><div><strong>3. 精算</strong><span>誰が誰へいくら払うか自動計算。</span></div></div></div><div class="shared-info-block shared-faq"><p class="eyebrow">FAQ</p><h2>よくある質問</h2><details><summary>一部の人だけが負担する支払いにも対応しますか？</summary><p>はい。支払いごとに負担するメンバーを選択できます。</p></details><details><summary>端数はどうなりますか？</summary><p>各人の差額は1円単位に丸めて精算案を計算します。</p></details></div></section>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(appJson)} />
+  <script src="../scripts/split-bill.ts"></script>
+</BaseLayout>
+<style>
+.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.side-title{margin:3px 0 14px;font-size:21px}
+.settlement-panel{margin-bottom:16px;background:linear-gradient(135deg,#f8fbff,#eef5ff)}.settlement-list{display:grid;gap:8px}.settlement-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-radius:10px;background:white;border:1px solid #d7e3f4}.settlement-row strong{font-size:14px}.settlement-row span{color:var(--accent);font-weight:900;font-size:14px}
+.member-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.member-check{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:12px;font-weight:700}.member-check input{width:auto;height:auto}.mini-action{justify-self:start;border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:800;cursor:pointer;padding:5px 0}
+.balance-list{display:grid;gap:8px}.balance-row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}.balance-row:last-child{border-bottom:0}.balance-row strong.positive{color:#218543}.balance-row strong.negative{color:#b42318}.balance-row strong.zero{color:var(--muted)}
+.expense-section{margin-top:16px}.expense-list{display:grid;gap:9px}.expense-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px}.expense-item-main{min-width:0}.expense-item-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px}.expense-item-head strong{font-size:13px}.expense-item-head b{font-size:15px}.expense-item p{margin:4px 0 0;color:var(--muted);font-size:10px;line-height:1.5}.expense-edit{border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:800;cursor:pointer}.shared-section-title h2 span{color:var(--muted);font-size:13px}
+@media(max-width:520px){.member-checks{grid-template-columns:1fr}.expense-item{grid-template-columns:1fr}.settlement-row{align-items:flex-start;flex-direction:column;gap:3px}}
+</style>

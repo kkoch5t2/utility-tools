@@ -1,0 +1,32 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="順番決め・くじ引き共有ツール｜参加者募集から抽選まで";
+const description="共有URLから参加者が名前を登録し、主催者がランダムに順番を決められる無料のくじ引きツールです。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"順番決め・くじ引き",url:siteConfig.url+"/lottery-order/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="順番決め・くじ引き｜無料Web便利ツール集">
+<div class="shell shared-page">
+<nav class="breadcrumbs"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span>順番決め・くじ引き</span></nav>
+<div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+<section data-create hidden><header class="shared-heading"><p class="eyebrow">LOTTERY</p><h1>順番決め・くじ引き</h1><p>共有URLから参加者を集めて、主催者が1クリックで順番を抽選します。</p></header><div class="shared-card"><form data-create-form>
+<div class="shared-field"><label for="lottery-title">抽選名 <span>必須</span></label><input id="lottery-title" name="title" maxlength="100" required placeholder="例：発表順を決める"></div>
+<div class="shared-field"><label for="lottery-description">説明</label><textarea id="lottery-description" name="description" rows="3" maxlength="800"></textarea></div>
+<div class="shared-storage"><strong>参加者と抽選結果を最大90日保存します</strong><p>抽選後は参加受付を締め切り、結果が固定されます。</p></div>
+<p class="shared-error" data-create-error hidden></p><button class="button button-primary shared-submit" type="submit" data-create-button>抽選ページを作成</button>
+</form></div></section>
+<section data-event hidden>
+<div class="shared-created" data-created hidden><strong>抽選ページを作成しました</strong><span>まず参加者へURLを共有してください。</span></div>
+<header class="shared-heading"><p class="eyebrow">LOTTERY</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-count>0人参加</span><span data-expiry></span></div></header>
+<div class="shared-sharebox"><div><strong>共有URL</strong><span>参加者は名前だけで登録できます</span></div><div class="shared-share-row"><input data-share-url readonly><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+<div class="shared-grid">
+<section class="shared-card"><p class="eyebrow">JOIN</p><h2 class="side-title">参加する</h2><form data-join-form><div class="shared-field"><label for="lottery-name">名前</label><input id="lottery-name" data-name maxlength="50" placeholder="例：田中"></div><p class="shared-error" data-join-error hidden></p><div class="shared-actions"><button class="button button-primary" type="submit" data-join>参加登録</button><button class="button button-secondary" type="button" data-leave hidden>参加を取り消す</button></div></form><div class="participant-list" data-participants></div></section>
+<aside class="shared-card"><p class="eyebrow">RESULT</p><h2 class="side-title">抽選結果</h2><div class="lottery-result" data-result></div><p class="shared-empty" data-not-drawn>まだ抽選されていません。</p><button class="button button-primary draw-button" type="button" data-draw hidden>順番を抽選する</button></aside>
+</div>
+<div class="shared-footer-actions"><a class="button button-secondary" href="/lottery-order/">新しい抽選を作る</a><button class="shared-danger" type="button" data-delete hidden>この抽選を削除</button></div>
+</section>
+<section class="shared-not-found" data-not-found hidden><h2>抽選が見つかりません</h2><a class="button button-primary" href="/lottery-order/">新しく作成する</a></section>
+</div><script type="application/ld+json" set:html={JSON.stringify(appJson)} /><script src="../scripts/lottery-order.ts"></script>
+</BaseLayout>
+<style>.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.side-title{margin:3px 0 14px;font-size:21px}.participant-list{display:grid;gap:7px;margin-top:16px}.participant{padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:12px;font-weight:700}.lottery-result{display:grid;gap:8px}.rank-row{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface-muted)}.rank-row b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px}.rank-row strong{font-size:13px}.draw-button{width:100%;margin-top:12px}</style>
