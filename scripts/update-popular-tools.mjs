@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 const API = "https://api.cloudflare.com/client/v4";
 const HOST = "utility-tools-jp.com";
 const DAYS = 7;
-const LIMIT = 6;
+const LIMIT = 3;
 const token = process.env.CLOUDFLARE_API_TOKEN;
 
 if (!token) throw new Error("CLOUDFLARE_API_TOKEN is not configured.");
