@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="持ち物分担表｜誰が何を持つかURL共有で管理";
+const description="旅行・BBQ・イベントの持ち物を共有し、誰が何を担当するかをURLだけで分担できる無料ツールです。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"持ち物分担表",url:siteConfig.url+"/packing-list/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="持ち物分担表｜無料Web便利ツール集">
+<div class="shell shared-page">
+<nav class="breadcrumbs"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span>持ち物分担表</span></nav>
+<div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+<section data-create hidden><header class="shared-heading"><p class="eyebrow">PACKING</p><h1>持ち物分担表</h1><p>必要な物を一覧にして共有し、各自が担当を取れます。</p></header><div class="shared-card"><form data-create-form>
+<div class="shared-field"><label for="packing-title">予定名 <span>必須</span></label><input id="packing-title" name="title" maxlength="100" required placeholder="例：秋のBBQ"></div>
+<div class="shared-field"><label for="packing-description">補足</label><textarea id="packing-description" name="description" rows="3" maxlength="800"></textarea></div>
+<div class="shared-field"><label for="packing-items">持ち物 <span>必須</span></label><textarea id="packing-items" name="items" rows="10" placeholder="炭&#10;紙皿&#10;飲み物&#10;クーラーボックス"></textarea><small>1行に1項目、最大100件。</small></div>
+<div class="shared-storage"><strong>担当情報を最大90日保存します</strong><p>共有URLを知っている人は担当者名を確認できます。</p></div>
+<p class="shared-error" data-create-error hidden></p><button class="button button-primary shared-submit" type="submit">分担表を作成</button>
+</form></div></section>
+<section data-event hidden>
+<div class="shared-created" data-created hidden><strong>分担表を作成しました</strong><span>URLをメンバーへ共有してください。</span></div>
+<header class="shared-heading"><p class="eyebrow">PACKING</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-progress>0 / 0 担当済み</span><span data-expiry></span></div></header>
+<div class="shared-sharebox"><div><strong>共有URL</strong><span>URLを知っている人が担当を取れます</span></div><div class="shared-share-row"><input data-share-url readonly><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+<section class="shared-card"><div class="shared-field"><label for="packing-name">あなたの名前</label><input id="packing-name" data-name maxlength="50" placeholder="例：田中"></div><p class="shared-error" data-error hidden></p><div class="packing-list" data-list></div></section>
+<div class="shared-footer-actions"><a class="button button-secondary" href="/packing-list/">新しい分担表を作る</a><button class="shared-danger" type="button" data-delete hidden>この分担表を削除</button></div>
+</section>
+<section class="shared-not-found" data-not-found hidden><h2>分担表が見つかりません</h2><a class="button button-primary" href="/packing-list/">新しく作成する</a></section>
+</div><script type="application/ld+json" set:html={JSON.stringify(appJson)} /><script src="../scripts/packing-list.ts"></script>
+</BaseLayout>
+<style>.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.packing-list{display:grid;gap:9px}.packing-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:11px}.packing-copy{min-width:0}.packing-copy strong{display:block;font-size:13px}.packing-copy span{display:block;margin-top:3px;color:var(--muted);font-size:10px}.packing-item.is-assigned{background:#f7fbff}.packing-item button{flex:0 0 auto}</style>

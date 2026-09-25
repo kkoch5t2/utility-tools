@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config/site";
+import "../styles/shared-tool.css";
+const title="候補ランキング作成｜みんなの順位を集計";
+const description="候補を順位付けしてもらい、Borda方式で総合ランキングを自動集計する無料の共有ツールです。";
+const appJson={"@context":"https://schema.org","@type":"WebApplication",name:"候補ランキング作成",url:siteConfig.url+"/candidate-ranking/",applicationCategory:"ProductivityApplication",operatingSystem:"Web",isAccessibleForFree:true,description};
+---
+<BaseLayout title={title} description={description} ogImage="/og/share.png" ogImageAlt="候補ランキング作成｜無料Web便利ツール集">
+<div class="shell shared-page">
+<nav class="breadcrumbs"><a href="/">ホーム</a><span>/</span><a href="/category/share/">共有・調整</a><span>/</span><span>候補ランキング</span></nav>
+<div class="shared-loading" data-loading><span class="shared-loader"></span><p>読み込み中...</p></div>
+<section data-create hidden><header class="shared-heading"><p class="eyebrow">RANKING</p><h1>候補ランキング作成</h1><p>みんなに候補を順位付けしてもらい、総合順位を自動計算します。</p></header><div class="shared-card"><form data-create-form>
+<div class="shared-field"><label for="ranking-title">テーマ <span>必須</span></label><input id="ranking-title" name="title" maxlength="100" required placeholder="例：社員旅行の行き先"></div>
+<div class="shared-field"><label for="ranking-description">補足</label><textarea id="ranking-description" name="description" rows="3" maxlength="800"></textarea></div>
+<div class="shared-field"><label for="ranking-options">候補 <span>2件以上</span></label><textarea id="ranking-options" name="options" rows="9" placeholder="北海道&#10;沖縄&#10;京都&#10;金沢"></textarea><small>1行に1候補、最大10件。</small></div>
+<div class="shared-storage"><strong>ランキング回答は最大90日保存します</strong><p>匿名で順位を回答できます。共有URLを知っている人は集計結果を閲覧できます。</p></div>
+<p class="shared-error" data-create-error hidden></p><button class="button button-primary shared-submit" type="submit">ランキングを作成</button>
+</form></div></section>
+<section data-event hidden>
+<div class="shared-created" data-created hidden><strong>ランキングを作成しました</strong><span>URLを回答者へ共有してください。</span></div>
+<header class="shared-heading"><p class="eyebrow">RANKING</p><h2 class="event-title" data-title></h2><p data-description hidden></p><div class="shared-meta"><span data-count>0件回答</span><span data-expiry></span></div></header>
+<div class="shared-sharebox"><div><strong>共有URL</strong><span>すべての候補に順位を付けます</span></div><div class="shared-share-row"><input data-share-url readonly><button class="button button-primary" type="button" data-copy>URLをコピー</button></div><p class="shared-copy" data-copy-message hidden>コピーしました。</p></div>
+<div class="shared-grid"><section class="shared-card"><p class="eyebrow">YOUR RANKING</p><h2 class="side-title" data-answer-heading>順位を付ける</h2><form data-answer-form><div class="ranking-form" data-ranking-form></div><p class="shared-error" data-answer-error hidden></p><div class="shared-actions"><button class="button button-primary" type="submit" data-submit>回答を送信</button><button class="button button-secondary" type="button" data-delete-answer hidden>回答を取り消す</button></div></form></section>
+<aside class="shared-card"><p class="eyebrow">RESULT</p><h2 class="side-title">総合ランキング</h2><div class="ranking-results" data-results></div><p class="ranking-note">1位ほど高得点になるBorda方式で集計します。</p></aside></div>
+<div class="shared-footer-actions"><a class="button button-secondary" href="/candidate-ranking/">新しいランキングを作る</a><button class="shared-danger" type="button" data-delete hidden>このランキングを削除</button></div>
+</section>
+<section class="shared-not-found" data-not-found hidden><h2>ランキングが見つかりません</h2><a class="button button-primary" href="/candidate-ranking/">新しく作成する</a></section>
+</div><script type="application/ld+json" set:html={JSON.stringify(appJson)} /><script src="../scripts/candidate-ranking.ts"></script>
+</BaseLayout>
+<style>.shared-page [hidden]{display:none!important}.event-title{margin:5px 0 10px;font-size:clamp(30px,5vw,44px)}.side-title{margin:3px 0 14px;font-size:21px}.ranking-form{display:grid;gap:8px;margin-bottom:16px}.ranking-row{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:8px}.ranking-row b{font-size:12px;text-align:center;color:var(--accent)}.ranking-row select{height:42px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font:inherit}.ranking-results{display:grid;gap:8px}.ranking-result{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px}.ranking-result b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px}.ranking-result strong{font-size:12px}.ranking-result span{font-size:11px;color:var(--muted);font-weight:800}.ranking-note{margin:12px 0 0;color:var(--muted);font-size:10px}</style>

@@ -70,7 +70,7 @@ for (const accountId of accountIds) {
   }
 }
 
-const toolPattern = /^(?:\/(schedule|poll|attendance|split-bill)\/?|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator)\/[a-z0-9-]+\/?)$/;
+const toolPattern = /^(?:\/(schedule|poll|attendance|split-bill|survey|team-divider|lottery-order|availability-match|packing-list|shared-checklist|seat-shuffle|travel-expense|candidate-ranking)\/?|\/(image|csv|json|text|pdf|qr|video|japanese|developer|date|calculator)\/[a-z0-9-]+\/?)$/;
 const totals = new Map();
 
 for (const row of rows) {
