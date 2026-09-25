@@ -1,5 +1,5 @@
-export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special" | "security" | "japan" | "office";
-export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share" | "security" | "japan" | "office";
+export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special" | "security" | "japan" | "office" | "game";
+export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share" | "security" | "japan" | "office" | "game";
 
 export type ExtraToolMeta = {
   id: string;
@@ -1272,6 +1272,13 @@ export const extraTools: ExtraToolMeta[] = [
     title: "時給・月給・年収換算｜労働時間から相互に単純換算",
     description: "時給・月給・年収のいずれかと1日の労働時間、月の勤務日数から、3つの金額を相互に単純換算します。",
     faqs: [["手取り額も計算できますか？", "いいえ。賞与、残業代、税金、社会保険等を含めない単純な額面換算です。"], ["年収は何か月分ですか？", "月給換算額の12か月分として計算します。"], privacyFaq],
+  },
+  {
+    id: "game-number-chain-10", mode: "number-chain-10", family: "game", category: "ゲーム", categoryKey: "game",
+    href: "/game/number-chain-10/", name: "10をつくれ！ナンバーチェイン",
+    title: "10をつくれ！ナンバーチェイン｜60秒で遊べる無料数字パズル",
+    description: "6×6の数字をなぞって合計10を作る60秒パズル。コンボ、ヒント、シャッフル、端末保存のベストスコア付きで無料で遊べます。",
+    faqs: [["どうやって遊びますか？", "上下左右・斜めにつながる数字を指やマウスでなぞり、合計が10になったところで指を離すと得点になります。"], ["ベストスコアは保存されますか？", "はい。同じブラウザのlocalStorageへベストスコアだけ保存します。ゲーム内容や操作履歴は外部サーバーへ送信しません。"], ["コンボとは何ですか？", "成功から3秒以内に次の10を作るとコンボが続き、獲得点の倍率が上がります。"], privacyFaq],
   },
 ];
 

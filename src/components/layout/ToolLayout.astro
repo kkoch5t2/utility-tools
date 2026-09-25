@@ -32,22 +32,29 @@ const inputGuide: Record<string, string> = {
   security: "確認したい文字列・URL・ファイルを入力または選択します。",
   japan: "日本向けの番号・住所・日付など、確認したい値を入力します。",
   office: "仕事・事務で整理したい内容や計算条件を入力します。",
+  game: "「ゲーム開始」を押して、画面のルールに沿ってプレイします。",
   date: "日付や期間など、計算に必要な値を入力します。",
   calculator: "計算に必要な数値と条件を入力します。",
   share: "参加者名や条件など、分ける・並べるために必要な内容を入力します。",
 };
-const guideSteps = [
-  inputGuide[categoryKey] ?? "処理したい内容を入力または選択します。",
-  "「処理する」「変換」「生成」などの実行ボタンを押します。",
-  "結果欄やプレビューを確認し、対応している場合はコピーまたはダウンロードします。",
-];
+const guideSteps = categoryKey === "game"
+  ? [
+      inputGuide[categoryKey],
+      "数字をなぞるなど、ゲーム画面のルールに沿ってスコアを伸ばします。",
+      "制限時間終了後にスコアを確認し、ベストスコア更新を狙って再挑戦できます。",
+    ]
+  : [
+      inputGuide[categoryKey] ?? "処理したい内容を入力または選択します。",
+      "「処理する」「変換」「生成」などの実行ボタンを押します。",
+      "結果欄やプレビューを確認し、対応している場合はコピーまたはダウンロードします。",
+    ];
 const toolJson = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name,
   url: new URL(currentHref, siteConfig.url).toString(),
   description,
-  applicationCategory: "UtilitiesApplication",
+  applicationCategory: categoryKey === "game" ? "GameApplication" : "UtilitiesApplication",
   operatingSystem: "Any",
   browserRequirements: "Requires JavaScript",
   offers: { "@type": "Offer", price: "0", priceCurrency: "JPY" },
@@ -119,8 +126,10 @@ const faqJson = {
     )}
 
     <section class="content-section">
-      <h2>入力内容が送信されない仕組み</h2>
-      <p>選択したファイルや入力したテキストはブラウザ内で処理します。このツールから内容を外部APIへ送信する処理はありません。</p>
+      <h2>{categoryKey === "game" ? "ゲームデータが送信されない仕組み" : "入力内容が送信されない仕組み"}</h2>
+      <p>{categoryKey === "game"
+        ? "ゲーム進行とスコア計算はブラウザ内で行います。ベストスコアは同じブラウザのlocalStorageにだけ保存し、外部APIへ送信しません。"
+        : "選択したファイルや入力したテキストはブラウザ内で処理します。このツールから内容を外部APIへ送信する処理はありません。"}</p>
     </section>
     <section class="content-section">
       <h2>よくある質問</h2>

@@ -21,6 +21,7 @@ const categories: Array<{ key: "all" | ToolDefinition["category"]; label: string
   { key: "security", label: "SECURITY" },
   { key: "japan", label: "JAPAN" },
   { key: "office", label: "OFFICE" },
+  { key: "game", label: "GAME" },
   { key: "share", label: "SHARE" },
 ];
 
@@ -109,7 +110,7 @@ for (const tool of tools) counts.set(tool.category, (counts.get(tool.category) ?
             <h3>{tool.name}</h3>
             <p>{tool.description}</p>
             {tool.status === "available"
-              ? <a class="tool-open" href={tool.href}><span>ツールを開く</span><span aria-hidden="true">→</span></a>
+              ? <a class="tool-open" href={tool.href}><span>{tool.category === "game" ? "ゲームを開く" : "ツールを開く"}</span><span aria-hidden="true">→</span></a>
               : <span class="planned">準備中</span>}
           </article>
         ))}
