@@ -1,0 +1,59 @@
+---
+import { gameMeta } from "../../config/games";
+
+interface Props { currentHref: string; }
+const { currentHref } = Astro.props;
+const currentIndex = Math.max(0, gameMeta.findIndex((game) => game.href === currentHref));
+const others = [
+  ...gameMeta.slice(currentIndex + 1),
+  ...gameMeta.slice(0, currentIndex),
+].filter((game) => game.href !== currentHref).slice(0, 3);
+---
+<section class="game-next-panel" data-game-next hidden aria-labelledby="game-next-title">
+  <div class="game-next-heading">
+    <div>
+      <p>KEEP PLAYING</p>
+      <h2 id="game-next-title">次はどれで遊ぶ？</h2>
+    </div>
+    <a href="/category/game/">ゲーム一覧を見る →</a>
+  </div>
+  <div class="game-next-grid">
+    {others.map((game) => (
+      <a class="game-next-card" href={game.href}>
+        <img src={game.thumbnail} alt="" width="1200" height="630" loading="lazy" />
+        <div>
+          <span>{game.genre} · {game.playTime}</span>
+          <strong>{game.name}</strong>
+          <p>{game.tagline}</p>
+        </div>
+      </a>
+    ))}
+  </div>
+</section>
+
+<script>
+  const panel = document.querySelector<HTMLElement>("[data-game-next]");
+  if (panel) {
+    const gameRoot = document.querySelector<HTMLElement>("[data-number-chain], [data-platformer], [data-arcade], [data-quick-game]");
+    if (gameRoot) {
+      const reveal = () => {
+        const state = gameRoot.dataset.state;
+        if (state === "complete" || state === "gameover") {
+          panel.hidden = false;
+          panel.classList.add("is-visible");
+        }
+      };
+      reveal();
+      new MutationObserver(reveal).observe(gameRoot, { attributes: true, attributeFilter: ["data-state"] });
+    }
+  }
+</script>
+
+<style>
+  .game-next-panel{margin-top:22px;padding:22px;border:1px solid #1e293b;border-radius:20px;background:linear-gradient(150deg,#07111f,#111827);color:#f8fafc;box-shadow:0 18px 48px rgba(15,23,42,.12)}
+  .game-next-panel[hidden]{display:none}.game-next-panel.is-visible{animation:game-next-in .32s ease-out}
+  .game-next-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:15px}.game-next-heading p{margin:0 0 3px;color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.15em}.game-next-heading h2{margin:0;color:#fff;font-size:23px}.game-next-heading>a{color:#93c5fd;font-size:13px;font-weight:800;text-decoration:none}
+  .game-next-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.game-next-card{overflow:hidden;border:1px solid rgba(148,163,184,.18);border-radius:14px;background:rgba(15,23,42,.7);color:#fff;text-decoration:none;transition:transform .16s,border-color .16s}.game-next-card:hover{transform:translateY(-2px);border-color:rgba(103,232,249,.5)}.game-next-card img{display:block;width:100%;height:auto;aspect-ratio:1200/630;object-fit:cover}.game-next-card>div{padding:11px}.game-next-card span{color:#7dd3fc;font-size:9px;font-weight:900}.game-next-card strong{display:block;margin-top:3px;font-size:15px}.game-next-card p{margin:4px 0 0;color:#9eb3c8;font-size:11px;line-height:1.5}
+  @keyframes game-next-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media(max-width:700px){.game-next-heading{align-items:flex-start}.game-next-grid{grid-template-columns:1fr}.game-next-card{display:grid;grid-template-columns:120px 1fr}.game-next-card img{height:100%;min-height:88px}.game-next-card p{display:none}}
+</style>

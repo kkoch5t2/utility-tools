@@ -2,9 +2,11 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import IssueReport from "../feedback/IssueReport.astro";
 import RelatedTools from "../tools/RelatedTools.astro";
+import GameRecommendations from "../tools/GameRecommendations.astro";
 import { tools } from "../../config/tools";
 import { siteConfig } from "../../config/site";
 import { prioritySeoContent } from "../../config/seo-content";
+import { gameMetaByHref } from "../../config/games";
 
 interface Props {
   title: string;
@@ -19,6 +21,9 @@ const currentHref = Astro.url.pathname;
 const currentTool = tools.find((tool) => tool.href === currentHref);
 const categoryKey = currentTool?.category ?? "developer";
 const seoContent = prioritySeoContent[currentHref];
+const gameInfo = categoryKey === "game" ? gameMetaByHref[currentHref] : undefined;
+const ogImage = gameInfo?.thumbnail ?? `/og/${categoryKey}.png`;
+const ogImageAlt = gameInfo ? `${gameInfo.name}｜無料ブラウザゲーム` : `${category}ツール｜${siteConfig.name}`;
 const inputGuide: Record<string, string> = {
   image: "画像ファイルを選び、必要なサイズや形式を設定します。",
   csv: "CSVファイルを選ぶか、対象データを入力して条件を設定します。",
@@ -78,7 +83,7 @@ const faqJson = {
   })),
 };
 ---
-<BaseLayout title={title} description={description} ogImage={`/og/${categoryKey}.png`} ogImageAlt={`${category}ツール｜${siteConfig.name}`}>
+<BaseLayout title={title} description={description} ogImage={ogImage} ogImageAlt={ogImageAlt}>
   <div class="shell page-shell">
     <nav class="breadcrumbs" aria-label="パンくず"><a href="/">ホーム</a><span>/</span><a href={`/category/${categoryKey}/`}>{category}</a><span>/</span><span aria-current="page">{name}</span></nav>
     <header class="tool-heading">
@@ -97,6 +102,7 @@ const faqJson = {
       ></span>
     )}
     <slot />
+    {categoryKey === "game" && <GameRecommendations currentHref={currentHref} />}
     <section class="content-section tool-guide" aria-labelledby="tool-guide-title">
       <h2 id="tool-guide-title">{name}の使い方</h2>
       <ol>
