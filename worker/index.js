@@ -239,6 +239,82 @@ export class ScheduleRoom {
   }
 }
 
+
+const GAME_IDS = new Set([
+  "game-number-chain-10",
+  "game-lumo-sky-run",
+  "game-meteor-drift",
+  "game-flash-matrix",
+  "game-neon-snake",
+  "game-reaction-zero",
+  "game-orbit-catch",
+]);
+const GAME_EVENT_TYPES = new Set(["start", "end", "replay", "next"]);
+
+function gameDayKey(time = Date.now()) {
+  return new Date(time).toISOString().slice(0, 10);
+}
+
+export class GameMetrics {
+  constructor(ctx) {
+    this.ctx = ctx;
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/event" && request.method === "POST") {
+      const body = await request.json().catch(() => null);
+      const game = textValue(body?.game, 80);
+      const event = textValue(body?.event, 24);
+      if (!GAME_IDS.has(game) || !GAME_EVENT_TYPES.has(event)) {
+        return json({ error: "invalid_game_event" }, 400);
+      }
+
+      const days = (await this.ctx.storage.get("game-days")) ?? {};
+      const today = gameDayKey();
+      days[today] ??= {};
+      days[today][game] ??= { start: 0, end: 0, replay: 0, next: 0 };
+      days[today][game][event] += 1;
+
+      const cutoff = Date.now() - 40 * DAY;
+      for (const key of Object.keys(days)) {
+        const time = Date.parse(key + "T00:00:00Z");
+        if (!Number.isFinite(time) || time < cutoff) delete days[key];
+      }
+
+      await this.ctx.storage.put("game-days", days);
+      return json({ ok: true }, 202);
+    }
+
+    if (url.pathname === "/stats" && request.method === "GET") {
+      const days = (await this.ctx.storage.get("game-days")) ?? {};
+      const requested = Math.max(1, Math.min(30, Number(url.searchParams.get("days") || 14) || 14));
+      const cutoff = Date.now() - (requested - 1) * DAY;
+      const games = Object.fromEntries(
+        [...GAME_IDS].map((game) => [game, { start: 0, end: 0, replay: 0, next: 0 }])
+      );
+
+      for (const [key, day] of Object.entries(days)) {
+        const time = Date.parse(key + "T00:00:00Z");
+        if (!Number.isFinite(time) || time < cutoff) continue;
+        for (const [game, counts] of Object.entries(day)) {
+          if (!games[game]) continue;
+          for (const type of GAME_EVENT_TYPES) games[game][type] += Number(counts?.[type] || 0);
+        }
+      }
+
+      return json({ days: requested, games });
+    }
+
+    return json({ error: "not_found" }, 404);
+  }
+}
+
+function gameMetricsStub(env) {
+  return env.GAME_METRICS.get(env.GAME_METRICS.idFromName("global"));
+}
+
 function scheduleStub(env, id) {
   return env.SCHEDULES.get(env.SCHEDULES.idFromName(id));
 }
@@ -1194,6 +1270,24 @@ async function routeShared(request, env, pathname) {
 }
 
 async function api(request, env, pathname) {
+  if (pathname === "/api/game-events" && request.method === "POST") {
+    if (!env.GAME_METRICS) return json({ error: "game_metrics_not_configured" }, 503);
+    if (!mutationAllowed(request)) return json({ error: "invalid_origin" }, 403);
+    return gameMetricsStub(env).fetch("https://game-metrics.internal/event", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: await request.text(),
+    });
+  }
+
+  if (pathname === "/api/game-stats" && request.method === "GET") {
+    if (!env.GAME_METRICS) return json({ error: "game_metrics_not_configured" }, 503);
+    const source = new URL(request.url);
+    const target = new URL("https://game-metrics.internal/stats");
+    if (source.searchParams.has("days")) target.searchParams.set("days", source.searchParams.get("days"));
+    return gameMetricsStub(env).fetch(target.toString());
+  }
+
   if (!env.SCHEDULES || !env.SHARED_TOOLS) return json({ error: "storage_not_configured" }, 503);
 
   if (pathname === "/api/health" && request.method === "GET") {

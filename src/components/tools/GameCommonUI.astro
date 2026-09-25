@@ -1,0 +1,90 @@
+---
+interface Props {
+  gameId: string;
+  gameName: string;
+}
+const { gameId, gameName } = Astro.props;
+---
+
+<div class="game-common-ui" data-game-common data-game-id={gameId} data-game-name={gameName}>
+  <a class="game-common-link" href="/category/game/">
+    <span aria-hidden="true">←</span>
+    <span>GAME一覧</span>
+  </a>
+  <div class="game-common-actions">
+    <a class="game-common-button" href="#tool-guide-title">遊び方</a>
+    <button class="game-common-button" type="button" data-game-fullscreen>全画面</button>
+  </div>
+</div>
+
+<script>
+  const common = document.querySelector<HTMLElement>("[data-game-common]");
+  if (common) {
+    const gameId = common.dataset.gameId ?? "";
+    const gameRoot = document.querySelector<HTMLElement>(
+      "[data-number-chain], [data-platformer], [data-arcade], [data-quick-game]"
+    );
+    const fullscreenButton = common.querySelector<HTMLButtonElement>("[data-game-fullscreen]");
+
+    const sendGameEvent = (event: "start" | "end" | "replay" | "next") => {
+      if (!gameId) return;
+      const body = JSON.stringify({ game: gameId, event });
+      void fetch("/api/game-events", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+
+    if (gameRoot) {
+      let previousState = gameRoot.dataset.state ?? "ready";
+      const handleState = () => {
+        const state = gameRoot.dataset.state ?? "";
+        if (!state || state === previousState) return;
+
+        if (state === "running") {
+          if (previousState === "complete" || previousState === "gameover") sendGameEvent("replay");
+          else if (previousState === "ready" || !previousState) sendGameEvent("start");
+        }
+        if (state === "complete" || state === "gameover") sendGameEvent("end");
+        previousState = state;
+      };
+
+      new MutationObserver(handleState).observe(gameRoot, {
+        attributes: true,
+        attributeFilter: ["data-state"],
+      });
+
+      fullscreenButton?.addEventListener("click", async () => {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else await gameRoot.requestFullscreen();
+        } catch {}
+      });
+
+      document.addEventListener("fullscreenchange", () => {
+        if (fullscreenButton) fullscreenButton.textContent = document.fullscreenElement ? "全画面を終了" : "全画面";
+      });
+    } else if (fullscreenButton) {
+      fullscreenButton.hidden = true;
+    }
+
+    document.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-game-next] .game-next-card")) sendGameEvent("next");
+    });
+  }
+</script>
+
+<style>
+  .game-common-ui{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:9px 10px;border:1px solid #dbe5f0;border-radius:12px;background:#f8fafc}
+  .game-common-link,.game-common-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 10px;border:1px solid #d7e0eb;border-radius:9px;background:#fff;color:#334155;font:inherit;font-size:11px;font-weight:850;text-decoration:none;cursor:pointer}
+  .game-common-link:hover,.game-common-button:hover{border-color:#93c5fd;color:#0b5bd3}
+  .game-common-actions{display:flex;gap:7px}
+  :global(:fullscreen [data-number-chain]),
+  :global(:fullscreen [data-platformer]),
+  :global(:fullscreen [data-arcade]),
+  :global(:fullscreen [data-quick-game]){width:100vw!important;height:100vh!important;max-width:none!important;margin:0!important;border-radius:0!important}
+  @media(max-width:640px){.game-common-ui{position:sticky;top:6px;z-index:18;margin-bottom:9px;background:rgba(248,250,252,.94);backdrop-filter:blur(10px)}.game-common-link,.game-common-button{min-height:36px;padding:0 9px}.game-common-actions{gap:5px}}
+</style>

@@ -221,11 +221,11 @@ test("GAME専用ハブでサムネ・最近遊んだゲーム・ジャンル絞�
   await expect(page.locator(".game-hub-card:not([hidden])")).toHaveCount(7);
 });
 
-test("各ゲームページが個別OG画像を使う", async ({ page }) => {
+test("各ゲームページが内容の分かる個別アイキャッチを使う", async ({ page }) => {
   await page.goto("/game/lumo-sky-run/");
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /game-lumo-sky-run\.png$/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/game-art\/lumo-sky-run\.jpg$/);
   await page.goto("/game/reaction-zero/");
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /game-reaction-zero\.png$/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/game-art\/reaction-zero\.jpg$/);
 });
 
 test("ゲーム終了後に次に遊ぶ3ゲームが表示される", async ({ page }) => {
@@ -243,12 +243,16 @@ test("ゲーム終了後に次に遊ぶ3ゲームが表示される", async ({ p
 });
 
 
-test("ホームからGAMEカテゴリへ移動できる", async ({ page }) => {
+test("ホーム上部からGAMEカテゴリへ移動できる", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await expect(page.locator(".home-games")).toBeVisible();
+  const section = page.locator(".home-games");
+  await expect(section).toBeVisible();
   await expect(page.locator(".home-games-grid > a")).toHaveCount(3);
   await expect(page.locator('.home-games-heading a[href="/category/game/"]')).toBeVisible();
   await expect(page.locator(".home-games-grid").filter({ hasText: "Lumo's Sky Run" })).toBeVisible();
+  const box = await section.boundingBox();
+  expect(box?.y ?? 9999).toBeLessThan(500);
 });
 
 test("GAME一覧カードがPCで縦長にならない", async ({ page }) => {
@@ -261,4 +265,32 @@ test("GAME一覧カードがPCで縦長にならない", async ({ page }) => {
   expect(cardBox?.height ?? 999).toBeLessThan(260);
   expect(imageBox?.height ?? 999).toBeLessThan(230);
   expect(imageBox?.width ?? 0).toBeGreaterThan(180);
+});
+
+
+test("共通GAME UIとプレイイベント計測が動く", async ({ page }) => {
+  const events: string[] = [];
+  await page.route("**/api/game-events", async (route) => {
+    const body = route.request().postDataJSON() as { event?: string };
+    if (body.event) events.push(body.event);
+    await route.fulfill({ status: 202, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+  });
+
+  await page.goto("/game/orbit-catch/");
+  await expect(page.locator("[data-game-common]")).toBeVisible();
+  await expect(page.locator('[data-game-common] a[href="/category/game/"]')).toBeVisible();
+  await expect(page.locator("[data-game-fullscreen]")).toBeVisible();
+
+  await page.locator("[data-start]").click();
+  await expect.poll(() => events).toContain("start");
+
+  for (let i = 0; i < 10; i++) {
+    await page.locator("[data-stop]").click();
+    if (i < 9) await page.waitForTimeout(360);
+  }
+  await expect(page.locator("[data-quick-game]")).toHaveAttribute("data-state", "complete", { timeout: 2000 });
+  await expect.poll(() => events).toContain("end");
+
+  await page.locator("[data-game-next] .game-next-card").first().click();
+  await expect.poll(() => events).toContain("next");
 });
