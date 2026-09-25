@@ -301,13 +301,17 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
   await expect(page.locator("[data-lineup-slot]")).toHaveCount(11);
   await page.selectOption("[data-tactic]", "press");
 
-  await page.locator('[data-buy-player="sato"]').click();
-  await expect(page.locator("[data-squad-table]")).toContainText("R. Sato");
+  const firstMarketCard = page.locator("[data-transfer-market] .market-player-card").first();
+  const boughtName = (await firstMarketCard.locator("strong").textContent())!;
+  const buyButton = firstMarketCard.locator("[data-buy-player]");
+  const boughtId = (await buyButton.getAttribute("data-buy-player"))!;
+  await buyButton.click();
+  await expect(page.locator("[data-squad-table]")).toContainText(boughtName);
   await expect(page.locator("[data-squad-count]")).toHaveText("19 players");
 
-  await page.locator("[data-lineup-slot]").last().selectOption("sato");
-  await expect(page.locator("[data-pitch-lineup]")).toContainText("Sato");
-  await expect(page.locator("[data-player-detail]")).toContainText("R. Sato");
+  await page.locator("[data-lineup-slot]").last().selectOption(boughtId);
+  await expect(page.locator("[data-pitch-lineup]")).toContainText(boughtName.split(" ").at(-1)!);
+  await expect(page.locator("[data-player-detail]")).toContainText(boughtName);
 
   await page.selectOption("[data-market-filter]", "GK");
   await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(2);
@@ -327,6 +331,29 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
   await page.locator("[data-next-month]").click();
   await expect(page.locator("[data-chart-points]")).not.toHaveAttribute("points", "0,95 600,95");
   await expect(page.locator("[data-risk-score]")).not.toHaveText("0");
+});
+
+test("サッカーは新シーズンごとに選手が入れ替わり保存中は維持される", async ({ page }) => {
+  await page.goto("/game/football-club-manager/");
+  await page.locator("[data-start]").click();
+  const season1 = await page.locator("[data-sim-game]").getAttribute("data-season-id");
+  const market1 = await page.locator("[data-transfer-market] .market-player-card strong").allTextContents();
+  const squad1 = await page.locator("[data-squad-table] .player-name-button").allTextContents();
+
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-season-id", season1!);
+  await expect(page.locator("[data-transfer-market] .market-player-card strong")).toHaveText(market1);
+
+  await page.locator("[data-restart]").click();
+  const season2 = await page.locator("[data-sim-game]").getAttribute("data-season-id");
+  const market2 = await page.locator("[data-transfer-market] .market-player-card strong").allTextContents();
+  const squad2 = await page.locator("[data-squad-table] .player-name-button").allTextContents();
+  expect(season2).not.toBe(season1);
+  expect(market2.join("|")).not.toBe(market1.join("|"));
+  expect(squad2.join("|")).not.toBe(squad1.join("|"));
+  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
+  await expect(page.locator("[data-squad-table] tr")).toHaveCount(18);
 });
 
 test("3つのシミュレーションゲームを最終ターンまで完走できる", async ({ page }) => {
