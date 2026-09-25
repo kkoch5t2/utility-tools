@@ -44,9 +44,11 @@ test("ゲームカテゴリページと端末ベストスコア表示が動く",
 
   await page.goto("/category/game/");
   await expect(page.getByRole("heading", { name: "ゲームツール一覧" })).toBeVisible();
-  await expect(page.locator(".category-card")).toHaveCount(2);
+  await expect(page.locator(".category-card")).toHaveCount(4);
   await expect(page.locator(".category-card").filter({ hasText: "ナンバーチェイン" })).toContainText("ナンバーチェイン");
   await expect(page.locator(".category-card").filter({ hasText: "Lumo's Sky Run" })).toContainText("Lumo's Sky Run");
+  await expect(page.locator(".category-card").filter({ hasText: "Meteor Drift" })).toContainText("Meteor Drift");
+  await expect(page.locator(".category-card").filter({ hasText: "Flash Matrix" })).toContainText("Flash Matrix");
 });
 
 
@@ -97,6 +99,55 @@ test("Lumo's Sky Runのスマホ操作とベストタイム表示が動く", asy
   expect(controlSelect).toBe("none");
 
   await page.goto("/category/game/");
-  await expect(page.locator(".category-card")).toHaveCount(2);
+  await expect(page.locator(".category-card")).toHaveCount(4);
   await expect(page.locator(".category-card").filter({ hasText: "Lumo's Sky Run" })).toBeVisible();
+});
+
+
+test("Meteor Driftで移動とスコア加算が動く", async ({ page }) => {
+  await page.goto("/game/meteor-drift/");
+  await expect(page.locator("h1")).toHaveText("Meteor Drift");
+  await expect(page.locator("[data-meteor-canvas]")).toBeVisible();
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-arcade]")).toHaveAttribute("data-state", "running");
+
+  await page.waitForTimeout(250);
+  const startX = Number(await page.locator("[data-arcade]").getAttribute("data-player-x"));
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(450);
+  await page.keyboard.up("ArrowRight");
+  const movedX = Number(await page.locator("[data-arcade]").getAttribute("data-player-x"));
+  expect(movedX).toBeGreaterThan(startX + 15);
+
+  await page.waitForTimeout(500);
+  const scoreText = (await page.locator("[data-score]").textContent()) ?? "0";
+  expect(Number(scoreText.replace(/,/g, ""))).toBeGreaterThan(0);
+  await expect(page.locator("[data-lives]")).toContainText("♥");
+});
+
+test("Flash Matrixの正解シーケンスを入力すると次ラウンドへ進む", async ({ page }) => {
+  await page.goto("/game/flash-matrix/");
+  await expect(page.locator("h1")).toHaveText("Flash Matrix");
+  await expect(page.locator("[data-memory-grid] [data-cell]")).toHaveCount(16);
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-arcade]")).toHaveAttribute("data-state", "running");
+
+  await expect(page.locator("[data-status]")).toHaveText("同じ順番でタップ！", { timeout: 5000 });
+  const raw = (await page.locator("[data-arcade]").getAttribute("data-sequence")) ?? "";
+  const sequence = raw.split(",").filter(Boolean).map(Number);
+  expect(sequence.length).toBe(3);
+
+  for (const index of sequence) {
+    await page.locator('[data-cell="' + index + '"]').click();
+  }
+  await expect(page.locator("[data-round]")).toHaveText("2", { timeout: 4000 });
+  await expect(page.locator("[data-score]")).not.toHaveText("0");
+});
+
+test("ブラウザゲーム目的別ページに4ゲームが表示される", async ({ page }) => {
+  await page.goto("/use-case/browser-games/");
+  await expect(page.getByRole("heading", { name: "ブラウザでゲームを遊ぶ" })).toBeVisible();
+  await expect(page.locator(".usecase-card")).toHaveCount(4);
+  await expect(page.locator(".usecase-card").filter({ hasText: "Meteor Drift" })).toBeVisible();
+  await expect(page.locator(".usecase-card").filter({ hasText: "Flash Matrix" })).toBeVisible();
 });
