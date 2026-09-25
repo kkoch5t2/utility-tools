@@ -82,6 +82,15 @@ export const useCasePages: readonly UseCasePage[] = [
     toolIds: ["japan-postal-code","japan-phone-number","japan-address-normalize","japan-prefecture-code","japan-corporate-number","japan-school-year","wareki","tax-calculator","id-photo-maker"],
   },
   {
+    slug: "browser-games",
+    label: "ブラウザでゲームを遊ぶ",
+    title: "無料ブラウザゲーム集｜インストール不要でスマホ・PCですぐ遊べる",
+    description: "数字パズル、横スクロールアクション、反射神経、記憶力ゲームなど、登録・インストール不要でそのまま遊べる無料ブラウザゲームをまとめています。",
+    intro: "1分で遊べるパズルから横スクロールアクション、隕石よけ、記憶力チャレンジまで、スマホとPCの両方で遊べる軽量ゲームを集めています。",
+    bullets: ["インストールなしですぐ遊びたい", "短時間の暇つぶしゲームを探している", "パズル・アクション・反射神経・記憶力を遊び分けたい"],
+    toolIds: ["game-number-chain-10","game-lumo-sky-run","game-meteor-drift","game-flash-matrix"],
+  },
+  {
     slug: "office-work",
     label: "仕事の文書・時間を整理する",
     title: "仕事・事務の無料ツール集｜議事録・日報・稟議・残業・給与換算",

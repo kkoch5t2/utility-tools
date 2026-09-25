@@ -184,10 +184,11 @@ test("最近使ったツールを端末内履歴から表示・削除できる",
 test("目的別ページから関連ツールを探せる", async ({ page }) => {
   await page.goto("/use-case/");
   await expect(page.getByRole("heading", { name: "やりたいことから探す" })).toBeVisible();
-  await expect(page.locator(".purpose-card")).toHaveCount(13);
+  await expect(page.locator(".purpose-card")).toHaveCount(14);
   await expect(page.locator('.purpose-card[href="/use-case/privacy-security/"]')).toContainText("個人情報");
   await expect(page.locator('.purpose-card[href="/use-case/japan-office-life/"]')).toContainText("日本の事務");
   await expect(page.locator('.purpose-card[href="/use-case/office-work/"]')).toContainText("仕事の文書");
+  await expect(page.locator('.purpose-card[href="/use-case/browser-games/"]')).toContainText("ブラウザでゲーム");
 
   await page.goto("/use-case/video-edit/");
   await expect(page.getByRole("heading", { name: "動画を軽く・編集する" })).toBeVisible();

@@ -1,0 +1,209 @@
+---
+import ToolLayout from "../layout/ToolLayout.astro";
+import type { ExtraToolMeta } from "../../config/extra-tools";
+import "../../styles/tool.css";
+interface Props { meta: ExtraToolMeta; }
+const { meta } = Astro.props;
+const isMeteor = meta.mode === "meteor-drift";
+const isMemory = meta.mode === "flash-matrix";
+---
+<ToolLayout title={meta.title} description={meta.description} name={meta.name} category={meta.category} faqs={meta.faqs}>
+  {isMeteor && (
+    <section class="arcade-shell meteor-shell" data-arcade data-mode="meteor-drift" data-state="ready">
+      <div class="arcade-head">
+        <div>
+          <p class="arcade-kicker">45 SECOND SURVIVAL</p>
+          <h2>Meteor Drift</h2>
+          <p>青い機体を左右に動かして隕石を避け、光るエネルギーを集めよう。時間が進むほど落下速度が上がります。</p>
+        </div>
+        <div class="arcade-best"><span>BEST</span><strong data-best>0</strong></div>
+      </div>
+
+      <div class="arcade-stats">
+        <div><span>SCORE</span><strong data-score>0</strong></div>
+        <div><span>TIME</span><strong data-time>45.0</strong></div>
+        <div><span>SHIELD</span><strong data-lives>♥♥♥</strong></div>
+        <div><span>LEVEL</span><strong data-level>1</strong></div>
+      </div>
+
+      <div class="meteor-stage">
+        <canvas data-meteor-canvas width="480" height="640" aria-label="Meteor Drift ゲーム画面"></canvas>
+        <div class="arcade-overlay" data-overlay>
+          <div class="arcade-overlay-card">
+            <p class="mini">SURVIVE 45 SEC</p>
+            <h3>隕石帯を抜けろ</h3>
+            <p>スマホは画面をドラッグ、PCは← → / A D。黄色いエネルギーは高得点。</p>
+            <button class="button button-primary" type="button" data-start>ゲーム開始</button>
+          </div>
+        </div>
+        <div class="arcade-toast" data-toast aria-live="polite"></div>
+      </div>
+      <p class="mobile-help">スマホ：ゲーム画面を指で左右になぞるだけ</p>
+    </section>
+  )}
+
+  {isMemory && (
+    <section class="arcade-shell memory-shell" data-arcade data-mode="flash-matrix" data-state="ready" data-sequence="">
+      <div class="arcade-head">
+        <div>
+          <p class="arcade-kicker">MEMORY CHALLENGE</p>
+          <h2>Flash Matrix</h2>
+          <p>光ったマスの順番を覚えて、同じ順番でタップ。ラウンドが進むたびに覚える数が1つ増えます。</p>
+        </div>
+        <div class="arcade-best"><span>BEST ROUND</span><strong data-best>0</strong></div>
+      </div>
+
+      <div class="arcade-stats">
+        <div><span>ROUND</span><strong data-round>1</strong></div>
+        <div><span>LENGTH</span><strong data-length>3</strong></div>
+        <div><span>LIVES</span><strong data-lives>♥♥♥</strong></div>
+        <div><span>SCORE</span><strong data-score>0</strong></div>
+      </div>
+
+      <div class="memory-stage">
+        <div class="memory-grid" data-memory-grid aria-label="4×4の記憶ゲーム盤">
+          {Array.from({length:16},(_,i)=><button type="button" class="memory-cell" data-cell={i} aria-label={(i+1)+"番のマス"}><span></span></button>)}
+        </div>
+        <div class="memory-status" data-status>「ゲーム開始」を押してください。</div>
+      </div>
+
+      <div class="memory-actions">
+        <button class="button button-primary" type="button" data-start>ゲーム開始</button>
+        <button class="button button-secondary" type="button" data-replay disabled>もう一度見る</button>
+      </div>
+    </section>
+  )}
+</ToolLayout>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-arcade]")!;
+  const mode = root.dataset.mode!;
+
+  if (mode === "meteor-drift") {
+    const canvas = root.querySelector<HTMLCanvasElement>("[data-meteor-canvas]")!;
+    const ctx = canvas.getContext("2d")!;
+    const overlay = root.querySelector<HTMLElement>("[data-overlay]")!;
+    const toast = root.querySelector<HTMLElement>("[data-toast]")!;
+    const startBtn = root.querySelector<HTMLButtonElement>("[data-start]")!;
+    const scoreEl = root.querySelector<HTMLElement>("[data-score]")!;
+    const timeEl = root.querySelector<HTMLElement>("[data-time]")!;
+    const livesEl = root.querySelector<HTMLElement>("[data-lives]")!;
+    const levelEl = root.querySelector<HTMLElement>("[data-level]")!;
+    const bestEl = root.querySelector<HTMLElement>("[data-best]")!;
+    const BEST_KEY = "utility-tools:meteor-drift:best";
+    const W=480,H=640,DURATION=45;
+    let running=false,last=0,startAt=0,raf=0,score=0,lives=3,nextSpawn=0,nextOrb=0,keys={left:false,right:false};
+    let meteors:Array<{x:number;y:number;r:number;vy:number;spin:number}>=[];
+    let orbs:Array<{x:number;y:number;r:number;vy:number;phase:number}>=[];
+    const player={x:W/2,y:H-72,w:42,h:50,inv:0};
+
+    let best=0;try{best=Number(localStorage.getItem(BEST_KEY)||"0")||0}catch{}
+    bestEl.textContent=best.toLocaleString("ja-JP");
+
+    function showToast(text:string){toast.textContent=text;toast.classList.remove("show");void toast.offsetWidth;toast.classList.add("show")}
+    function clampPlayer(){player.x=Math.max(player.w/2+8,Math.min(W-player.w/2-8,player.x))}
+    function hitCircleRect(cx:number,cy:number,r:number,x:number,y:number,w:number,h:number){
+      const nx=Math.max(x,Math.min(cx,x+w)),ny=Math.max(y,Math.min(cy,y+h));
+      const dx=cx-nx,dy=cy-ny;return dx*dx+dy*dy<r*r;
+    }
+    function reset(){
+      score=0;lives=3;meteors=[];orbs=[];player.x=W/2;player.inv=0;nextSpawn=.35;nextOrb=2.1;
+      scoreEl.textContent="0";livesEl.textContent="♥♥♥";timeEl.textContent="45.0";levelEl.textContent="1";
+    }
+    function start(){
+      reset();running=true;root.dataset.state="running";overlay.classList.add("is-hidden");startAt=performance.now();last=startAt;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+    }
+    function end(){
+      running=false;root.dataset.state="complete";const final=Math.floor(score);
+      if(final>best){best=final;try{localStorage.setItem(BEST_KEY,String(best))}catch{};showToast("NEW BEST!")}
+      bestEl.textContent=best.toLocaleString("ja-JP");
+      overlay.innerHTML='<div class="arcade-overlay-card"><p class="mini">MISSION COMPLETE</p><h3>'+final.toLocaleString("ja-JP")+' pts</h3><p>45秒生き残りました。</p><button class="button button-primary" type="button" data-again>もう一度遊ぶ</button></div>';
+      overlay.classList.remove("is-hidden");overlay.querySelector<HTMLButtonElement>("[data-again]")?.addEventListener("click",start);
+    }
+    function damage(){
+      if(player.inv>0)return;lives--;player.inv=1.2;showToast("HIT!");livesEl.textContent="♥".repeat(lives)+"♡".repeat(3-lives);
+      if(lives<=0){running=false;root.dataset.state="gameover";const final=Math.floor(score);overlay.innerHTML='<div class="arcade-overlay-card"><p class="mini">GAME OVER</p><h3>'+final.toLocaleString("ja-JP")+' pts</h3><button class="button button-primary" type="button" data-again>もう一度遊ぶ</button></div>';overlay.classList.remove("is-hidden");overlay.querySelector<HTMLButtonElement>("[data-again]")?.addEventListener("click",start);}
+    }
+    function update(dt:number,now:number){
+      const elapsed=(now-startAt)/1000,left=Math.max(0,DURATION-elapsed),level=1+Math.floor(elapsed/9);
+      if(left<=0){end();return}
+      timeEl.textContent=left.toFixed(1);levelEl.textContent=String(level);if(player.inv>0)player.inv-=dt;
+      if(keys.left)player.x-=300*dt;if(keys.right)player.x+=300*dt;clampPlayer();root.dataset.playerX=player.x.toFixed(1);
+      nextSpawn-=dt;nextOrb-=dt;
+      if(nextSpawn<=0){const r=14+Math.random()*18;meteors.push({x:20+r+Math.random()*(W-40-r*2),y:-r,r,vy:150+level*35+Math.random()*70,spin:Math.random()*6.28});nextSpawn=Math.max(.18,.62-level*.07);}
+      if(nextOrb<=0){orbs.push({x:30+Math.random()*(W-60),y:-20,r:11,vy:130+level*12,phase:Math.random()*6.28});nextOrb=2.2+Math.random()*1.6;}
+      const px=player.x-player.w/2,py=player.y-player.h/2;
+      for(const m of meteors){m.y+=m.vy*dt;m.spin+=dt*2;if(hitCircleRect(m.x,m.y,m.r,px,py,player.w,player.h)){m.y=H+100;damage()}}
+      for(const o of orbs){o.y+=o.vy*dt;o.phase+=dt*5;if(hitCircleRect(o.x,o.y,o.r+4,px,py,player.w,player.h)){o.y=H+100;score+=250;showToast("+250 ENERGY")}}
+      meteors=meteors.filter(m=>m.y-m.r<H+40);orbs=orbs.filter(o=>o.y-o.r<H+40);
+      score+=dt*(12+level*3);scoreEl.textContent=Math.floor(score).toLocaleString("ja-JP");
+    }
+    function draw(){
+      const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#030712");g.addColorStop(1,"#172554");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+      ctx.fillStyle="rgba(255,255,255,.75)";for(let i=0;i<45;i++){const x=(i*97)%W,y=(i*137+(performance.now()*.018*(1+(i%3))))%H;ctx.fillRect(x,y,1+(i%2),1+(i%2))}
+      for(const o of orbs){ctx.save();ctx.translate(o.x,o.y);ctx.shadowBlur=20;ctx.shadowColor="#fde047";ctx.fillStyle="#fde047";ctx.beginPath();ctx.arc(0,0,o.r+Math.sin(o.phase)*2,0,Math.PI*2);ctx.fill();ctx.restore()}
+      for(const m of meteors){ctx.save();ctx.translate(m.x,m.y);ctx.rotate(m.spin);ctx.fillStyle="#64748b";ctx.beginPath();ctx.arc(0,0,m.r,0,Math.PI*2);ctx.fill();ctx.fillStyle="#334155";ctx.beginPath();ctx.arc(-m.r*.28,-m.r*.2,m.r*.24,0,Math.PI*2);ctx.arc(m.r*.3,m.r*.18,m.r*.18,0,Math.PI*2);ctx.fill();ctx.restore()}
+      ctx.save();ctx.translate(player.x,player.y);if(player.inv>0&&Math.floor(player.inv*12)%2===0)ctx.globalAlpha=.28;ctx.shadowBlur=18;ctx.shadowColor="#22d3ee";ctx.fillStyle="#38bdf8";ctx.beginPath();ctx.moveTo(0,-26);ctx.lineTo(22,22);ctx.lineTo(0,14);ctx.lineTo(-22,22);ctx.closePath();ctx.fill();ctx.fillStyle="#e0f2fe";ctx.beginPath();ctx.arc(0,-5,6,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+    function loop(now:number){if(!running)return;const dt=Math.min(.033,(now-last)/1000);last=now;update(dt,now);draw();if(running)raf=requestAnimationFrame(loop)}
+    function setPointer(clientX:number){const box=canvas.getBoundingClientRect();player.x=(clientX-box.left)/box.width*W;clampPlayer()}
+    canvas.addEventListener("pointerdown",e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);setPointer(e.clientX)});
+    canvas.addEventListener("pointermove",e=>{if(e.buttons||e.pointerType==="touch")setPointer(e.clientX)});
+    window.addEventListener("keydown",e=>{if(["ArrowLeft","KeyA"].includes(e.code))keys.left=true;if(["ArrowRight","KeyD"].includes(e.code))keys.right=true});
+    window.addEventListener("keyup",e=>{if(["ArrowLeft","KeyA"].includes(e.code))keys.left=false;if(["ArrowRight","KeyD"].includes(e.code))keys.right=false});
+    startBtn.addEventListener("click",start);draw();
+  }
+
+  if (mode === "flash-matrix") {
+    const grid=root.querySelector<HTMLElement>("[data-memory-grid]")!;
+    const cells=[...grid.querySelectorAll<HTMLButtonElement>("[data-cell]")];
+    const startBtn=root.querySelector<HTMLButtonElement>("[data-start]")!;
+    const replayBtn=root.querySelector<HTMLButtonElement>("[data-replay]")!;
+    const roundEl=root.querySelector<HTMLElement>("[data-round]")!;
+    const lengthEl=root.querySelector<HTMLElement>("[data-length]")!;
+    const livesEl=root.querySelector<HTMLElement>("[data-lives]")!;
+    const scoreEl=root.querySelector<HTMLElement>("[data-score]")!;
+    const bestEl=root.querySelector<HTMLElement>("[data-best]")!;
+    const statusEl=root.querySelector<HTMLElement>("[data-status]")!;
+    const BEST_KEY="utility-tools:flash-matrix:best";
+    let round=1,lives=3,score=0,sequence:number[]=[],input:number[]=[],accepting=false,showing=false;
+    let best=0;try{best=Number(localStorage.getItem(BEST_KEY)||"0")||0}catch{};bestEl.textContent=String(best);
+
+    const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+    function update(){roundEl.textContent=String(round);lengthEl.textContent=String(sequence.length||round+2);livesEl.textContent="♥".repeat(lives)+"♡".repeat(3-lives);scoreEl.textContent=score.toLocaleString("ja-JP");root.dataset.sequence=sequence.join(",")}
+    function makeSequence(){const len=round+2;sequence=Array.from({length:len},()=>Math.floor(Math.random()*16));input=[];update()}
+    async function showSequence(){
+      if(showing)return;showing=true;accepting=false;replayBtn.disabled=true;statusEl.textContent="覚えて…";
+      cells.forEach(c=>c.disabled=true);await sleep(350);
+      for(const index of sequence){const c=cells[index];c.classList.add("flash");await sleep(Math.max(220,520-round*18));c.classList.remove("flash");await sleep(110)}
+      showing=false;accepting=true;cells.forEach(c=>c.disabled=false);replayBtn.disabled=false;statusEl.textContent="同じ順番でタップ！";
+    }
+    async function start(){round=1;lives=3;score=0;root.dataset.state="running";startBtn.textContent="最初から";makeSequence();update();await showSequence()}
+    async function nextRound(){round++;score+=round*120;makeSequence();update();statusEl.textContent="ROUND "+round;await sleep(450);await showSequence()}
+    function finish(){
+      accepting=false;root.dataset.state="gameover";if(round>best){best=round;try{localStorage.setItem(BEST_KEY,String(best))}catch{};bestEl.textContent=String(best)}
+      statusEl.textContent="GAME OVER — ROUND "+round;replayBtn.disabled=true;
+    }
+    async function onCell(index:number){
+      if(!accepting||showing)return;const pos=input.length;cells[index].classList.add("tap");setTimeout(()=>cells[index].classList.remove("tap"),160);
+      if(index!==sequence[pos]){accepting=false;lives--;update();statusEl.textContent="MISS! 正解はもう一度光ります。";if(lives<=0){finish();return}input=[];await sleep(450);await showSequence();return}
+      input.push(index);if(input.length===sequence.length){accepting=false;score+=sequence.length*100;update();statusEl.textContent="PERFECT!";await sleep(500);await nextRound()}
+    }
+    cells.forEach((cell,i)=>cell.addEventListener("click",()=>onCell(i)));
+    startBtn.addEventListener("click",start);replayBtn.addEventListener("click",()=>{if(!showing&&sequence.length){input=[];showSequence()}});
+    update();
+  }
+</script>
+<style>
+  .arcade-shell{display:grid;gap:14px;padding:20px;border:1px solid #dbe5f0;border-radius:22px;background:linear-gradient(180deg,#07111f,#0b1220);box-shadow:0 18px 48px rgba(15,23,42,.17);color:#f8fafc}
+  .arcade-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.arcade-head h2{margin:0;color:#fff;font-size:clamp(28px,4.5vw,43px);line-height:1}.arcade-head p:not(.arcade-kicker){max-width:650px;margin:8px 0 0;color:#a8bdd2;font-size:14px;line-height:1.7}.arcade-kicker{margin:0 0 5px;color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.15em}
+  .arcade-best{flex:0 0 116px;padding:11px;border:1px solid rgba(103,232,249,.24);border-radius:14px;background:rgba(15,23,42,.65);text-align:center}.arcade-best span{display:block;color:#7dd3fc;font-size:9px;font-weight:900;letter-spacing:.1em}.arcade-best strong{font-size:22px}
+  .arcade-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.arcade-stats>div{padding:9px 10px;border:1px solid rgba(148,163,184,.14);border-radius:11px;background:rgba(15,23,42,.62)}.arcade-stats span{display:block;color:#7f95ad;font-size:8px;font-weight:900;letter-spacing:.1em}.arcade-stats strong{font-size:18px;font-variant-numeric:tabular-nums}
+  .meteor-stage{position:relative;width:min(100%,480px);margin:0 auto;overflow:hidden;border:1px solid rgba(103,232,249,.18);border-radius:18px;background:#020617;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.meteor-stage canvas{display:block;width:100%;height:auto;touch-action:none}
+  .arcade-overlay{position:absolute;inset:0;display:grid;place-items:center;padding:18px;background:rgba(2,8,23,.67);transition:opacity .2s}.arcade-overlay.is-hidden{opacity:0;pointer-events:none}.arcade-overlay-card{max-width:360px;padding:22px;border:1px solid rgba(148,163,184,.24);border-radius:17px;background:rgba(8,21,38,.91);text-align:center}.arcade-overlay-card .mini{margin:0;color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.13em}.arcade-overlay-card h3{margin:5px 0 8px;color:#fff;font-size:27px}.arcade-overlay-card p{margin:0 0 15px;color:#b5c8dc;line-height:1.65}
+  .arcade-toast{position:absolute;top:16px;left:50%;padding:7px 13px;border-radius:999px;background:rgba(15,23,42,.82);color:#fff;font-size:11px;font-weight:900;opacity:0;transform:translateX(-50%);pointer-events:none}.arcade-toast.show{animation:arcade-toast 1.15s ease}.mobile-help{margin:0;color:#8fa7be;font-size:11px;text-align:center}
+  .memory-stage{display:grid;gap:14px;justify-items:center;padding:18px;border:1px solid rgba(148,163,184,.15);border-radius:17px;background:rgba(2,8,23,.58)}.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(100%,480px);-webkit-user-select:none;user-select:none}.memory-cell{position:relative;aspect-ratio:1;border:1px solid rgba(125,211,252,.2);border-radius:15px;background:linear-gradient(145deg,#142238,#0f172a);touch-action:manipulation;transition:transform .12s,background .12s,box-shadow .12s}.memory-cell span{position:absolute;inset:22%;border-radius:10px;background:rgba(56,189,248,.09)}.memory-cell.flash{transform:scale(.93);background:#facc15;box-shadow:0 0 30px rgba(250,204,21,.55)}.memory-cell.tap{transform:scale(.93);background:#22d3ee;box-shadow:0 0 25px rgba(34,211,238,.45)}.memory-status{min-height:24px;color:#d8e7f6;font-size:14px;font-weight:800;text-align:center}.memory-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+  @keyframes arcade-toast{0%{opacity:0;transform:translate(-50%,-7px)}18%,70%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-5px)}}
+  @media(max-width:640px){.arcade-shell{padding:12px;border-radius:16px}.arcade-head{align-items:center}.arcade-head p:not(.arcade-kicker){font-size:12px}.arcade-best{flex-basis:92px}.arcade-stats{gap:4px}.arcade-stats>div{padding:7px 5px}.arcade-stats strong{font-size:14px}.meteor-stage{width:100%;max-width:390px}.memory-stage{padding:11px}.memory-grid{gap:6px}.memory-cell{border-radius:11px}}
+  @media(max-width:420px){.arcade-best{display:none}.arcade-head h2{font-size:29px}.arcade-stats strong{font-size:13px}.memory-cell{border-radius:9px}}
+</style>

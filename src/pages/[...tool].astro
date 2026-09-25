@@ -17,6 +17,7 @@ import JapanQuickTool from "../components/tools/JapanQuickTool.astro";
 import OfficeQuickTool from "../components/tools/OfficeQuickTool.astro";
 import GameQuickTool from "../components/tools/GameQuickTool.astro";
 import PlatformerGame from "../components/tools/PlatformerGame.astro";
+import ArcadeMiniGames from "../components/tools/ArcadeMiniGames.astro";
 
 export function getStaticPaths() {
   return extraTools.map((meta) => ({
@@ -43,6 +44,7 @@ const Component =
   meta.family === "japan" ? JapanQuickTool :
   meta.family === "office" ? OfficeQuickTool :
   meta.mode === "lumo-sky-run" ? PlatformerGame :
+  ["meteor-drift","flash-matrix"].includes(meta.mode) ? ArcadeMiniGames :
   meta.family === "game" ? GameQuickTool :
   DeveloperQuickTool;
 ---

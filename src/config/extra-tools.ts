@@ -1287,6 +1287,20 @@ export const extraTools: ExtraToolMeta[] = [
     description: "走る・ジャンプ・敵を踏む・スター収集・チェックポイント・動く足場を楽しめる、3ステージ構成の完全オリジナル無料ブラウザアクションです。",
     faqs: [["どんなゲームですか？", "左右移動とジャンプで空中遺跡を進む横スクロールアクションです。敵は上から踏むと倒せ、スターを集めながら3ステージのゴールを目指します。"], ["スマホでも遊べますか？", "はい。スマホでは画面下の左右ボタンとJUMPボタン、PCでは矢印キーまたはA/DとSpace・W・↑で操作できます。"], ["セーブされる内容は？", "ベストタイムだけを同じブラウザのlocalStorageへ保存します。ゲーム進行や操作履歴を外部サーバーへ送信しません。"], privacyFaq],
   },
+  {
+    id: "game-meteor-drift", mode: "meteor-drift", family: "game", category: "ゲーム", categoryKey: "game",
+    href: "/game/meteor-drift/", name: "Meteor Drift",
+    title: "Meteor Drift｜45秒生き残る無料隕石よけゲーム",
+    description: "機体を左右に動かして隕石を避け、エネルギーを集めながら45秒の生存を目指す、スマホ・PC対応の無料反射神経ゲームです。",
+    faqs: [["どうやって操作しますか？", "スマホではゲーム画面を指で左右になぞり、PCでは矢印キーまたはA/Dで移動します。"], ["何をすると得点になりますか？", "生存時間でスコアが増え、黄色いエネルギーを取ると250点加算されます。時間が進むほど隕石の量と速度が上がります。"], ["ベストスコアは保存されますか？", "はい。同じブラウザのlocalStorageへベストスコアだけ保存します。"], privacyFaq],
+  },
+  {
+    id: "game-flash-matrix", mode: "flash-matrix", family: "game", category: "ゲーム", categoryKey: "game",
+    href: "/game/flash-matrix/", name: "Flash Matrix",
+    title: "Flash Matrix｜光るマスの順番を覚える無料記憶力ゲーム",
+    description: "4×4のマスが光る順番を覚えて同じ順番でタップする記憶力ゲーム。ラウンドごとに記憶する数が増え、3回ミスするまで挑戦できます。",
+    faqs: [["ルールは？", "光ったマスの順番を覚え、表示が終わったら同じ順番でマスをタップします。正解すると次のラウンドで1手増えます。"], ["ミスしたらどうなりますか？", "残機が1つ減り、同じ順番をもう一度確認できます。3回ミスするとゲーム終了です。"], ["ベスト記録は保存されますか？", "はい。同じブラウザのlocalStorageへ到達した最高ラウンドだけ保存します。"], privacyFaq],
+  },
 ];
 
 export const extraToolByPath = new Map(extraTools.map((tool) => [tool.href, tool]));
