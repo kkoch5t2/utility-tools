@@ -39,6 +39,8 @@ try {
   const ownerContext = await browser.newContext();
   const owner = await ownerContext.newPage();
   await owner.goto(BASE + "/schedule/");
+  await owner.locator("[data-create-view]").waitFor({ state: "visible" });
+  assert(await owner.locator("[data-loading]").isHidden(), "Initial loader must disappear on create page");
   await owner.locator("#schedule-title").fill("共有機能テスト");
   await owner.locator("#schedule-organizer").fill("主催者");
   await owner.locator("#schedule-description").fill("自動テスト");
