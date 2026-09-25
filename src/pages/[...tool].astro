@@ -11,6 +11,7 @@ import UtilityPlusTool from "../components/tools/UtilityPlusTool.astro";
 import CsvMoreTool from "../components/tools/CsvMoreTool.astro";
 import GeneralMoreTool from "../components/tools/GeneralMoreTool.astro";
 import DeveloperQuickTool from "../components/tools/DeveloperQuickTool.astro";
+import SpecialQuickTool from "../components/tools/SpecialQuickTool.astro";
 
 export function getStaticPaths() {
   return extraTools.map((meta) => ({
@@ -32,6 +33,7 @@ const Component =
   meta.family === "utilityplus" ? UtilityPlusTool :
   meta.family === "csvmore" ? CsvMoreTool :
   meta.family === "generalmore" ? GeneralMoreTool :
+  meta.family === "special" ? SpecialQuickTool :
   DeveloperQuickTool;
 ---
 <Component meta={meta} />

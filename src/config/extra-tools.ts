@@ -1,5 +1,5 @@
-export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore";
-export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator";
+export type ExtraToolFamily = "image" | "csv" | "text" | "pdf" | "qr" | "video" | "developer" | "utility" | "utilityplus" | "csvmore" | "generalmore" | "special";
+export type ExtraToolCategory = "image" | "csv" | "json" | "text" | "pdf" | "qr" | "video" | "japanese" | "developer" | "date" | "calculator" | "share";
 
 export type ExtraToolMeta = {
   id: string;
@@ -1090,6 +1090,41 @@ export const extraTools: ExtraToolMeta[] = [
     title: "Unix時間・日時変換｜秒・ミリ秒対応",
     description: "Unixタイムスタンプと日時を相互変換します。秒・ミリ秒を自動判定します。",
     faqs: [["秒とミリ秒の両方に対応しますか？", "はい。桁数をもとに自動判定します。"], privacyFaq],
+  },
+  {
+    id: "privacy-mask", mode: "pii-mask", family: "special", category: "テキスト", categoryKey: "text",
+    href: "/text/privacy-mask/", name: "個人情報マスキング",
+    title: "個人情報マスキング｜メール・電話番号・IPをブラウザ内で伏字化",
+    description: "文章やログに含まれるメールアドレス、電話番号、IPv4、12桁番号や指定語句をブラウザ内でまとめて伏字化します。",
+    faqs: [["どの情報をマスキングできますか？", "メールアドレス、電話番号、IPv4、12桁番号に加え、任意の語句を指定して伏字化できます。"], ["完全に自動判定できますか？", "正規表現による検出のため、文脈によっては誤検出や見逃しがあります。公開前は結果を目視確認してください。"], privacyFaq],
+  },
+  {
+    id: "work-hours", mode: "work-hours", family: "special", category: "計算", categoryKey: "calculator",
+    href: "/calculator/work-hours/", name: "勤務時間・残業時間計算",
+    title: "勤務時間・残業時間計算｜出勤・退勤・休憩から実働を計算",
+    description: "出勤時刻、退勤時刻、休憩時間から実働時間を計算し、入力した所定労働時間との差や月換算も確認できます。",
+    faqs: [["日付をまたぐ勤務にも対応しますか？", "はい。退勤時刻が出勤時刻より早い場合は翌日の退勤として計算します。"], ["法定残業時間を判定できますか？", "このツールは入力した所定労働時間との差を計算する簡易ツールです。法令や会社ごとの就業規則の判定は行いません。"], privacyFaq],
+  },
+  {
+    id: "tournament-bracket", mode: "tournament", family: "special", category: "共有・調整", categoryKey: "share",
+    href: "/tournament/", name: "トーナメント表・組み合わせ作成",
+    title: "トーナメント表作成｜参加者をランダム組み合わせ",
+    description: "参加者やチーム名を入力して、最大64件までのシングルエリミネーション形式の組み合わせ表をブラウザ内で作成します。",
+    faqs: [["参加人数が2の累乗でない場合は？", "不足枠をBYEとして自動で補い、次の2の累乗サイズのトーナメント表を作ります。"], ["組み合わせを固定順にできますか？", "はい。「組み合わせをランダムにする」をオフにすると入力順で配置します。"], privacyFaq],
+  },
+  {
+    id: "remove-image-metadata", mode: "remove-exif", family: "image", category: "画像", categoryKey: "image",
+    href: "/image/remove-exif/", name: "EXIF・画像メタデータ削除",
+    title: "EXIF削除｜画像の位置情報・メタデータをブラウザ内で除去",
+    description: "JPG・PNG・WebP画像をブラウザ内で再描画し、EXIFなど元ファイルの付加メタデータを引き継がない新しい画像として保存します。",
+    faqs: [["位置情報も削除できますか？", "元ファイルをCanvasへ描画して新規画像として出力するため、元のEXIF位置情報などは出力ファイルへ引き継ぎません。"], ["画質は変わりますか？", "JPEG・WebPは再エンコードされるため、わずかに画質や容量が変わる場合があります。"], privacyFaq],
+  },
+  {
+    id: "id-photo-maker", mode: "id-photo", family: "image", category: "画像", categoryKey: "image",
+    href: "/image/id-photo/", name: "証明写真サイズ作成",
+    title: "証明写真サイズ作成｜履歴書・パスポート用にトリミング",
+    description: "写真を中央基準でトリミングし、履歴書30×40mmやパスポート35×45mm相当の画像サイズへブラウザ内で整えます。",
+    faqs: [["履歴書用は何mmですか？", "このツールでは一般的な履歴書写真の縦40mm×横30mmをプリセットにしています。"], ["顔位置も自動調整されますか？", "いいえ。中央基準のトリミングです。公的書類へ使う場合は各提出先の最新要件と顔位置を必ず確認してください。"], privacyFaq],
   },
 ];
 
