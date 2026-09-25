@@ -79,7 +79,8 @@ try{
     await guest.locator("[data-slots] input").nth(0).check();await guest.locator("[data-slots] input").nth(1).check();
     await guest.getByRole("button",{name:"回答を送信"}).click();await guest.getByRole("button",{name:"回答を更新"}).waitFor();
     assert((await guest.locator("[data-count]").textContent())==="1人回答","availability count");
-    guest.once("dialog",d=>d.accept());await guest.getByRole("button",{name:"回答を削除"}).click();await wait(100);
+    guest.once("dialog",d=>d.accept());await guest.getByRole("button",{name:"回答を削除"}).click();
+    await guest.waitForFunction(() => document.querySelector("[data-count]")?.textContent === "0人回答");
     assert((await guest.locator("[data-count]").textContent())==="0人回答","availability delete");
     owner.once("dialog",d=>d.accept());await owner.getByRole("button",{name:"この候補を削除"}).click();await owner.waitForURL(BASE+"/availability-match/");
     await guestCtx.close();await ownerCtx.close();
