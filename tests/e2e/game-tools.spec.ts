@@ -278,7 +278,7 @@ test("3つのシミュレーションゲームが開始して1ターン進めら
   await page.locator('[data-buy="nova"]').click();
   await expect(page.locator('[data-holding="nova"]')).toHaveText("5口");
   await page.locator("[data-next-month]").click();
-  await expect(page.locator("[data-month]")).toHaveText("2 / 36");
+  await expect(page.locator("[data-month]")).toHaveText("2 / 60");
 });
 
 
@@ -346,7 +346,7 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
 
   await page.goto("/game/investment-simulator/");
   await page.locator("[data-start]").click();
-  await expect(page.locator("[data-asset-row]")).toHaveCount(6);
+  await expect(page.locator("[data-asset-row]")).toHaveCount(8);
   await page.locator('[data-buy="nova"]').click();
   await page.locator('[data-buy="bond"]').click();
   await expect(page.locator("[data-allocation] .allocation-row")).toHaveCount(3);
@@ -395,6 +395,40 @@ test("コンビニの棚割り・スタッフ・財務・支店が連動する",
   await expect(page.locator("[data-day]")).toHaveText("2 / 30");
   await expect(page.locator("[data-segment-bars] > div")).toHaveCount(4);
   await expect(page.locator("[data-report-note]")).toContainText("支店利益");
+});
+
+test("投資の企業分析・決算・IPO・リバランス・ベンチマークが連動する", async ({ page }) => {
+  await page.goto("/game/investment-simulator/");
+  await page.locator("[data-start]").click();
+
+  await expect(page.locator("[data-asset-row]")).toHaveCount(8);
+  await expect(page.locator("[data-rate]")).toContainText("%");
+  await expect(page.locator("[data-ipo-name]")).toContainText("ORBIT");
+  await page.locator("[data-ipo-reserve]").click();
+  await expect(page.locator("[data-ipo-reserve]")).toHaveText("申込済み");
+
+  await page.locator('[data-open-research="nova"]').click();
+  await expect(page.locator('[data-invest-panel="research"]')).toBeVisible();
+  await expect(page.locator("[data-company-research]")).toContainText("PER");
+  await expect(page.locator("[data-company-research]")).toContainText("売上成長");
+
+  for (let i = 0; i < 3; i++) await page.locator("[data-next-month]").click();
+  await expect(page.locator("[data-earnings-quarter]")).not.toHaveText("まだありません");
+  await expect(page.locator("[data-earnings-detail]")).toContainText("EPS surprise");
+
+  for (let i = 0; i < 3; i++) await page.locator("[data-next-month]").click();
+  await page.locator('[data-invest-tab="market"]').click();
+  await expect(page.locator("[data-asset-row]")).toHaveCount(9);
+  await expect(page.locator('[data-asset-row="orbit"]')).toBeVisible();
+
+  await page.locator('[data-invest-tab="portfolio"]').click();
+  await page.locator('[data-rebalance="balanced"]').click();
+  expect(await page.locator("[data-holdings-table] tr").count()).toBeGreaterThan(1);
+  expect(await page.locator("[data-allocation] .allocation-row").count()).toBeGreaterThan(2);
+
+  await page.locator('[data-invest-tab="records"]').click();
+  await expect(page.locator("[data-record-grid]")).toContainText("ALPHA");
+  await expect(page.locator("[data-benchmark]")).not.toHaveText("100.0");
 });
 
 test("サッカーの育成・スカウト・ベンチ交代・個人成績が連動する", async ({ page }) => {
@@ -492,9 +526,18 @@ test("3つのシミュレーションゲームを最終ターンまで完走で�
 
   await page.goto("/game/investment-simulator/");
   await page.locator("[data-start]").click();
-  for (let i = 0; i < 36; i++) await page.locator("[data-next-month]").click();
+  for (let i = 0; i < 60; i++) await page.locator("[data-next-month]").click();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
-  await expect(page.locator("[data-result]")).toContainText("36か月終了");
+  await expect(page.locator("[data-result]")).toContainText("5年間終了");
+  await expect(page.locator("[data-year-history] > div")).toHaveCount(5);
+  const finalAssets = await page.locator("[data-assets]").textContent();
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  await expect(page.locator("[data-game-over]")).toBeVisible();
+  await page.locator("[data-new-cycle]").click();
+  await expect(page.locator("[data-month]")).toHaveText("1 / 60");
+  await expect(page.locator("[data-assets]")).toHaveText(finalAssets!);
+  await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "running");
 });
 
 test("シミュレーションゲームはスマホで横にはみ出さない", async ({ page }) => {
@@ -506,6 +549,21 @@ test("シミュレーションゲームはスマホで横にはみ出さない",
     await expect(page.locator("[data-game-retry]")).toBeVisible();
     await expect(page.locator("[data-game-common]")).toHaveCSS("position", "static");
   }
+
+  await page.goto("/game/investment-simulator/");
+  await page.locator("[data-start]").click();
+  await page.locator('[data-invest-tab="portfolio"]').click();
+  const internalOverflow = await page.evaluate(() => {
+    const viewport = document.documentElement.clientWidth;
+    const shell = document.querySelector('[data-sim-game]')!;
+    return [...shell.querySelectorAll('*')].filter((el) => {
+      if ((el as HTMLElement).offsetParent === null) return false;
+      if (el.closest('.holdings-table-wrap')) return false;
+      const r = el.getBoundingClientRect();
+      return r.left < -1 || r.right > viewport + 1;
+    }).length;
+  });
+  expect(internalOverflow).toBe(0);
 });
 
 test("ホーム上部からGAMEカテゴリへ移動できる", async ({ page }) => {
