@@ -287,6 +287,7 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
   await page.locator("[data-start]").click();
   await expect(page.locator("[data-product-card]")).toHaveCount(10);
   await expect(page.locator("[data-shelf]")).toHaveCount(6);
+  await expect(page.locator("[data-auto-order]")).toBeChecked();
   await expect(page.locator("[data-time-demand] > div")).toHaveCount(4);
 
   await page.locator('[data-store-tab="staff"]').click();
@@ -471,6 +472,7 @@ test("3つのシミュレーションゲームを最終ターンまで完走で�
   await expect(page.locator("[data-month]")).toHaveText("2か月目");
   await expect(page.locator("[data-day]")).toHaveText("1 / 30");
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "running");
+  await expect(page.locator("[data-weather]")).not.toContainText("寒い");
 
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
