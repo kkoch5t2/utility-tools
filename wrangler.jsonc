@@ -27,15 +27,55 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["ScheduleRoom"]
+      "new_sqlite_classes": [
+        "ScheduleRoom"
+      ]
     },
     {
       "tag": "v2",
-      "new_sqlite_classes": ["SharedToolRoom"]
+      "new_sqlite_classes": [
+        "SharedToolRoom"
+      ]
     },
     {
       "tag": "v3",
-      "new_sqlite_classes": ["GameMetrics"]
+      "new_sqlite_classes": [
+        "GameMetrics"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "API_CREATE_RATE_LIMITER",
+      "namespace_id": "731401",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    },
+    {
+      "name": "API_MUTATION_RATE_LIMITER",
+      "namespace_id": "731402",
+      "simple": {
+        "limit": 180,
+        "period": 60
+      }
+    },
+    {
+      "name": "API_GAME_RATE_LIMITER",
+      "namespace_id": "731403",
+      "simple": {
+        "limit": 300,
+        "period": 60
+      }
+    },
+    {
+      "name": "API_READ_RATE_LIMITER",
+      "namespace_id": "731404",
+      "simple": {
+        "limit": 600,
+        "period": 60
+      }
     }
   ]
 }
