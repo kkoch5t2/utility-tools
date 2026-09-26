@@ -109,9 +109,9 @@ export const gameMeta: GameMeta[] = [
     href: "/game/investment-simulator/",
     name: "投資シミュレーションゲーム",
     genre: "資産運用ゲーム",
-    playTime: "5〜10分",
+    playTime: "10〜20分",
     control: "タップ / クリック",
-    tagline: "ニュースと配分を読み、100万円を36か月運用。",
+    tagline: "決算・金利・IPOを読み、100万円を5年間運用。",
     thumbnail: "/game-art/investment-simulator.svg",
   },
 ];
