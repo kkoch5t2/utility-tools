@@ -1,7 +1,11 @@
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
+  "x-content-type-options": "nosniff",
+  "cross-origin-resource-policy": "same-origin",
 };
+
+const API_MAX_BODY_BYTES = 32 * 1024;
 
 const DAY = 24 * 60 * 60 * 1000;
 const MAX_OPTIONS = 20;
@@ -11,8 +15,8 @@ const MAX_DESCRIPTION = 800;
 const MAX_NAME = 50;
 const MAX_COMMENT = 500;
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
+function json(data, status = 200, extraHeaders = {}) {
+  return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...extraHeaders } });
 }
 
 function textValue(value, max = 100) {
@@ -46,12 +50,61 @@ function bearer(request) {
 
 function mutationAllowed(request) {
   const origin = request.headers.get("origin");
-  if (!origin) return true;
+  if (!origin) return false;
   try {
-    return new URL(origin).host === new URL(request.url).host;
+    return new URL(origin).origin === new URL(request.url).origin;
   } catch {
     return false;
   }
+}
+
+function apiClientKey(request) {
+  return (request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown").slice(0, 96);
+}
+
+function isCreateRequest(method, pathname) {
+  if (method !== "POST") return false;
+  return pathname === "/api/schedules" || pathname === "/api/polls" ||
+    pathname === "/api/attendance" || pathname === "/api/split-bills" ||
+    /^\/api\/collab\/(survey|lottery|availability|packing|checklist|ranking)$/.test(pathname);
+}
+
+async function enforceApiRateLimit(request, env, pathname) {
+  if (pathname === "/api/health") return null;
+  let limiter = env.API_MUTATION_RATE_LIMITER;
+  let bucket = "mutation";
+  if (request.method === "GET") { limiter = env.API_READ_RATE_LIMITER; bucket = "read"; }
+  else if (pathname === "/api/game-events") { limiter = env.API_GAME_RATE_LIMITER; bucket = "game"; }
+  else if (isCreateRequest(request.method, pathname)) { limiter = env.API_CREATE_RATE_LIMITER; bucket = "create"; }
+  if (!limiter?.limit) return null;
+  const { success } = await limiter.limit({ key: apiClientKey(request) + ":" + bucket });
+  return success ? null : json({ error: "rate_limited" }, 429, { "retry-after": "60" });
+}
+
+async function validateMutationRequest(request) {
+  if (!["POST", "PUT"].includes(request.method)) return null;
+  const contentType = (request.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+  if (contentType !== "application/json") return json({ error: "unsupported_media_type" }, 415);
+  const declared = Number(request.headers.get("content-length") || 0);
+  if (Number.isFinite(declared) && declared > API_MAX_BODY_BYTES) return json({ error: "payload_too_large" }, 413);
+  if (!request.body) return null;
+  const reader = request.clone().body.getReader();
+  let bytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > API_MAX_BODY_BYTES) {
+        await reader.cancel();
+        return json({ error: "payload_too_large" }, 413);
+      }
+    }
+  } finally {
+    try { reader.releaseLock(); } catch {}
+  }
+  return null;
 }
 
 function publicSchedule(data) {
@@ -1270,9 +1323,19 @@ async function routeShared(request, env, pathname) {
 }
 
 async function api(request, env, pathname) {
+  if (request.method !== "GET") {
+    if (!mutationAllowed(request)) return json({ error: "invalid_origin" }, 403);
+    const limited = await enforceApiRateLimit(request, env, pathname);
+    if (limited) return limited;
+    const invalidBody = await validateMutationRequest(request);
+    if (invalidBody) return invalidBody;
+  } else {
+    const limited = await enforceApiRateLimit(request, env, pathname);
+    if (limited) return limited;
+  }
+
   if (pathname === "/api/game-events" && request.method === "POST") {
     if (!env.GAME_METRICS) return json({ error: "game_metrics_not_configured" }, 503);
-    if (!mutationAllowed(request)) return json({ error: "invalid_origin" }, 403);
     return gameMetricsStub(env).fetch("https://game-metrics.internal/event", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -1292,10 +1355,6 @@ async function api(request, env, pathname) {
 
   if (pathname === "/api/health" && request.method === "GET") {
     return json({ ok: true, service: "shared-tools" });
-  }
-
-  if (!mutationAllowed(request) && request.method !== "GET") {
-    return json({ error: "invalid_origin" }, 403);
   }
 
   const shared = await routeShared(request, env, pathname);
