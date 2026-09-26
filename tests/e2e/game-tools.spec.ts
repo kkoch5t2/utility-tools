@@ -285,13 +285,23 @@ test("3つのシミュレーションゲームが開始して1ターン進めら
 test("シミュレーション3本の追加管理機能が実際に操作できる", async ({ page }) => {
   await page.goto("/game/convenience-store-simulator/");
   await page.locator("[data-start]").click();
-  await expect(page.locator("[data-product-card]")).toHaveCount(6);
-  await page.locator("[data-hire]").click();
-  await expect(page.locator("[data-staff]")).toHaveText("3名");
+  await expect(page.locator("[data-product-card]")).toHaveCount(10);
+  await expect(page.locator("[data-shelf]")).toHaveCount(6);
+  await expect(page.locator("[data-time-demand] > div")).toHaveCount(4);
+
+  await page.locator('[data-store-tab="staff"]').click();
+  await expect(page.locator('[data-store-panel="staff"]')).toBeVisible();
+  await expect(page.locator("[data-staff-roster] .staff-card")).toHaveCount(3);
+  await expect(page.locator("[data-staff-candidates] .candidate-card")).toHaveCount(3);
+  await page.locator("[data-hire-staff]:not([disabled])").first().click();
+  await expect(page.locator("[data-staff-roster] .staff-card")).toHaveCount(4);
+
+  await page.locator('[data-store-tab="store"]').click();
   await page.locator('[data-upgrade="coffee"]').click();
+  await page.locator('[data-store-tab="products"]').click();
   await expect(page.locator('[data-product-card="coffee"]')).not.toHaveClass(/locked/);
   await page.locator('[data-order="coffee"]').click();
-  await expect(page.locator('[data-stock="coffee"]')).not.toHaveText("20個");
+  await expect(page.locator('[data-stock="coffee"]')).toHaveText("45個");
 
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
@@ -342,6 +352,48 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
   await page.locator("[data-next-month]").click();
   await expect(page.locator("[data-chart-points]")).not.toHaveAttribute("points", "0,95 600,95");
   await expect(page.locator("[data-risk-score]")).not.toHaveText("0");
+});
+
+test("コンビニの棚割り・スタッフ・財務・支店が連動する", async ({ page }) => {
+  await page.goto("/game/convenience-store-simulator/");
+  await page.locator("[data-start]").click();
+
+  const firstShelf = page.locator("[data-shelf]").first();
+  const beforeShelf = await firstShelf.inputValue();
+  await firstShelf.selectOption("magazine");
+  expect(await firstShelf.inputValue()).not.toBe(beforeShelf);
+
+  await page.locator('[data-store-tab="staff"]').click();
+  const firstShift = page.locator("[data-shift]").first();
+  await firstShift.selectOption("night");
+  await expect(firstShift).toHaveValue("night");
+  await page.locator("[data-hire-staff]:not([disabled])").first().click();
+  await expect(page.locator("[data-staff-roster] .staff-card")).toHaveCount(4);
+
+  await page.locator('[data-store-tab="finance"]').click();
+  await page.locator("[data-borrow]").click();
+  await expect(page.locator("[data-debt]")).toContainText("500,000");
+  await page.locator("[data-repay]").click();
+  await expect(page.locator("[data-debt]")).toContainText("400,000");
+
+  await page.evaluate(() => {
+    const key = "utility-tools:sim:convenience-store-sim:v2";
+    const state = JSON.parse(localStorage.getItem(key)!);
+    state.rep = 60;
+    state.cash = 2000000;
+    localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  await page.locator('[data-store-tab="store"]').click();
+  await page.locator("[data-open-branch]").click();
+  await expect(page.locator("[data-branch-list] > div")).toHaveCount(2);
+  await expect(page.locator("[data-branch-count]")).toHaveText("2店舗");
+
+  await page.locator("[data-open]").click();
+  await expect(page.locator("[data-day]")).toHaveText("2 / 30");
+  await expect(page.locator("[data-segment-bars] > div")).toHaveCount(4);
+  await expect(page.locator("[data-report-note]")).toContainText("支店利益");
 });
 
 test("サッカーの育成・スカウト・ベンチ交代・個人成績が連動する", async ({ page }) => {
@@ -413,7 +465,12 @@ test("3つのシミュレーションゲームを最終ターンまで完走で�
   await page.locator("[data-start]").click();
   for (let i = 0; i < 30; i++) await page.locator("[data-open]").click();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
-  await expect(page.locator("[data-result]")).toContainText("30日終了");
+  await expect(page.locator("[data-game-over]")).toBeVisible();
+  await expect(page.locator("[data-month-history] > div")).toHaveCount(1);
+  await page.locator("[data-next-month]").click();
+  await expect(page.locator("[data-month]")).toHaveText("2か月目");
+  await expect(page.locator("[data-day]")).toHaveText("1 / 30");
+  await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "running");
 
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
