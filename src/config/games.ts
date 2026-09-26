@@ -91,7 +91,7 @@ export const gameMeta: GameMeta[] = [
     genre: "経営シミュレーション",
     playTime: "5〜15分",
     control: "タップ / クリック",
-    tagline: "仕入れて、値付けして、30日後の繁盛店を目指せ。",
+    tagline: "棚・人・客・財務を動かし、小さな店をチェーンへ。",
     thumbnail: "/game-art/convenience-store-simulator.svg",
   },
   {
