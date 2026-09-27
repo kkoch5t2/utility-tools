@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 const PORT = 8794;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -85,5 +85,10 @@ try {
   assert(health.ok, "health endpoint must remain available");
   console.log("API security OK: origin / JSON / 32KiB body / rate limit / health bypass.");
 } finally {
-  try { if (worker.pid) process.kill(-worker.pid, "SIGTERM"); } catch {}
+  try {
+    if (worker.pid) {
+      if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(worker.pid), "/T", "/F"], { stdio: "ignore" });
+      else process.kill(-worker.pid, "SIGTERM");
+    }
+  } catch {}
 }
