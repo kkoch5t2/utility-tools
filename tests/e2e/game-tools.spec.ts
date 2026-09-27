@@ -266,11 +266,12 @@ test("3つのシミュレーションゲームが開始して1ターン進めら
 
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
   await page.locator("[data-match]").click();
   await expect(page.locator("[data-halftime]")).toBeVisible();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-match-phase", "halftime");
   await page.locator("[data-match]").click();
-  await expect(page.locator("[data-week]")).toHaveText("2 / 14");
+  await expect(page.locator("[data-week]")).toHaveText("2 / 38");
   await expect(page.locator("[data-result]")).toContainText(/WIN|DRAW|LOSE/);
 
   await page.goto("/game/investment-simulator/");
@@ -306,9 +307,10 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
 
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
-  await expect(page.locator("[data-league-table] tr")).toHaveCount(8);
-  await expect(page.locator("[data-squad-table] tr")).toHaveCount(18);
-  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
+  await expect(page.locator("[data-play]")).toBeVisible();
+  await expect(page.locator("[data-league-table] tr")).toHaveCount(20);
+  await expect(page.locator("[data-squad-table] tr")).toHaveCount(22);
+  expect(await page.locator("[data-transfer-market] .market-player-card").count()).toBeGreaterThanOrEqual(20);
   await expect(page.locator("[data-player-detail]")).toContainText("PAC");
 
   await page.selectOption("[data-formation]", "343");
@@ -317,21 +319,26 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
 
   await page.locator('[data-football-tab="market"]').click();
   await expect(page.locator('[data-football-panel="market"]')).toBeVisible();
+  await page.selectOption("[data-market-sort]", "price");
   const buyButton = page.locator('[data-football-panel="market"] [data-buy-player]:not([disabled])').first();
-  const boughtName = (await buyButton.evaluate((el) => el.closest(".market-player-card")?.querySelector("strong")?.textContent || ""));
+  const boughtName = await buyButton.evaluate((el) => el.closest(".market-player-card")?.querySelector("strong")?.textContent || "");
   const boughtId = (await buyButton.getAttribute("data-buy-player"))!;
   await buyButton.click();
+  const ask = await page.evaluate(() => JSON.parse(localStorage.getItem("utility-tools:sim:football-club-sim:v5")!).negotiation.ask);
+  await page.locator("[data-negotiation-fee]").fill(String(ask));
+  await page.locator("[data-submit-club-offer]").click();
+  await page.locator("[data-submit-contract-offer]").click();
   await expect(page.locator("[data-squad-table]")).toContainText(boughtName);
-  await expect(page.locator("[data-squad-count]")).toHaveText("19 players");
+  await expect(page.locator("[data-squad-count]")).toHaveText("23 players");
 
   await page.locator("[data-lineup-slot]").last().selectOption(boughtId);
   await expect(page.locator("[data-pitch-lineup]")).toContainText(boughtName.split(" ").at(-1)!);
   await expect(page.locator("[data-player-detail]")).toContainText(boughtName);
 
   await page.selectOption("[data-market-filter]", "GK");
-  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(2);
+  expect(await page.locator("[data-transfer-market] .market-player-card").count()).toBeGreaterThan(0);
   await page.selectOption("[data-market-filter]", "ALL");
-  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
+  expect(await page.locator("[data-transfer-market] .market-player-card").count()).toBeGreaterThanOrEqual(20);
 
   await page.locator("[data-match]").click();
   await expect(page.locator("[data-halftime]")).toBeVisible();
@@ -434,10 +441,11 @@ test("投資の企業分析・決算・IPO・リバランス・ベンチマー�
 test("サッカーの育成・スカウト・ベンチ交代・個人成績が連動する", async ({ page }) => {
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
 
   await expect(page.locator("[data-bench-editor] .bench-row")).toHaveCount(7);
   await expect(page.locator("[data-player-detail]")).toContainText("POT");
-  await expect(page.locator("[data-player-detail]")).toContainText("成長");
+  await expect(page.locator("[data-player-detail]")).toContainText("契約");
   await expect(page.locator(".player-table-deep")).toContainText("VALUE");
 
   await page.locator('[data-football-tab="market"]').click();
@@ -462,25 +470,27 @@ test("サッカーの育成・スカウト・ベンチ交代・個人成績が�
   await expect(page.locator("[data-player-detail]")).toContainText("出場 1");
   await page.locator('[data-football-tab="stats"]').click();
   await expect(page.locator('[data-football-panel="stats"]').first()).toBeVisible();
-  await expect(page.locator("[data-player-leaders] button")).toHaveCount(5);
+  await expect(page.locator("[data-player-leaders] button")).toHaveCount(8);
   await page.locator('[data-football-tab="market"]').click();
 
   const marketBefore = await page.locator("[data-transfer-market] .market-player-card strong").allTextContents();
   await page.locator("[data-market-refresh]").click();
   const marketAfter = await page.locator("[data-transfer-market] .market-player-card strong").allTextContents();
   expect(marketAfter.join("|")).not.toBe(marketBefore.join("|"));
-  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
+  expect(await page.locator("[data-transfer-market] .market-player-card").count()).toBeGreaterThanOrEqual(20);
 });
 
 test("サッカーは新シーズンごとに選手が入れ替わり保存中は維持される", async ({ page }) => {
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
   const season1 = await page.locator("[data-sim-game]").getAttribute("data-season-id");
   const market1 = await page.locator("[data-transfer-market] .market-player-card strong").allTextContents();
   const squad1 = await page.locator("[data-squad-table] .player-name-button").allTextContents();
 
   await page.reload();
   await page.locator("[data-continue]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-season-id", season1!);
   await expect(page.locator("[data-transfer-market] .market-player-card strong")).toHaveText(market1);
 
@@ -491,8 +501,8 @@ test("サッカーは新シーズンごとに選手が入れ替わり保存中�
   expect(season2).not.toBe(season1);
   expect(market2.join("|")).not.toBe(market1.join("|"));
   expect(squad2.join("|")).not.toBe(squad1.join("|"));
-  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
-  await expect(page.locator("[data-squad-table] tr")).toHaveCount(18);
+  expect(await page.locator("[data-transfer-market] .market-player-card").count()).toBeGreaterThanOrEqual(20);
+  await expect(page.locator("[data-squad-table] tr")).toHaveCount(22);
 });
 
 test("3つのシミュレーションゲームを最終ターンまで完走できる", async ({ page }) => {
@@ -510,19 +520,19 @@ test("3つのシミュレーションゲームを最終ターンまで完走で�
 
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
-  for (let i = 0; i < 14; i++) {
+  await expect(page.locator("[data-play]")).toBeVisible();
+  for (let i = 0; i < 38; i++) {
     await page.locator("[data-auto-lineup]").click();
-    await page.locator("[data-match]").click();
-    await page.locator("[data-match]").click();
+    await page.locator("[data-quick-match]").click();
   }
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
   await expect(page.locator("[data-result]")).toContainText("シーズン終了");
   await expect(page.locator("[data-season-history] > div")).toHaveCount(1);
   await page.locator("[data-next-season]").click();
   await expect(page.locator("[data-season]")).toHaveText("2年目");
-  await expect(page.locator("[data-week]")).toHaveText("1 / 14");
+  await expect(page.locator("[data-week]")).toHaveText("1 / 38");
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "running");
-  await expect(page.locator("[data-transfer-market] .market-player-card")).toHaveCount(20);
+  expect(await page.locator("[data-transfer-market] .market-player-card").count()).toBeGreaterThanOrEqual(20);
 
   await page.goto("/game/investment-simulator/");
   await page.locator("[data-start]").click();

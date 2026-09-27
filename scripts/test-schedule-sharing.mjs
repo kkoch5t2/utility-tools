@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { chromium } from "@playwright/test";
 
 const PORT = 8791;
@@ -95,6 +95,9 @@ try {
 } finally {
   await browser?.close().catch(() => {});
   try {
-    if (worker.pid) process.kill(-worker.pid, "SIGTERM");
+    if (worker.pid) {
+      if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(worker.pid), "/T", "/F"], { stdio: "ignore" });
+      else process.kill(-worker.pid, "SIGTERM");
+    }
   } catch {}
 }

@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { chromium } from "@playwright/test";
 
 const PORT=8793;
@@ -229,6 +229,11 @@ try{
   console.log("Extended tool E2E OK: survey / lottery / availability / packing / checklist / ranking / team / seating / travel expense / privacy mask / work hours / tournament / image privacy.");
 
 } finally {
-  await browser?.close().catch(()=>{});
-  try{if(worker.pid)process.kill(-worker.pid,"SIGTERM")}catch{}
+  await browser?.close().catch(() => {});
+  try {
+    if (worker.pid) {
+      if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(worker.pid), "/T", "/F"], { stdio: "ignore" });
+      else process.kill(-worker.pid, "SIGTERM");
+    }
+  } catch {}
 }

@@ -99,9 +99,9 @@ export const gameMeta: GameMeta[] = [
     href: "/game/football-club-manager/",
     name: "サッカークラブ経営シミュレーション",
     genre: "スポーツ経営",
-    playTime: "5〜15分",
+    playTime: "10〜30分",
     control: "タップ / クリック",
-    tagline: "補強と戦術で、架空クラブをリーグ上位へ。",
+    tagline: "38試合を戦い、欧州移籍と契約交渉でクラブを育てる。",
     thumbnail: "/game-art/football-club-manager.svg",
   },
   {
