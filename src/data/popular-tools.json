@@ -1,33 +1,15 @@
 {
-  "generatedAt": "2026-09-30T06:39:44.053Z",
+  "generatedAt": "2026-09-30T13:38:43.758Z",
   "periodDays": 7,
   "items": [
     {
       "path": "/image/batch-converter/"
     },
     {
-      "path": "/csv/json-converter/"
-    },
-    {
       "path": "/csv/split/"
     },
     {
-      "path": "/csv/columns/"
-    },
-    {
       "path": "/video/to-mp3/"
-    },
-    {
-      "path": "/image/target-filesize/"
-    },
-    {
-      "path": "/csv/merge/"
-    },
-    {
-      "path": "/video/compress/"
-    },
-    {
-      "path": "/pdf/merge/"
     },
     {
       "path": "/text/pad-lines/"
@@ -37,9 +19,6 @@
     },
     {
       "path": "/developer/base64/"
-    },
-    {
-      "path": "/developer/unix-time/"
     }
   ]
 }
