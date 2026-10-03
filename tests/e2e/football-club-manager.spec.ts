@@ -480,6 +480,7 @@ test("旧セーブの施設はLv1へ移行し、Lv10強化と有料グレード�
 test("10年進めてもAIクラブは若手を補充し高齢化し続けない", async ({ page }) => {
   await page.goto(url); await page.locator("[data-start]").click();
   await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.seed=123456789;localStorage.setItem(key,JSON.stringify(st))},saveKey);
   const youthPositions=new Set<string>();
   for(let i=0;i<10;i++){
     const before=await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.complete=true;st.history.push({season:st.season,rank:5,points:55,record:"16勝7分15敗",prize:60_000_000});localStorage.setItem(key,JSON.stringify(st));return st.season},saveKey);
@@ -488,9 +489,10 @@ test("10年進めてもAIクラブは若手を補充し高齢化し続けない"
     const pos=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!).squad.filter((p:any)=>String(p.id).startsWith("y_")&&p.age<=20).map((p:any)=>p.pos[0]),saveKey);
     for(const p of pos)youthPositions.add(p);
   }
-  const stats=await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);const bags=[...Object.values(st.rivalSquads||{}),...Object.values(st.worldSquads||{})] as any[][];return bags.map(r=>({n:r.length,avg:r.reduce((a:number,p:any)=>a+p.age,0)/r.length,youth:r.some((p:any)=>p.age<=20)}))},saveKey);
+  const stats=await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);const bags=[...Object.values(st.rivalSquads||{}),...Object.values(st.worldSquads||{})] as any[][];return bags.map(r=>({n:r.length,avg:r.reduce((a:number,p:any)=>a+p.age,0)/r.length,youth:r.some((p:any)=>p.age<=20),pot94:r.some((p:any)=>String(p.id).startsWith("aiy_")&&p.pot===94),maxPot:Math.max(...r.map((p:any)=>p.pot))}))},saveKey);
   expect(stats.length).toBeGreaterThan(30); expect(stats.every(x=>x.n>=20&&x.n<=21)).toBe(true);
   expect(Math.max(...stats.map(x=>x.avg))).toBeLessThan(29.5); expect(stats.every(x=>x.youth)).toBe(true);
+  expect(stats.some(x=>x.pot94)).toBe(true); expect(Math.max(...stats.map(x=>x.maxPot))).toBe(94);
   expect(youthPositions.size).toBeGreaterThanOrEqual(4);
   expect([...youthPositions].some(p=>["DM","CM","AM","LM","RM"].includes(p))).toBe(true);
   expect([...youthPositions].some(p=>["LW","RW","ST"].includes(p))).toBe(true);
@@ -525,4 +527,23 @@ test("プレシーズン導入前の既存v5セーブは現在季を維持し次
   await expect(page.locator("[data-preseason-day]")).toHaveText("DAY 1 / 5");
   st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(st.summerDay).toBe(1); expect(st.preseasonDone).toBe(false);
+});
+
+
+test("academy Lv10 uses weighted POT rolls instead of guaranteed 94", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.seed=123456789;st.budget=100_000_000_000;st.facilities.academy=10;localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  const pots:number[]=[];
+  for(let i=0;i<4;i++){
+    const before=await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.complete=true;st.history.push({season:st.season,rank:5,points:55,record:"16-7-15",prize:60_000_000});localStorage.setItem(key,JSON.stringify(st));return st.season},saveKey);
+    await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-next-season]").click();
+    await page.waitForFunction(({key,before})=>JSON.parse(localStorage.getItem(key)!).season===before+1,{key:saveKey,before});
+    const generated=await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);return st.squad.filter((p:any)=>String(p.id).startsWith(`y_${st.seed}_${st.season}_`)).map((p:any)=>p.pot)},saveKey);
+    pots.push(...generated);
+  }
+  expect(pots.length).toBeGreaterThanOrEqual(16);
+  expect(pots.every(p=>p>=82&&p<=94)).toBe(true);
+  expect(pots.some(p=>p>=90)).toBe(true);
+  expect(pots.some(p=>p<94)).toBe(true);
 });
