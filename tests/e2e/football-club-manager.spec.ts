@@ -266,3 +266,43 @@ test("攻撃時と守備時の形を変更して保存し試合へ反映でき�
   await page.locator("[data-match]").click();
   await expect(page.locator("[data-match-feed]")).toContainText("攻撃 3-2-4-1 / 守備 5-3-2");
 });
+
+
+test("戦術ボードで選手詳細を確認し先発同士を直接入れ替えられる", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
+  await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), saveKey);
+  const before = await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key)!);
+    const player = state.squad.find((p:any) => p.id === state.lineup[1]);
+    return { lineup:[...state.lineup], player };
+  }, saveKey);
+
+  await page.locator("[data-pitch-player]").nth(1).click();
+  const detail = page.locator("[data-tactical-player-detail]");
+  await expect(detail).toContainText(before.player.name);
+  await expect(detail).toContainText("OVR");
+  await expect(detail).toContainText("POT");
+  await expect(detail).toContainText("PAC");
+  await expect(detail).toContainText(String(before.player.pac));
+  await expect(detail).toContainText(before.player.pos[0]);
+  await page.locator("[data-arm-starter-swap]").click();
+  await expect(page.locator("[data-pitch-player]").nth(1)).toHaveClass(/swap-source/);
+  await page.locator("[data-pitch-player]").nth(4).click();
+
+  const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).lineup, saveKey);
+  expect(after[1]).toBe(before.lineup[4]);
+  expect(after[4]).toBe(before.lineup[1]);
+  await expect(page.locator("[data-pitch-player]").nth(1)).toHaveAttribute("data-pitch-player", before.lineup[4]);
+  await expect(page.locator("[data-pitch-player]").nth(4)).toHaveAttribute("data-pitch-player", before.lineup[1]);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  const persisted = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).lineup, saveKey);
+  expect(persisted[1]).toBe(before.lineup[4]);
+  expect(persisted[4]).toBe(before.lineup[1]);
+});

@@ -31,7 +31,8 @@ const { meta } = Astro.props;
         <div class="tactical-phase-tabs" data-tactical-phase-tabs><button type="button" class="active" data-board-phase="base">基本</button><button type="button" data-board-phase="attack">攻撃時</button><button type="button" data-board-phase="defense">守備時</button></div>
         <div class="football-pitch football-lineup-pitch" data-pitch-lineup></div>
         <div class="tactical-swap-panel">
-          <div><strong>ボードから入替</strong><small data-tactical-selected>ピッチ上の選手を選択</small></div>
+          <div><strong>選手詳細・入替</strong><small data-tactical-selected>選手をタップして詳細表示</small></div>
+          <div class="tactical-player-detail" data-tactical-player-detail><p>選手をタップするとポジション・OVR・POT・能力値を確認できます。</p></div>
           <div class="tactical-bench" data-tactical-bench></div>
         </div>
         <div class="club-lines"><div><span>ATTACK</span><strong data-attack>0.0</strong></div><div><span>MIDFIELD</span><strong data-midfield>0.0</strong></div><div><span>DEFENSE</span><strong data-defense>0.0</strong></div></div>
