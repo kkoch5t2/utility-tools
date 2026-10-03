@@ -105,7 +105,7 @@ test("38試合完走後も全盛期までの選手は2年目開始だけで弱�
     return { budget:state.budget, levy:state.lastReserveLevy, maintenance:state.lastFacilityMaintenance };
   }, saveKey);
   expect(fiscal.levy).toBeGreaterThan(1000000000);
-  expect(fiscal.maintenance).toBe(260000000);
+  expect(fiscal.maintenance).toBe(460000000);
   expect(fiscal.budget).toBeLessThan(1000000000);
   const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).squad.map((p:any) => ({ id:p.id, age:p.age, ovr:p.ovr })), saveKey);
   const afterMap = new Map(after.map((p:any) => [p.id, p]));
@@ -447,4 +447,70 @@ test("新シーズンは5日間のプレシーズン後に開幕し夏移籍期�
   st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(st.summerDay).toBe(11); expect(st.week).toBe(6);
   await expect(page.locator("[data-window-status]")).toHaveText("WINDOW CLOSED");
+});
+test("旧セーブの施設はLv1へ移行し、強化と解体ができる", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.budget=5_000_000_000;st.facilities={training:true,recovery:false,academy:true,stadium:false};localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  await page.reload(); await page.locator("[data-continue]").click();
+  await page.locator('[data-football-tab="club"]').click();
+  await expect(page.locator('[data-facility-level="training"]')).toHaveText("Lv1");
+  await expect(page.locator('[data-facility-level="academy"]')).toHaveText("Lv1");
+  const before=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  await page.locator('[data-facility="training"]').click();
+  let after=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(after.facilities.training).toBe(2); expect(before.budget-after.budget).toBe(450_000_000);
+  await expect(page.locator('[data-facility-info="training"]')).toContainText("年間維持 ¥280,000,000");
+  await page.locator('[data-facility-demolish="academy"]').click();
+  after=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(after.facilities.academy).toBe(0);
+  await expect(page.locator('[data-facility-level="academy"]')).toHaveText("Lv0");
+});
+
+test("10年進めてもAIクラブは若手を補充し高齢化し続けない", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  const youthPositions=new Set<string>();
+  for(let i=0;i<10;i++){
+    const before=await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.complete=true;st.history.push({season:st.season,rank:5,points:55,record:"16勝7分15敗",prize:60_000_000});localStorage.setItem(key,JSON.stringify(st));return st.season},saveKey);
+    await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-next-season]").click();
+    await page.waitForFunction(({key,before})=>JSON.parse(localStorage.getItem(key)!).season===before+1,{key:saveKey,before});
+    const pos=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!).squad.filter((p:any)=>String(p.id).startsWith("y_")&&p.age<=20).map((p:any)=>p.pos[0]),saveKey);
+    for(const p of pos)youthPositions.add(p);
+  }
+  const stats=await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);const bags=[...Object.values(st.rivalSquads||{}),...Object.values(st.worldSquads||{})] as any[][];return bags.map(r=>({n:r.length,avg:r.reduce((a:number,p:any)=>a+p.age,0)/r.length,youth:r.some((p:any)=>p.age<=20)}))},saveKey);
+  expect(stats.length).toBeGreaterThan(30); expect(stats.every(x=>x.n>=20&&x.n<=21)).toBe(true);
+  expect(Math.max(...stats.map(x=>x.avg))).toBeLessThan(29.5); expect(stats.every(x=>x.youth)).toBe(true);
+  expect(youthPositions.size).toBeGreaterThanOrEqual(4);
+  expect([...youthPositions].some(p=>["DM","CM","AM","LM","RM"].includes(p))).toBe(true);
+  expect([...youthPositions].some(p=>["LW","RW","ST"].includes(p))).toBe(true);
+});
+
+test("新シーズンの累進オーナー徴収と高額施設維持費で資金膨張を抑える", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.budget=2_000_000_000;st.facilities={training:3,recovery:3,academy:3,stadium:3};st.complete=true;st.history.push({season:st.season,rank:1,points:90,record:"28勝6分4敗",prize:220_000_000});localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-next-season]").click();
+  const st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(st.lastReserveLevy).toBeGreaterThan(1_000_000_000);
+  expect(st.lastFacilityMaintenance).toBe(3_300_000_000);
+  expect(st.budget).toBeLessThan(0);
+  await page.locator('[data-football-tab="club"]').click();
+  await expect(page.locator("[data-facility-maintenance]")).toHaveText("¥3,300,000,000");
+});
+
+test("プレシーズン導入前の既存v5セーブは現在季を維持し次季から適用する", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.week=12;delete st.preseasonDone;delete st.preseasonDay;delete st.summerDay;localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  await page.reload(); await page.locator("[data-continue]").click();
+  await expect(page.locator("[data-preseason-panel]")).toBeHidden();
+  let st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(st.week).toBe(12); expect(st.preseasonDone).toBe(true);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.complete=true;st.history.push({season:st.season,rank:5,points:55,record:"16勝7分15敗",prize:60_000_000});localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-next-season]").click();
+  await expect(page.locator("[data-preseason-panel]")).toBeVisible();
+  await expect(page.locator("[data-preseason-day]")).toHaveText("DAY 1 / 5");
+  st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(st.summerDay).toBe(1); expect(st.preseasonDone).toBe(false);
 });
