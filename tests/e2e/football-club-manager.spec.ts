@@ -347,3 +347,52 @@ test("attack and defense boards keep independent manual starter positions", asyn
   expect(persisted.attackLineup).toEqual(afterAttack.attackLineup);
   expect(persisted.defenseLineup).toEqual(afterDefense.defenseLineup);
 });
+
+
+test("選手をサブポジションへコンバートしメインポジションへ昇格できる", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), saveKey);
+  const picked = await page.evaluate((key) => { const st=JSON.parse(localStorage.getItem(key)!); const p=st.squad.find((x:any)=>!x.pos.includes("GK")); return {id:p.id,main:p.pos[0]}; }, saveKey);
+  await page.locator(`[data-profile="${picked.id}"]`).first().click();
+  const target = await page.locator("[data-convert-target] option").first().getAttribute("value"); expect(target).toBeTruthy();
+  await page.locator("[data-convert-target]").selectOption(target!); await page.locator("[data-start-conversion]").click();
+  await expect(page.locator("[data-cancel-conversion]")).toBeVisible();
+  await page.evaluate(({key,id})=>{const st=JSON.parse(localStorage.getItem(key)!);const p=st.squad.find((x:any)=>x.id===id);p.conversionProgress=96;localStorage.setItem(key,JSON.stringify(st));},{key:saveKey,id:picked.id});
+  await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-quick-match]").click();
+  const learned = await page.evaluate(({key,id})=>JSON.parse(localStorage.getItem(key)!).squad.find((x:any)=>x.id===id),{key:saveKey,id:picked.id});
+  expect(learned.pos).toContain(target); expect(learned.conversionTarget).toBe("");
+  await page.locator(`[data-profile="${picked.id}"]`).first().click(); await page.locator(`[data-promote-position="${target}"]`).click();
+  const promoted = await page.evaluate(({key,id})=>JSON.parse(localStorage.getItem(key)!).squad.find((x:any)=>x.id===id),{key:saveKey,id:picked.id});
+  expect(promoted.pos[0]).toBe(target); expect(promoted.pos).toContain(picked.main);
+});
+
+
+test("戦術ボードをドラッグして基本と攻撃時の先発配置を入れ替えられる", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), saveKey);
+  const baseA=page.locator("[data-pitch-player]").nth(1),baseB=page.locator("[data-pitch-player]").nth(4);
+  const a=Number(await baseA.getAttribute("data-lineup-index")),b=Number(await baseB.getAttribute("data-lineup-index"));
+  const before=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey); await baseA.dragTo(baseB);
+  const after=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(after.lineup[a]).toBe(before.lineup[b]); expect(after.lineup[b]).toBe(before.lineup[a]);
+  await page.locator('[data-board-phase="attack"]').click();
+  const atkA=page.locator("[data-pitch-player]").nth(2),atkB=page.locator("[data-pitch-player]").nth(7);
+  const atkBefore=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  const idA=await atkA.getAttribute("data-pitch-player"),idB=await atkB.getAttribute("data-pitch-player"); await atkA.dragTo(atkB);
+  const atkAfter=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(atkAfter.lineup).toEqual(after.lineup); expect(atkAfter.attackLineup.indexOf(idA)).toBe(atkBefore.attackLineup.indexOf(idB)); expect(atkAfter.attackLineup.indexOf(idB)).toBe(atkBefore.attackLineup.indexOf(idA));
+});
+
+
+test("スマホでは長押しドラッグで戦術ボードの先発を入れ替えられる", async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}); const page=await context.newPage();
+  await page.goto(url); await page.locator("[data-start]").click(); await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  const a=page.locator("[data-pitch-player]").nth(1),b=page.locator("[data-pitch-player]").nth(4),ab=await a.boundingBox(),bb=await b.boundingBox();
+  expect(ab).toBeTruthy(); expect(bb).toBeTruthy(); const from=Number(await a.getAttribute("data-lineup-index")),to=Number(await b.getAttribute("data-lineup-index"));
+  const before=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey),ax=ab!.x+ab!.width/2,ay=ab!.y+ab!.height/2,bx=bb!.x+bb!.width/2,by=bb!.y+bb!.height/2;
+  await a.dispatchEvent("pointerdown",{pointerId:9,pointerType:"touch",button:0,clientX:ax,clientY:ay}); await page.waitForTimeout(320);
+  await a.dispatchEvent("pointermove",{pointerId:9,pointerType:"touch",button:0,clientX:bx,clientY:by});
+  await a.dispatchEvent("pointerup",{pointerId:9,pointerType:"touch",button:0,clientX:bx,clientY:by});
+  const after=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey); expect(after.lineup[from]).toBe(before.lineup[to]); expect(after.lineup[to]).toBe(before.lineup[from]);
+  await context.close();
+});
