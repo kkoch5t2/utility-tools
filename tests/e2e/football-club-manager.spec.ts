@@ -403,10 +403,18 @@ test("全選手に利き足がありプロフィールと戦術ボードで確�
   await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
   const state=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(state.squad.every((p:any)=>p.preferredFoot==="R"||p.preferredFoot==="L")).toBe(true);
+  const all=[...state.squad,...Object.values(state.rivalSquads||{}).flat(),...Object.values(state.worldSquads||{}).flat()] as any[];
+  const wide=all.filter((p:any)=>["LW","LM","RW","RM"].includes(p.pos?.[0]));
+  const inverted=wide.filter((p:any)=>["LW","LM"].includes(p.pos[0])?p.preferredFoot==="R":p.preferredFoot==="L");
+  expect(wide.length).toBeGreaterThan(30); expect(inverted.length/wide.length).toBeGreaterThan(.6); expect(inverted.length/wide.length).toBeLessThan(.8);
   const id=state.lineup[0],player=state.squad.find((p:any)=>p.id===id),label=player.preferredFoot==="L"?"左足":"右足";
   await page.locator(`[data-pitch-player="${id}"]`).click();
   await expect(page.locator("[data-tactical-player-detail]")).toContainText(label);
   await expect(page.locator("[data-player-detail]")).toContainText(label);
   await page.locator('[data-football-tab="squad"]').click();
   await expect(page.locator("[data-squad-table]")).toContainText(label);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.preferredFootModel=1;const all=[...st.squad,...Object.values(st.rivalSquads||{}).flat(),...Object.values(st.worldSquads||{}).flat()] as any[];for(const p of all){if(["LW","LM"].includes(p.pos?.[0]))p.preferredFoot="L";if(["RW","RM"].includes(p.pos?.[0]))p.preferredFoot="R"}localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  await page.reload(); await page.locator("[data-continue]").click(); await page.waitForFunction((key)=>JSON.parse(localStorage.getItem(key)!).preferredFootModel===2,saveKey);
+  const migrated=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey),mAll=[...migrated.squad,...Object.values(migrated.rivalSquads||{}).flat(),...Object.values(migrated.worldSquads||{}).flat()] as any[],mWide=mAll.filter((p:any)=>["LW","LM","RW","RM"].includes(p.pos?.[0])),mInv=mWide.filter((p:any)=>["LW","LM"].includes(p.pos[0])?p.preferredFoot==="R":p.preferredFoot==="L");
+  expect(mInv.length/mWide.length).toBeGreaterThan(.6); expect(mInv.length/mWide.length).toBeLessThan(.8);
 });
