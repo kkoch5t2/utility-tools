@@ -31,6 +31,12 @@ test("移籍金と契約を交渉して獲得し、届いた売却オファー�
   const buy = page.locator("[data-buy-player]:not([disabled])").first();
   const name = await buy.evaluate(el => el.closest(".market-player-card")?.querySelector("strong")?.textContent || "");
   await buy.click();
+  await expect(page.locator("[data-negotiation-backdrop]")).toBeVisible();
+  const modalBox = await page.locator("[data-negotiation]").boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(modalBox).not.toBeNull();
+  expect(modalBox!.y).toBeGreaterThanOrEqual(0);
+  expect(modalBox!.y + modalBox!.height).toBeLessThanOrEqual(viewport.height + 1);
   const ask = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).negotiation.ask, saveKey);
   await page.locator("[data-negotiation-fee]").fill(String(ask));
   await page.locator("[data-submit-club-offer]").click();
@@ -41,10 +47,16 @@ test("移籍金と契約を交渉して獲得し、届いた売却オファー�
 
   await page.locator("[data-quick-match]").click();
   await page.locator("[data-quick-match]").click();
-  await page.locator('[data-football-tab="club"]').click();
+  await expect(page.locator("[data-offer-alert]")).toBeVisible();
+  await expect(page.locator("[data-offer-alert-text]")).toContainText("1件");
+  await page.locator("[data-offer-alert]").click();
+  await expect(page.locator('[data-football-panel="club"]')).toBeVisible();
   await expect(page.locator("[data-transfer-offers] .offer-card")).toHaveCount(1);
   await page.locator("[data-offer-accept]").click();
   await expect(page.locator("[data-squad-count]")).toHaveText("22 players");
+  const sold = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).transferHistory.filter((x:any) => x.type === "OUT").at(-1), saveKey);
+  expect(sold.ownerCut).toBeGreaterThan(0);
+  expect(sold.net).toBeLessThan(sold.fee);
   await page.locator('[data-football-tab="stats"]').click();
   expect(await page.locator("[data-transfer-history] > div").count()).toBeGreaterThanOrEqual(2);
 });
@@ -69,8 +81,24 @@ test("38試合完走後も全盛期までの選手は2年目開始だけで弱�
   for (let i = 0; i < 38; i++) await page.locator("[data-quick-match]").click();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
   const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).squad.map((p:any) => ({ id:p.id, age:p.age, ovr:p.ovr })), saveKey);
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key)!);
+    state.budget = 2000000000;
+    state.facilities = { training:true, recovery:true, academy:true, stadium:true };
+    localStorage.setItem(key, JSON.stringify(state));
+  }, saveKey);
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
   await page.locator("[data-next-season]").click();
   await expect(page.locator("[data-season]")).toHaveText("2年目");
+  const fiscal = await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key)!);
+    return { budget:state.budget, levy:state.lastReserveLevy, maintenance:state.lastFacilityMaintenance };
+  }, saveKey);
+  expect(fiscal.levy).toBeGreaterThan(1000000000);
+  expect(fiscal.maintenance).toBe(260000000);
+  expect(fiscal.budget).toBeLessThan(1000000000);
   const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).squad.map((p:any) => ({ id:p.id, age:p.age, ovr:p.ovr })), saveKey);
   const afterMap = new Map(after.map((p:any) => [p.id, p]));
   const prime = before.filter((p:any) => p.age <= 31 && afterMap.has(p.id));
@@ -114,4 +142,73 @@ test("新しいクラブ管理画面はスマホでもページ全体が横に�
     expect(overflow).toBeLessThanOrEqual(1);
   }
   await expect(page.locator("[data-football-tabs]")).toBeVisible();
+});
+
+test("タクティカルボードから交代でき、国籍コードとポジション色が見える", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto(url);
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
+  const firstName = page.locator("[data-squad-table] .player-name-button").first();
+  await expect(firstName.locator(".nation-badge small")).toHaveText(/^[A-Z]{2}$/);
+  await expect(firstName).toContainText(/[🟤🟡🟢🔵]/);
+
+  await page.locator("[data-match]").click();
+  await expect(page.locator("[data-halftime]")).toBeVisible();
+  const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).lineup[9], saveKey);
+  await page.locator('[data-pitch-slot="9"]').click();
+  await expect(page.locator("[data-tactical-selected]")).toContainText("を入れ替える");
+  const incoming = page.locator("[data-tactical-in]:not([disabled])").first();
+  await expect(incoming).toBeVisible();
+  await incoming.click();
+  await expect(page.locator("[data-sub-count]")).toHaveText("交代 1 / 3");
+  const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).lineup[9], saveKey);
+  expect(after).not.toBe(before);
+});
+
+test("FITが落ちた先発を第2レギュラーへ自動ローテする", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
+  const ids = await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key)!);
+    const starter = state.lineup[0], reserve = state.rotationLineup[0];
+    state.squad.find((p:any) => p.id === starter).fit = 40;
+    state.squad.find((p:any) => p.id === reserve).fit = 99;
+    state.autoRotate = true;
+    state.rotationThreshold = 75;
+    localStorage.setItem(key, JSON.stringify(state));
+    return { starter, reserve };
+  }, saveKey);
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  await expect(page.locator("[data-auto-rotate]")).toBeChecked();
+  await page.locator("[data-quick-match]").click();
+  const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(state.lineup[0]).toBe(ids.reserve);
+  expect(state.rotationLineup[0]).toBe(ids.starter);
+  expect(state.log.join("\n")).toContain("自動ローテ");
+});
+
+test("スマホでも移籍交渉モーダルとオファー通知が画面内に収まる", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.locator("[data-start]").click();
+  await page.locator('[data-football-tab="market"]').click();
+  await page.locator("[data-buy-player]:not([disabled])").first().click();
+  const modal = await page.locator("[data-negotiation]").boundingBox();
+  expect(modal).not.toBeNull();
+  expect(modal!.x).toBeGreaterThanOrEqual(0);
+  expect(modal!.x + modal!.width).toBeLessThanOrEqual(390);
+  expect(modal!.y + modal!.height).toBeLessThanOrEqual(844);
+  await page.locator("[data-cancel-negotiation]").click();
+
+  await page.locator("[data-quick-match]").click();
+  await page.locator("[data-quick-match]").click();
+  await expect(page.locator("[data-offer-alert]")).toBeVisible();
+  const alert = await page.locator("[data-offer-alert]").boundingBox();
+  expect(alert).not.toBeNull();
+  expect(alert!.x + alert!.width).toBeLessThanOrEqual(390);
+  await page.locator("[data-offer-alert]").click();
+  await expect(page.locator('[data-football-panel="club"]')).toBeVisible();
 });

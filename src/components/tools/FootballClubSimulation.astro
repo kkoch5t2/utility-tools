@@ -22,9 +22,17 @@ const { meta } = Astro.props;
   </div>
 
   <div class="sim-play" data-play hidden>
+    <button class="football-offer-alert" type="button" data-offer-alert hidden aria-live="polite">
+      <span>📩 移籍オファー</span><strong data-offer-alert-text>新しいオファーがあります</strong><em>確認する →</em>
+    </button>
+    <div class="negotiation-backdrop" data-negotiation-backdrop hidden><div class="negotiation-panel" data-negotiation></div></div>
     <div class="sim-grid">      <section class="sim-card">
         <div class="sim-card-head"><h3>TACTICAL BOARD</h3><span data-opponent-badge>vs Northbridge United</span></div>
         <div class="football-pitch football-lineup-pitch" data-pitch-lineup></div>
+        <div class="tactical-swap-panel">
+          <div><strong>ボードから入替</strong><small data-tactical-selected>ピッチ上の選手を選択</small></div>
+          <div class="tactical-bench" data-tactical-bench></div>
+        </div>
         <div class="club-lines"><div><span>ATTACK</span><strong data-attack>0.0</strong></div><div><span>MIDFIELD</span><strong data-midfield>0.0</strong></div><div><span>DEFENSE</span><strong data-defense>0.0</strong></div></div>
       </section>
       <section class="sim-card">
@@ -51,7 +59,10 @@ const { meta } = Astro.props;
     <div class="sim-grid football-squad-grid">
       <section class="sim-card">
         <div class="sim-card-head"><h3>スタメン編成</h3><button class="sim-secondary compact" type="button" data-auto-lineup>ベストXI自動選出</button></div>
-        <p class="football-help">ポジション適性・能力・調子・体力まで試合計算に反映。負傷中の選手は起用できません。</p>        <div class="lineup-editor" data-lineup-editor></div>
+        <p class="football-help">ポジション適性・能力・調子・体力まで試合計算に反映。負傷中の選手は起用できません。</p>
+        <div class="rotation-toolbar"><label><input type="checkbox" data-auto-rotate checked> FIT低下で自動ローテ</label><label>交代基準 <select data-rotation-threshold><option value="65">65%</option><option value="70">70%</option><option value="75" selected>75%</option><option value="80">80%</option></select></label><button class="sim-secondary compact" type="button" data-auto-rotation>第2XI自動設定</button></div>
+        <div class="lineup-editor" data-lineup-editor></div>
+        <details class="rotation-details"><summary>第2レギュラー設定 <small>各ポジションのローテ要員</small></summary><div class="rotation-editor" data-rotation-editor></div></details>
         <div class="sim-card-head bench-heading"><h3>ベンチ</h3><span>7 players</span></div>
         <div class="bench-editor" data-bench-editor></div>
       </section>
@@ -83,7 +94,6 @@ const { meta } = Astro.props;
         <label>COUNTRY<select data-market-country></select></label><label>CLUB<select data-market-club></select></label><label>POS<select data-market-filter><option value="ALL">ALL</option><option value="GK">GK</option><option value="DF">DF</option><option value="MF">MF</option><option value="FW">FW</option></select></label><label>SORT<select data-market-sort><option value="ovr">OVR順</option><option value="pot">POT順</option><option value="price">市場価値順</option><option value="age">年齢順</option></select></label>
       </div>      <p class="football-help">一覧は移籍リスト入り選手を中心に最大48人表示。クラブを指定すると所属全選手を確認できます。詳細能力はスカウト、OVR・成績・契約状況は常時確認できます。</p>
       <div class="football-transfer-market" data-transfer-market></div>
-      <div class="negotiation-panel" data-negotiation hidden></div>
     </section>
 
     <section class="sim-card football-panel" data-football-panel="world" hidden>
@@ -98,12 +108,12 @@ const { meta } = Astro.props;
       <section class="sim-card">
         <div class="sim-card-head"><h3>クラブ施設</h3><span data-facility-count>0 / 4</span></div>
         <div class="facility-grid">
-          <div class="facility-card"><strong>トレーニングセンター</strong><small>試合・練習で得る成長XP +40%</small><button type="button" data-facility="training">¥100,000,000</button></div>
-          <div class="facility-card"><strong>リカバリー室</strong><small>試合後の体力回復 +6</small><button type="button" data-facility="recovery">¥80,000,000</button></div>
-          <div class="facility-card"><strong>ユースアカデミー</strong><small>オフに高POT若手2名加入、若手成長UP</small><button type="button" data-facility="academy">¥120,000,000</button></div>
-          <div class="facility-card"><strong>スタジアム改修</strong><small>ホーム戦収入・ファン増加量UP</small><button type="button" data-facility="stadium">¥150,000,000</button></div>
+          <div class="facility-card"><strong>トレーニングセンター</strong><small>成長XP +40%｜年間維持 ¥60,000,000</small><button type="button" data-facility="training">¥100,000,000</button></div>
+          <div class="facility-card"><strong>リカバリー室</strong><small>試合後の体力回復 +6｜年間維持 ¥45,000,000</small><button type="button" data-facility="recovery">¥80,000,000</button></div>
+          <div class="facility-card"><strong>ユースアカデミー</strong><small>高POT若手2名＋成長UP｜年間維持 ¥70,000,000</small><button type="button" data-facility="academy">¥120,000,000</button></div>
+          <div class="facility-card"><strong>スタジアム改修</strong><small>ホーム戦収入UP｜年間維持 ¥85,000,000</small><button type="button" data-facility="stadium">¥150,000,000</button></div>
         </div>
-        <div class="finance-strip"><span>選手給与/節 <b data-payroll>¥0</b></span><span>前節収支 <b data-net-income>¥0</b></span><span>市場価値合計 <b data-squad-value>¥0</b></span></div>
+        <div class="finance-strip"><span>選手給与/節 <b data-payroll>¥0</b></span><span>前節収支 <b data-net-income>¥0</b></span><span>市場価値合計 <b data-squad-value>¥0</b></span><span>施設維持/年 <b data-facility-maintenance>¥0</b></span><span>売却益徴収率 <b data-sale-owner-rate>0%</b></span></div><div class="owner-policy-note"><strong>OWNER POLICY</strong><span>新シーズン開始時、保有資金1億円超へ20%→35%→50%→65%の累進徴収。売却益も残高に応じ5%〜40%をオーナーが徴収します。</span><small>前回の新シーズン徴収 <b data-last-reserve-levy>¥0</b></small></div>
       </section>
       <section class="sim-card"><div class="sim-card-head"><h3>移籍オファー</h3><span data-offer-count>0 pending</span></div><div class="offer-list" data-transfer-offers><p>現在オファーはありません。</p></div></section>
       <section class="sim-card"><div class="sim-card-head"><h3>マッチセンター</h3><span data-scoreline>-- - --</span></div><div class="match-feed" data-match-feed><div>キックオフすると試合経過が表示されます。</div></div><ul class="sim-log" data-log></ul></section>
