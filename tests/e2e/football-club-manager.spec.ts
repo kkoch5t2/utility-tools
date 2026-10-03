@@ -53,14 +53,14 @@ test("移籍金と契約を交渉して獲得し、届いた売却オファー�
   await expect(page.locator("[data-squad-table]")).toContainText(name);
   await expect(page.locator("[data-squad-count]")).toHaveText("23 players");
 
-  await finishPreseason(page); await page.locator("[data-quick-match]").click();
-  await finishPreseason(page); await page.locator("[data-quick-match]").click();
+  await page.evaluate((key) => { const st=JSON.parse(localStorage.getItem(key)!); st.seed=12345; st.offers=[]; delete st.lastOfferGenerationKey; localStorage.setItem(key,JSON.stringify(st)); }, saveKey);
+  await page.reload(); await page.locator("[data-continue]").click();
+  await finishPreseason(page);
   await expect(page.locator("[data-offer-alert]")).toBeVisible();
-  await expect(page.locator("[data-offer-alert-text]")).toContainText("1件");
   await page.locator("[data-offer-alert]").click();
   await expect(page.locator('[data-football-panel="club"]')).toBeVisible();
-  await expect(page.locator("[data-transfer-offers] .offer-card")).toHaveCount(1);
-  await page.locator("[data-offer-accept]").click();
+  expect(await page.locator("[data-transfer-offers] .offer-card").count()).toBeGreaterThanOrEqual(1);
+  await page.locator("[data-offer-accept]").first().click();
   await expect(page.locator("[data-squad-count]")).toHaveText("22 players");
   const sold = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).transferHistory.filter((x:any) => x.type === "OUT").at(-1), saveKey);
   expect(sold.ownerCut).toBeGreaterThan(0);
@@ -546,4 +546,25 @@ test("academy Lv10 uses weighted POT rolls instead of guaranteed 94", async ({ p
   expect(pots.every(p=>p>=82&&p<=94)).toBe(true);
   expect(pots.some(p=>p>=90)).toBe(true);
   expect(pots.some(p=>p<94)).toBe(true);
+});
+
+
+test("incoming transfer offers vary by day, count, and buyer club", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.seed=12345;st.offers=[];delete st.lastOfferGenerationKey;for(const p of st.squad)p.transferListed=true;localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  await page.reload(); await page.locator("[data-continue]").click();
+  const batchCounts:number[]=[]; const buyerIds:string[]=[];
+  const collectAndReject=async()=>{
+    const pending=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!).offers.filter((o:any)=>o.status==="pending").map((o:any)=>({clubId:o.clubId,id:o.id})),saveKey);
+    batchCounts.push(pending.length); buyerIds.push(...pending.map((o:any)=>o.clubId));
+    if(pending.length){await page.locator('[data-football-tab="club"]').click();while(await page.locator("[data-offer-reject]").count())await page.locator("[data-offer-reject]").first().click()}
+  };
+  for(let i=0;i<5;i++){await page.locator("[data-preseason-action]").click();await collectAndReject()}
+  for(let i=0;i<5;i++){await page.locator("[data-quick-match]").click();await collectAndReject()}
+  expect(batchCounts).toHaveLength(10);
+  expect(batchCounts.some(n=>n===0)).toBe(true);
+  expect(batchCounts.some(n=>n===2)).toBe(true);
+  expect(buyerIds.length).toBeGreaterThanOrEqual(4);
+  expect(new Set(buyerIds).size).toBeGreaterThanOrEqual(3);
 });
