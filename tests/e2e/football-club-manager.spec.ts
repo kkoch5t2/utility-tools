@@ -306,3 +306,44 @@ test("戦術ボードで選手詳細を確認し先発同士を直接入れ替�
   expect(persisted[1]).toBe(before.lineup[4]);
   expect(persisted[4]).toBe(before.lineup[1]);
 });
+
+
+test("attack and defense boards keep independent manual starter positions", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("[data-start]").click();
+  await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), saveKey);
+  await page.selectOption("[data-attack-formation]", "433");
+  await page.selectOption("[data-defense-formation]", "433");
+
+  await page.locator('[data-board-phase="attack"]').click();
+  const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  const baseBefore = [...before.lineup];
+  const defenseBefore = [...before.defenseLineup];
+  const attackBefore = [...before.attackLineup];
+  await page.locator("[data-pitch-player]").nth(1).click();
+  await page.locator("[data-arm-starter-swap]").click();
+  await page.locator("[data-pitch-player]").nth(4).click();
+
+  const afterAttack = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(afterAttack.lineup).toEqual(baseBefore);
+  expect(afterAttack.defenseLineup).toEqual(defenseBefore);
+  expect(afterAttack.attackLineup[1]).toBe(attackBefore[4]);
+  expect(afterAttack.attackLineup[4]).toBe(attackBefore[1]);
+
+  await page.locator('[data-board-phase="defense"]').click();
+  const defenseSwapBefore = [...afterAttack.defenseLineup];
+  await page.locator("[data-pitch-player]").nth(2).click();
+  await page.locator("[data-arm-starter-swap]").click();
+  await page.locator("[data-pitch-player]").nth(7).click();
+  const afterDefense = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(afterDefense.lineup).toEqual(baseBefore);
+  expect(afterDefense.attackLineup).toEqual(afterAttack.attackLineup);
+  expect(afterDefense.defenseLineup[2]).toBe(defenseSwapBefore[7]);
+  expect(afterDefense.defenseLineup[7]).toBe(defenseSwapBefore[2]);
+
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  const persisted = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(persisted.attackLineup).toEqual(afterAttack.attackLineup);
+  expect(persisted.defenseLineup).toEqual(afterDefense.defenseLineup);
+});
