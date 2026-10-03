@@ -156,7 +156,8 @@ test("タクティカルボードから交代でき、国籍コードとポジ�
   await page.locator("[data-match]").click();
   await expect(page.locator("[data-halftime]")).toBeVisible();
   const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).lineup[9], saveKey);
-  await page.locator('[data-pitch-slot="9"]').click();
+  await page.locator('[data-board-phase="base"]').click();
+  await page.locator("[data-pitch-player]").nth(9).click();
   await expect(page.locator("[data-tactical-selected]")).toContainText("を入れ替える");
   const incoming = page.locator("[data-tactical-in]:not([disabled])").first();
   await expect(incoming).toBeVisible();
@@ -211,4 +212,53 @@ test("スマホでも移籍交渉モーダルとオファー通知が画面内�
   expect(alert!.x + alert!.width).toBeLessThanOrEqual(390);
   await page.locator("[data-offer-alert]").click();
   await expect(page.locator('[data-football-panel="club"]')).toBeVisible();
+});
+
+test("攻守の可変フォーメーションでも同じ11人を自動最適配置しOVRを維持する", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto(url);
+  await page.locator("[data-start]").click();
+  await expect(page.locator("[data-shape-summary]")).toContainText("攻撃 3-2-5");
+  await expect(page.locator("[data-shape-summary]")).toContainText("守備 4-1-4-1");
+
+  const saved = await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key)!);
+    return { ids: [...state.lineup], ovr: Object.fromEntries(state.squad.map((p:any) => [p.id, p.ovr])) };
+  }, saveKey);
+  const baseIds = await page.locator("[data-pitch-player]").evaluateAll(nodes => nodes.map(n => n.getAttribute("data-pitch-player")));
+  expect(new Set(baseIds)).toEqual(new Set(saved.ids));
+  await expect(page.locator("[data-pitch-player]").first()).toContainText(/OVR \d+/);
+  await page.locator('[data-board-phase="attack"]').click();
+  await expect(page.locator('[data-board-phase="attack"]')).toHaveClass(/active/);
+  const attack = await page.locator("[data-pitch-player]").evaluateAll(nodes => nodes.map(n => ({ id:n.getAttribute("data-pitch-player"), fit:Number(n.getAttribute("data-role-fit")) })));
+  expect(new Set(attack.map(x => x.id))).toEqual(new Set(saved.ids));
+  expect(Math.min(...attack.map(x => x.fit))).toBeGreaterThanOrEqual(90);
+  await expect(page.locator("[data-pitch-player]").first()).toContainText(/OVR \d+/);
+
+  await page.locator('[data-board-phase="defense"]').click();
+  const defense = await page.locator("[data-pitch-player]").evaluateAll(nodes => nodes.map(n => ({ id:n.getAttribute("data-pitch-player"), fit:Number(n.getAttribute("data-role-fit")) })));
+  expect(new Set(defense.map(x => x.id))).toEqual(new Set(saved.ids));
+  expect(Math.min(...defense.map(x => x.fit))).toBeGreaterThanOrEqual(90);
+
+  const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  for (const id of saved.ids) expect(after.squad.find((p:any) => p.id === id).ovr).toBe(saved.ovr[id]);
+});
+
+test("攻撃時と守備時の形を変更して保存し試合へ反映できる", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("[data-start]").click();
+  await page.locator("[data-attack-formation]").selectOption("3241");
+  await page.locator("[data-defense-formation]").selectOption("532");
+  await expect(page.locator("[data-shape-summary]")).toContainText("攻撃 3-2-4-1");
+  await expect(page.locator("[data-shape-summary]")).toContainText("守備 5-3-2");
+  let state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(state.attackFormation).toBe("3241");
+  expect(state.defenseFormation).toBe("532");
+
+  await page.reload();
+  await page.locator("[data-continue]").click();
+  await expect(page.locator("[data-attack-formation]")).toHaveValue("3241");
+  await expect(page.locator("[data-defense-formation]")).toHaveValue("532");
+  await page.locator("[data-match]").click();
+  await expect(page.locator("[data-match-feed]")).toContainText("攻撃 3-2-4-1 / 守備 5-3-2");
 });
