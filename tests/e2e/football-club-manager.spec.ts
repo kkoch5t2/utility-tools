@@ -503,10 +503,10 @@ test("Lv10施設の年間維持費と累進オーナー徴収を新シーズン�
   await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-next-season]").click();
   const st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(st.lastReserveLevy).toBeGreaterThan(1_000_000_000);
-  expect(st.lastFacilityMaintenance).toBe(339_000_000);
+  expect(st.lastFacilityMaintenance).toBe(1_045_000_000);
   expect(st.budget).toBeLessThan(1_000_000_000);
   await page.locator('[data-football-tab="club"]').click();
-  await expect(page.locator("[data-facility-maintenance]")).toHaveText("¥339,000,000");
+  await expect(page.locator("[data-facility-maintenance]")).toHaveText("¥1,045,000,000");
   await expect(page.locator("[data-facility-count]")).toContainText("総Lv 40/40");
 });
 
