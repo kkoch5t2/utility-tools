@@ -1,5 +1,13 @@
 import { test, expect } from "@playwright/test";
 
+async function finishFootballPreseason(page:any){
+  await page.locator("[data-play]").waitFor({state:"visible"});
+  const panel=page.locator("[data-preseason-panel]");
+  if(await panel.count()===0)return;
+  await page.waitForFunction(()=>document.querySelector("[data-sim-game]")?.hasAttribute("data-match-phase"));
+  for(let i=0;i<5;i++){if(!(await panel.isVisible()))break;const btn=page.locator("[data-preseason-action]");await btn.waitFor({state:"visible"});await btn.click();}
+}
+
 test("ナンバーチェインを開始してヒント経路で得点できる", async ({ page }) => {
   await page.goto("/game/number-chain-10/");
   await expect(page.getByRole("heading", { name: "10をつくれ！ナンバーチェイン", exact: true })).toBeVisible();
@@ -267,10 +275,10 @@ test("3つのシミュレーションゲームが開始して1ターン進めら
   await page.goto("/game/football-club-manager/");
   await page.locator("[data-start]").click();
   await expect(page.locator("[data-play]")).toBeVisible();
-  await page.locator("[data-match]").click();
+  await finishFootballPreseason(page); await page.locator("[data-match]").click();
   await expect(page.locator("[data-halftime]")).toBeVisible();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-match-phase", "halftime");
-  await page.locator("[data-match]").click();
+  await finishFootballPreseason(page); await page.locator("[data-match]").click();
   await expect(page.locator("[data-week]")).toHaveText("2 / 38");
   await expect(page.locator("[data-result]")).toContainText(/WIN|DRAW|LOSE/);
 
@@ -340,14 +348,14 @@ test("シミュレーション3本の追加管理機能が実際に操作でき�
   await page.selectOption("[data-market-filter]", "ALL");
   expect(await page.locator("[data-transfer-market] .market-player-card").count()).toBeGreaterThanOrEqual(20);
 
-  await page.locator("[data-match]").click();
+  await finishFootballPreseason(page); await page.locator("[data-match]").click();
   await expect(page.locator("[data-halftime]")).toBeVisible();
   const incoming = await page.locator("[data-sub-in] option").first().getAttribute("value");
   const outgoing = await page.locator("[data-sub-out] option").first().getAttribute("value");
   expect(incoming).not.toBe(outgoing);
   await page.locator("[data-make-sub]").click();
   await expect(page.locator("[data-sub-count]")).toHaveText("交代 1 / 3");
-  await page.locator("[data-match]").click();
+  await finishFootballPreseason(page); await page.locator("[data-match]").click();
   expect(await page.locator("[data-match-feed] div").count()).toBeGreaterThanOrEqual(4);
   await expect(page.locator("[data-league-table]")).toContainText("Harbor City FC");
 
@@ -458,11 +466,11 @@ test("サッカーの育成・スカウト・ベンチ交代・個人成績が�
   await expect(page.locator(`[data-scout-player="${scoutId}"]`)).toHaveText("SCOUTED");
 
   const starterId = await page.locator("[data-lineup-slot]").first().inputValue();
-  await page.locator("[data-match]").click();
+  await finishFootballPreseason(page); await page.locator("[data-match]").click();
   await expect(page.locator("[data-halftime]")).toBeVisible();
   await page.locator("[data-make-sub]").click();
   await expect(page.locator("[data-sub-count]")).toHaveText("交代 1 / 3");
-  await page.locator("[data-match]").click();
+  await finishFootballPreseason(page); await page.locator("[data-match]").click();
 
   await page.locator('[data-football-tab="squad"]').click();
   await expect(page.locator('[data-football-panel="squad"]')).toBeVisible();
@@ -523,7 +531,7 @@ test("3つのシミュレーションゲームを最終ターンまで完走で�
   await expect(page.locator("[data-play]")).toBeVisible();
   for (let i = 0; i < 38; i++) {
     await page.locator("[data-auto-lineup]").click();
-    await page.locator("[data-quick-match]").click();
+    await finishFootballPreseason(page); await page.locator("[data-quick-match]").click();
   }
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
   await expect(page.locator("[data-result]")).toContainText("シーズン終了");

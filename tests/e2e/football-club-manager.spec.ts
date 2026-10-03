@@ -3,6 +3,14 @@ import { expect, test } from "@playwright/test";
 const url = "/game/football-club-manager/";
 const saveKey = "utility-tools:sim:football-club-sim:v5";
 
+async function finishPreseason(page:any){
+  await page.locator("[data-play]").waitFor({state:"visible"});
+  const panel=page.locator("[data-preseason-panel]");
+  if(await panel.count()===0)return;
+  await page.waitForFunction(()=>document.querySelector("[data-sim-game]")?.hasAttribute("data-match-phase"));
+  for(let i=0;i<5;i++){if(!(await panel.isVisible()))break;const btn=page.locator("[data-preseason-action]");await btn.waitFor({state:"visible"});await btn.click();}
+}
+
 test("20クラブ38試合と欧州クラブの選手データを閲覧できる", async ({ page }) => {
   await page.goto(url);
   await page.locator("[data-start]").click();
@@ -17,7 +25,7 @@ test("20クラブ38試合と欧州クラブの選手データを閲覧できる"
   await expect(page.locator("[data-world-roster] tr")).toHaveCount(20);
   await expect(page.locator("[data-world-roster] tr").first()).toContainText(/\d+/);
 
-  await page.locator("[data-quick-match]").click();
+  await finishPreseason(page); await page.locator("[data-quick-match]").click();
   await page.selectOption("[data-world-country]", "LEAGUE");
   await expect(page.locator("[data-world-roster] tr").first().locator("td").nth(5)).toHaveText("1");
 });
@@ -45,8 +53,8 @@ test("移籍金と契約を交渉して獲得し、届いた売却オファー�
   await expect(page.locator("[data-squad-table]")).toContainText(name);
   await expect(page.locator("[data-squad-count]")).toHaveText("23 players");
 
-  await page.locator("[data-quick-match]").click();
-  await page.locator("[data-quick-match]").click();
+  await finishPreseason(page); await page.locator("[data-quick-match]").click();
+  await finishPreseason(page); await page.locator("[data-quick-match]").click();
   await expect(page.locator("[data-offer-alert]")).toBeVisible();
   await expect(page.locator("[data-offer-alert-text]")).toContainText("1件");
   await page.locator("[data-offer-alert]").click();
@@ -66,7 +74,7 @@ test("PCのハーフタイムで交代ボタンが画面内に見えて操作で
   await page.goto(url);
   await page.locator("[data-start]").click();
   await expect(page.locator("[data-play]")).toBeVisible();
-  await page.locator("[data-match]").click();
+  await finishPreseason(page); await page.locator("[data-match]").click();
   const sub = page.locator("[data-make-sub]");
   await expect(page.locator("[data-halftime]")).toBeVisible();
   await expect(sub).toBeVisible();
@@ -78,7 +86,7 @@ test("38試合完走後も全盛期までの選手は2年目開始だけで弱�
   await page.goto(url);
   await page.locator("[data-start]").click();
   await expect(page.locator("[data-play]")).toBeVisible();
-  for (let i = 0; i < 38; i++) await page.locator("[data-quick-match]").click();
+  await finishPreseason(page); for (let i = 0; i < 38; i++) await page.locator("[data-quick-match]").click();
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
   const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).squad.map((p:any) => ({ id:p.id, age:p.age, ovr:p.ovr })), saveKey);
   await page.evaluate((key) => {
@@ -153,7 +161,7 @@ test("タクティカルボードから交代でき、国籍コードとポジ�
   await expect(firstName.locator(".nation-badge small")).toHaveText(/^[A-Z]{2}$/);
   await expect(firstName).toContainText(/[🟤🟡🟢🔵]/);
 
-  await page.locator("[data-match]").click();
+  await finishPreseason(page); await page.locator("[data-match]").click();
   await expect(page.locator("[data-halftime]")).toBeVisible();
   const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).lineup[9], saveKey);
   await page.locator('[data-board-phase="base"]').click();
@@ -184,7 +192,7 @@ test("FITが落ちた先発を第2レギュラーへ自動ローテする", asyn
   await page.reload();
   await page.locator("[data-continue]").click();
   await expect(page.locator("[data-auto-rotate]")).toBeChecked();
-  await page.locator("[data-quick-match]").click();
+  await finishPreseason(page); await page.locator("[data-quick-match]").click();
   const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
   expect(state.lineup[0]).toBe(ids.reserve);
   expect(state.rotationLineup[0]).toBe(ids.starter);
@@ -204,8 +212,8 @@ test("スマホでも移籍交渉モーダルとオファー通知が画面内�
   expect(modal!.y + modal!.height).toBeLessThanOrEqual(844);
   await page.locator("[data-cancel-negotiation]").click();
 
-  await page.locator("[data-quick-match]").click();
-  await page.locator("[data-quick-match]").click();
+  await finishPreseason(page); await page.locator("[data-quick-match]").click();
+  await finishPreseason(page); await page.locator("[data-quick-match]").click();
   await expect(page.locator("[data-offer-alert]")).toBeVisible();
   const alert = await page.locator("[data-offer-alert]").boundingBox();
   expect(alert).not.toBeNull();
@@ -263,7 +271,7 @@ test("攻撃時と守備時の形を変更して保存し試合へ反映でき�
   await page.locator("[data-continue]").click();
   await expect(page.locator("[data-attack-formation]")).toHaveValue("3241");
   await expect(page.locator("[data-defense-formation]")).toHaveValue("532");
-  await page.locator("[data-match]").click();
+  await finishPreseason(page); await page.locator("[data-match]").click();
   await expect(page.locator("[data-match-feed]")).toContainText("攻撃 3-2-4-1 / 守備 5-3-2");
 });
 
@@ -358,7 +366,7 @@ test("選手をサブポジションへコンバートしメインポジショ�
   await page.locator("[data-convert-target]").selectOption(target!); await page.locator("[data-start-conversion]").click();
   await expect(page.locator("[data-cancel-conversion]")).toBeVisible();
   await page.evaluate(({key,id})=>{const st=JSON.parse(localStorage.getItem(key)!);const p=st.squad.find((x:any)=>x.id===id);p.conversionProgress=96;localStorage.setItem(key,JSON.stringify(st));},{key:saveKey,id:picked.id});
-  await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-quick-match]").click();
+  await page.reload(); await page.locator("[data-continue]").click(); await finishPreseason(page); await page.locator("[data-quick-match]").click();
   const learned = await page.evaluate(({key,id})=>JSON.parse(localStorage.getItem(key)!).squad.find((x:any)=>x.id===id),{key:saveKey,id:picked.id});
   expect(learned.pos).toContain(target); expect(learned.conversionTarget).toBe("");
   await page.locator(`[data-profile="${picked.id}"]`).first().click(); await page.locator(`[data-promote-position="${target}"]`).click();
@@ -417,4 +425,26 @@ test("全選手に利き足がありプロフィールと戦術ボードで確�
   await page.reload(); await page.locator("[data-continue]").click(); await page.waitForFunction((key)=>JSON.parse(localStorage.getItem(key)!).preferredFootModel===2,saveKey);
   const migrated=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey),mAll=[...migrated.squad,...Object.values(migrated.rivalSquads||{}).flat(),...Object.values(migrated.worldSquads||{}).flat()] as any[],mWide=mAll.filter((p:any)=>["LW","LM","RW","RM"].includes(p.pos?.[0])),mInv=mWide.filter((p:any)=>["LW","LM"].includes(p.pos[0])?p.preferredFoot==="R":p.preferredFoot==="L");
   expect(mInv.length/mWide.length).toBeGreaterThan(.6); expect(mInv.length/mWide.length).toBeLessThan(.8);
+});
+
+test("新シーズンは5日間のプレシーズン後に開幕し夏移籍期間は10日ある", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await expect(page.locator("[data-preseason-panel]")).toBeVisible();
+  await expect(page.locator("[data-preseason-day]")).toHaveText("DAY 1 / 5");
+  await page.locator("[data-preseason-action]").click();
+  await expect(page.locator("[data-preseason-action]")).toContainText("プレシーズンマッチ");
+  await page.locator("[data-preseason-action]").click();
+  let st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(st.week).toBe(1); expect(st.preseasonResults).toHaveLength(1);
+  expect(st.offers.some((o:any)=>o.status==="pending")).toBe(true);
+  for(let i=0;i<3;i++) await page.locator("[data-preseason-action]").click();
+  await expect(page.locator("[data-preseason-panel]")).toBeHidden();
+  st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(st.preseasonDone).toBe(true); expect(st.summerDay).toBe(6); expect(st.week).toBe(1);
+  await page.locator('[data-football-tab="market"]').click();
+  await expect(page.locator("[data-market-window]")).toContainText("DAY 6 / 10");
+  for(let i=0;i<5;i++) await page.locator("[data-quick-match]").click();
+  st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(st.summerDay).toBe(11); expect(st.week).toBe(6);
+  await expect(page.locator("[data-window-status]")).toHaveText("WINDOW CLOSED");
 });
