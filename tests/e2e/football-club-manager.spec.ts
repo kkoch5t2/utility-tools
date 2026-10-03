@@ -552,7 +552,7 @@ test("academy Lv10 uses weighted POT rolls instead of guaranteed 94", async ({ p
 test("incoming transfer offers vary by day, count, and buyer club", async ({ page }) => {
   await page.goto(url); await page.locator("[data-start]").click();
   await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
-  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.seed=12345;st.offers=[];delete st.lastOfferGenerationKey;for(const p of st.squad)p.transferListed=true;localStorage.setItem(key,JSON.stringify(st))},saveKey);
+  await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.seed=12345;st.offers=[];delete st.lastOfferGenerationKey;for(const p of st.squad){p.transferListed=true;p.ovr=90;}localStorage.setItem(key,JSON.stringify(st))},saveKey);
   await page.reload(); await page.locator("[data-continue]").click();
   const batchCounts:number[]=[]; const buyerIds:string[]=[];
   const collectAndReject=async()=>{
