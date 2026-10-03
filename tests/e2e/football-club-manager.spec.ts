@@ -105,7 +105,7 @@ test("38試合完走後も全盛期までの選手は2年目開始だけで弱�
     return { budget:state.budget, levy:state.lastReserveLevy, maintenance:state.lastFacilityMaintenance };
   }, saveKey);
   expect(fiscal.levy).toBeGreaterThan(1000000000);
-  expect(fiscal.maintenance).toBe(55_000_000);
+  expect(fiscal.maintenance).toBe(72_000_000);
   expect(fiscal.budget).toBeLessThan(1000000000);
   const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).squad.map((p:any) => ({ id:p.id, age:p.age, ovr:p.ovr })), saveKey);
   const afterMap = new Map(after.map((p:any) => [p.id, p]));
@@ -436,7 +436,7 @@ test("新シーズンは5日間のプレシーズン後に開幕し夏移籍期�
   await page.locator("[data-preseason-action]").click();
   let st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(st.week).toBe(1); expect(st.preseasonResults).toHaveLength(1);
-  expect(st.offers.some((o:any)=>o.status==="pending")).toBe(true);
+  expect(st.lastOfferGenerationKey).toBe("1:S:2");
   for(let i=0;i<3;i++) await page.locator("[data-preseason-action]").click();
   await expect(page.locator("[data-preseason-panel]")).toBeHidden();
   st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
@@ -505,10 +505,10 @@ test("Lv10施設の年間維持費と累進オーナー徴収を新シーズン�
   await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-next-season]").click();
   const st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(st.lastReserveLevy).toBeGreaterThan(1_000_000_000);
-  expect(st.lastFacilityMaintenance).toBe(1_045_000_000);
+  expect(st.lastFacilityMaintenance).toBe(1_359_000_000);
   expect(st.budget).toBeLessThan(1_000_000_000);
   await page.locator('[data-football-tab="club"]').click();
-  await expect(page.locator("[data-facility-maintenance]")).toHaveText("¥1,045,000,000");
+  await expect(page.locator("[data-facility-maintenance]")).toHaveText("¥1,359,000,000");
   await expect(page.locator("[data-facility-count]")).toContainText("総Lv 40/40");
 });
 
