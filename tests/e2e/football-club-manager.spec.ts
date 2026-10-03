@@ -218,6 +218,8 @@ test("攻守の可変フォーメーションでも同じ11人を自動最適配
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto(url);
   await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
+  await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), saveKey);
   await expect(page.locator("[data-shape-summary]")).toContainText("攻撃 3-2-5");
   await expect(page.locator("[data-shape-summary]")).toContainText("守備 4-1-4-1");
 
@@ -247,6 +249,8 @@ test("攻守の可変フォーメーションでも同じ11人を自動最適配
 test("攻撃時と守備時の形を変更して保存し試合へ反映できる", async ({ page }) => {
   await page.goto(url);
   await page.locator("[data-start]").click();
+  await expect(page.locator("[data-play]")).toBeVisible();
+  await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), saveKey);
   await page.locator("[data-attack-formation]").selectOption("3241");
   await page.locator("[data-defense-formation]").selectOption("532");
   await expect(page.locator("[data-shape-summary]")).toContainText("攻撃 3-2-4-1");
