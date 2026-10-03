@@ -27,7 +27,8 @@ const { meta } = Astro.props;
     </button>
     <div class="negotiation-backdrop" data-negotiation-backdrop hidden><div class="negotiation-panel" data-negotiation></div></div>
     <div class="sim-grid">      <section class="sim-card">
-        <div class="sim-card-head"><h3>TACTICAL BOARD</h3><span data-opponent-badge>vs Northbridge United</span></div>
+        <div class="sim-card-head"><div><h3>TACTICAL BOARD</h3><small data-shape-summary>基本 4-3-3｜攻撃 3-2-5｜守備 4-1-4-1</small></div><span data-opponent-badge>vs Northbridge United</span></div>
+        <div class="tactical-phase-tabs" data-tactical-phase-tabs><button type="button" class="active" data-board-phase="base">基本</button><button type="button" data-board-phase="attack">攻撃時</button><button type="button" data-board-phase="defense">守備時</button></div>
         <div class="football-pitch football-lineup-pitch" data-pitch-lineup></div>
         <div class="tactical-swap-panel">
           <div><strong>ボードから入替</strong><small data-tactical-selected>ピッチ上の選手を選択</small></div>
@@ -38,9 +39,12 @@ const { meta } = Astro.props;
       <section class="sim-card">
         <div class="sim-card-head"><h3>次節の準備</h3><span data-opponent-level>相手 OVR 69</span></div>
         <div class="football-control-grid">
-          <label>フォーメーション<select data-formation><option value="433">4-3-3</option><option value="4231">4-2-3-1</option><option value="343">3-4-3</option><option value="532">5-3-2</option></select></label>
+          <label>基本フォーメーション<select data-formation><option value="433">4-3-3</option><option value="4231">4-2-3-1</option><option value="343">3-4-3</option><option value="532">5-3-2</option><option value="442">4-4-2</option></select></label>
           <label>戦術<select data-tactic><option value="balanced">バランス</option><option value="possession">ポゼッション</option><option value="counter">カウンター</option><option value="press">ハイプレス</option><option value="block">ローブロック</option></select></label>
+          <label>攻撃時の形<select data-attack-formation><option value="325">3-2-5</option><option value="3241">3-2-4-1</option><option value="343">3-4-3</option><option value="433">4-3-3</option><option value="4231">4-2-3-1</option></select></label>
+          <label>守備時の形<select data-defense-formation><option value="4141">4-1-4-1</option><option value="442">4-4-2</option><option value="532">5-3-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option></select></label>
           <label class="wide-control">今週の練習<select data-training><option value="balanced">総合練習</option><option value="attack">攻撃連携</option><option value="defense">守備組織</option><option value="fitness">フィジカル</option><option value="recovery">リカバリー</option></select></label>
+          <div class="variable-shape-note wide-control"><b>可変フォーメーション</b><span>同じ11人を各フェーズへ自動最適配置。表示OVRは変えず、近い役割なら能力低下はごく小さくなります。</span></div>
         </div>
         <div class="sim-progress"><span>XI FITNESS</span><progress data-fitness max="100" value="90"></progress><b data-fitness-text>90</b></div>
         <div class="sim-progress"><span>XI FORM</span><progress data-morale max="100" value="60"></progress><b data-morale-text>3.0</b></div>
