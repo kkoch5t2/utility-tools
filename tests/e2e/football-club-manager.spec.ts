@@ -86,7 +86,15 @@ test("38試合完走後も全盛期までの選手は2年目開始だけで弱�
   await page.goto(url);
   await page.locator("[data-start]").click();
   await expect(page.locator("[data-play]")).toBeVisible();
-  await finishPreseason(page); for (let i = 0; i < 38; i++) await page.locator("[data-quick-match]").click();
+  await finishPreseason(page);
+  for (let i = 0; i < 38; i++) {
+    const hasInjuredStarter = await page.evaluate((key) => {
+      const state=JSON.parse(localStorage.getItem(key)!);
+      return state.lineup.some((id:string)=>state.squad.find((p:any)=>p.id===id)?.injury>0);
+    }, saveKey);
+    if(hasInjuredStarter) await page.locator("[data-auto-lineup]").click();
+    await page.locator("[data-quick-match]").click();
+  }
   await expect(page.locator("[data-sim-game]")).toHaveAttribute("data-state", "complete");
   const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).squad.map((p:any) => ({ id:p.id, age:p.age, ovr:p.ovr })), saveKey);
   await page.evaluate((key) => {
@@ -105,7 +113,7 @@ test("38試合完走後も全盛期までの選手は2年目開始だけで弱�
     return { budget:state.budget, levy:state.lastReserveLevy, maintenance:state.lastFacilityMaintenance };
   }, saveKey);
   expect(fiscal.levy).toBeGreaterThan(1000000000);
-  expect(fiscal.maintenance).toBe(72_000_000);
+  expect(fiscal.maintenance).toBe(94_000_000);
   expect(fiscal.budget).toBeLessThan(1000000000);
   const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).squad.map((p:any) => ({ id:p.id, age:p.age, ovr:p.ovr })), saveKey);
   const afterMap = new Map(after.map((p:any) => [p.id, p]));
@@ -175,28 +183,44 @@ test("タクティカルボードから交代でき、国籍コードとポジ�
   expect(after).not.toBe(before);
 });
 
-test("FITが落ちた先発を第2レギュラーへ自動ローテする", async ({ page }) => {
+test("自動編成を押さない限りスタメンは自動で変わらない", async ({ page }) => {
   await page.goto(url);
   await page.locator("[data-start]").click();
   await expect(page.locator("[data-play]")).toBeVisible();
-  const ids = await page.evaluate((key) => {
+  const original = await page.evaluate((key) => {
     const state = JSON.parse(localStorage.getItem(key)!);
     const starter = state.lineup[0], reserve = state.rotationLineup[0];
     state.squad.find((p:any) => p.id === starter).fit = 40;
     state.squad.find((p:any) => p.id === reserve).fit = 99;
     state.autoRotate = true;
-    state.rotationThreshold = 75;
     localStorage.setItem(key, JSON.stringify(state));
-    return { starter, reserve };
+    return { lineup:[...state.lineup], starter, reserve };
   }, saveKey);
   await page.reload();
   await page.locator("[data-continue]").click();
-  await expect(page.locator("[data-auto-rotate]")).toBeChecked();
-  await finishPreseason(page); await page.locator("[data-quick-match]").click();
-  const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
-  expect(state.lineup[0]).toBe(ids.reserve);
-  expect(state.rotationLineup[0]).toBe(ids.starter);
-  expect(state.log.join("\n")).toContain("自動ローテ");
+  let state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(state.lineup).toEqual(original.lineup);
+  await finishPreseason(page);
+  state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(state.lineup).toEqual(original.lineup);
+  await page.locator("[data-formation]").selectOption("442");
+  state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(state.lineup).toEqual(original.lineup);
+  await page.locator("[data-match]").click();
+  state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(state.lineup).toEqual(original.lineup);
+  await page.locator("[data-match]").click();
+  await page.evaluate(({key,starter,reserve}) => {
+    const state = JSON.parse(localStorage.getItem(key)!);
+    for(const p of state.squad)p.injury=0;
+    state.squad.find((p:any) => p.id === starter).fit = 40;
+    state.squad.find((p:any) => p.id === reserve).fit = 99;
+    localStorage.setItem(key, JSON.stringify(state));
+  }, {key:saveKey,starter:original.starter,reserve:original.reserve});
+  await page.reload(); await page.locator("[data-continue]").click();
+  await page.locator("[data-quick-match]").click();
+  state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), saveKey);
+  expect(state.lineup).toEqual(original.lineup);
 });
 
 test("スマホでも移籍交渉モーダルとオファー通知が画面内に収まる", async ({ page }) => {
@@ -505,10 +529,10 @@ test("Lv10施設の年間維持費と累進オーナー徴収を新シーズン�
   await page.reload(); await page.locator("[data-continue]").click(); await page.locator("[data-next-season]").click();
   const st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(st.lastReserveLevy).toBeGreaterThan(1_000_000_000);
-  expect(st.lastFacilityMaintenance).toBe(1_359_000_000);
+  expect(st.lastFacilityMaintenance).toBe(1_767_000_000);
   expect(st.budget).toBeLessThan(1_000_000_000);
   await page.locator('[data-football-tab="club"]').click();
-  await expect(page.locator("[data-facility-maintenance]")).toHaveText("¥1,359,000,000");
+  await expect(page.locator("[data-facility-maintenance]")).toHaveText("¥1,767,000,000");
   await expect(page.locator("[data-facility-count]")).toContainText("総Lv 40/40");
 });
 
