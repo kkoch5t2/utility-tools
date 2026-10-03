@@ -504,6 +504,7 @@ test("プレシーズン導入前の既存v5セーブは現在季を維持し次
   await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
   await page.evaluate((key)=>{const st=JSON.parse(localStorage.getItem(key)!);st.week=12;delete st.preseasonDone;delete st.preseasonDay;delete st.summerDay;localStorage.setItem(key,JSON.stringify(st))},saveKey);
   await page.reload(); await page.locator("[data-continue]").click();
+  await page.waitForFunction((key)=>{const st=JSON.parse(localStorage.getItem(key)||"null");return st?.week===12&&st?.preseasonDone===true},saveKey);
   await expect(page.locator("[data-preseason-panel]")).toBeHidden();
   let st=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
   expect(st.week).toBe(12); expect(st.preseasonDone).toBe(true);
