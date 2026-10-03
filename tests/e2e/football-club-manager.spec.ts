@@ -396,3 +396,17 @@ test("スマホでは長押しドラッグで戦術ボードの先発を入れ�
   const after=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey); expect(after.lineup[from]).toBe(before.lineup[to]); expect(after.lineup[to]).toBe(before.lineup[from]);
   await context.close();
 });
+
+
+test("全選手に利き足がありプロフィールと戦術ボードで確認できる", async ({ page }) => {
+  await page.goto(url); await page.locator("[data-start]").click();
+  await page.waitForFunction((key)=>Boolean(localStorage.getItem(key)),saveKey);
+  const state=await page.evaluate((key)=>JSON.parse(localStorage.getItem(key)!),saveKey);
+  expect(state.squad.every((p:any)=>p.preferredFoot==="R"||p.preferredFoot==="L")).toBe(true);
+  const id=state.lineup[0],player=state.squad.find((p:any)=>p.id===id),label=player.preferredFoot==="L"?"左足":"右足";
+  await page.locator(`[data-pitch-player="${id}"]`).click();
+  await expect(page.locator("[data-tactical-player-detail]")).toContainText(label);
+  await expect(page.locator("[data-player-detail]")).toContainText(label);
+  await page.locator('[data-football-tab="squad"]').click();
+  await expect(page.locator("[data-squad-table]")).toContainText(label);
+});
