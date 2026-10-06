@@ -1,18 +1,9 @@
 {
-  "generatedAt": "2026-10-01T08:51:07.007Z",
+  "generatedAt": "2026-10-06T07:31:07.968Z",
   "periodDays": 7,
   "items": [
     {
-      "path": "/image/batch-converter/"
-    },
-    {
-      "path": "/csv/split/"
-    },
-    {
-      "path": "/developer/regex-escape/"
-    },
-    {
-      "path": "/developer/base64/"
+      "path": "/japan/corporate-number/"
     }
   ]
 }
