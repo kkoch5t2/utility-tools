@@ -6,8 +6,9 @@ import { siteConfig } from "../config/site";
 import "../styles/tokens.css";
 import "../styles/global.css";
 
-interface Props { title?: string; description?: string; noindex?: boolean; ogImage?: string; ogImageAlt?: string; }
-const { title = siteConfig.name, description = siteConfig.description, noindex = false, ogImage = "/og/default.png", ogImageAlt = title } = Astro.props;
+interface Props { title?: string; description?: string; noindex?: boolean; ogImage?: string; ogImageAlt?: string; ads?: boolean; }
+const { title = siteConfig.name, description = siteConfig.description, noindex = false, ogImage = "/og/default.png", ogImageAlt = title, ads = true } = Astro.props;
+const adsenseClient = "ca-pub-7677179691441346";
 const canonical = new URL(Astro.url.pathname, siteConfig.url);
 const ogImageUrl = new URL(ogImage, siteConfig.url).toString();
 const webSiteJson = {
@@ -25,6 +26,8 @@ const webSiteJson = {
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#0b5bd3" />
+    <meta name="google-adsense-account" content={adsenseClient} />
+    {ads && <script is:inline async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`} crossorigin="anonymous"></script>}
     {noindex && <meta name="robots" content="noindex,nofollow" />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-v3-32x32.png?v=3" />
