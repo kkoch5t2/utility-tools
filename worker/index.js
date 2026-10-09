@@ -75,6 +75,7 @@ async function enforceApiRateLimit(request, env, pathname) {
   let limiter = env.API_MUTATION_RATE_LIMITER;
   let bucket = "mutation";
   if (request.method === "GET") { limiter = env.API_READ_RATE_LIMITER; bucket = "read"; }
+  else if (pathname === "/api/issue-report") { limiter = env.API_REPORT_RATE_LIMITER; bucket = "report"; }
   else if (pathname === "/api/game-events") { limiter = env.API_GAME_RATE_LIMITER; bucket = "game"; }
   else if (isCreateRequest(request.method, pathname)) { limiter = env.API_CREATE_RATE_LIMITER; bucket = "create"; }
   if (!limiter?.limit) return null;
@@ -1322,6 +1323,39 @@ async function routeShared(request, env, pathname) {
   return null;
 }
 
+async function reportIssue(request, env) {
+  if (!env.ISSUE_REPORT_EMAIL) return json({ error: "report_not_configured" }, 503);
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "invalid_json" }, 400);
+  if (body._honey) return json({ ok: true });
+  const issueType = textValue(body.issue_type, 30);
+  if (!["処理できない", "ダウンロードできない", "表示がおかしい", "その他"].includes(issueType)) {
+    return json({ error: "invalid_issue_type" }, 400);
+  }
+  if (typeof body.details === "string" && body.details.length > 1000) {
+    return json({ error: "details_too_long" }, 400);
+  }
+  const payload = {
+    issue_type: issueType,
+    details: textValue(body.details, 1000),
+    tool: textValue(body.tool, 100),
+    url: textValue(body.url, 500),
+    browser: textValue(body.browser, 300),
+    _subject: "[便利ツール不具合] " + textValue(body.tool, 100),
+  };
+  const response = await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(env.ISSUE_REPORT_EMAIL), {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) return json({ error: "report_delivery_failed" }, 502);
+  const result = await response.json().catch(() => null);
+  if (result?.success === false || result?.success === "false") {
+    return json({ error: "report_delivery_failed" }, 502);
+  }
+  return json({ ok: true });
+}
+
 async function api(request, env, pathname) {
   if (request.method !== "GET") {
     if (!mutationAllowed(request)) return json({ error: "invalid_origin" }, 403);
@@ -1332,6 +1366,10 @@ async function api(request, env, pathname) {
   } else {
     const limited = await enforceApiRateLimit(request, env, pathname);
     if (limited) return limited;
+  }
+
+  if (pathname === "/api/issue-report" && request.method === "POST") {
+    return reportIssue(request, env);
   }
 
   if (pathname === "/api/game-events" && request.method === "POST") {
