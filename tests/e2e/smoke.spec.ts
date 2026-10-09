@@ -87,7 +87,7 @@ test("テキスト重複行を条件指定で削除してTXT保存できる", as
 
 test("不具合報告にツール情報を付けて送信できる", async ({ page }) => {
   let payload: Record<string, string> = {};
-  await page.route("https://formsubmit.co/ajax/**", async (route) => {
+  await page.route("**/api/issue-report", async (route) => {
     payload = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
